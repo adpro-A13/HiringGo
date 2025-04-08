@@ -35,7 +35,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Set gradlew as executable
         run: chmod +x ./gradlew
-      - name: Build and analyze (debug)
+      - name: Build and analyze
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_HIRING_GO }}
-        run: ./gradlew build sonar --stacktrace --debug
+          SONAR_TOKEN: ${{ secrets.TOKEN_HIRING_GO }}
+        run: ./gradlew build sonar --info
