@@ -22,7 +22,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          run: ./gradlew bootBuildImage --imageName ${{ secrets.ECR_REGISTRY }}/hiringgo
+          run: ./gradlew bootBuildImage --imageName=hiringgo
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
           docker tag hiringgo:latest ${{ secrets.ECR_REGISTRY }}/hiringgo:latest
           docker push ${{ secrets.ECR_REGISTRY }}/hiringgo:latest
