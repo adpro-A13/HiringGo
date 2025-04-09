@@ -8,4 +8,11 @@
 - Akmal Nabil Fikri (2306152084)
 - Henry Aditya Kosasi (2306214990)
 
-testt deployment using ECS: http://44.204.37.192:8080/
+## Pembagian Tugas
+1. Registrasi Akun (⛓️‍💥) (C, R) & Login  ⛓️‍💥 (C, R) [Authentication] **Bersama-sama**
+2. Dashboard 🧑‍🏫/🧑‍🎓/🧑‍💻 & Mendaftar Lowongan 🧑‍🎓(C, R) **Christian Yudistira Hermawan**
+3. Manajemen Akun 🧑‍💻(C, R, U, D) **Christian Raphael Heryanto**
+4. Manajemen Mata Kuliah 🧑‍💻(C, R, U, D) **Muhammad Radhiya Arshq**
+5. Manajemen Lowongan 🧑‍🏫 (C, R, U, D) **Henry Aditya Kosasi**
+6. Manajemen Log 🧑‍🎓(C, R, U, D) **Nobel Julian Bintang**
+7. Periksa Log 🧑‍🏫 (R, U) & Dashboard Honor 🧑‍🎓 **Akmal Nabil Fikri**
