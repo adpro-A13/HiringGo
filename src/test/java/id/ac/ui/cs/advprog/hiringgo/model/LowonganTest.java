@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.model;
 
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,8 +40,8 @@ public class LowonganTest {
         assertEquals(UUID.fromString("eb558e9f-1c39-460e-8860-71af6af63bd6"), lowongan.getLowonganId());
         assertEquals("CSUI-MK1", lowongan.getIdMataKuliah());
         assertEquals("2024/2025", lowongan.getTahunAjaran());
-        assertEquals("DIBUKA", lowongan.getStatusLowongan());
-        assertEquals("GANJIL", lowongan.getSemester());
+        assertEquals(StatusLowongan.DIBUKA, lowongan.getStatusLowongan());
+        assertEquals(Semester.GANJIL, lowongan.getSemester());
         assertEquals(3, lowongan.getJumlahAsdosDibutuhkan());
         assertEquals(2, lowongan.getJumlahAsdosDiterima());
         assertEquals(5, lowongan.getJumlahAsdosPendaftar());
@@ -68,7 +70,7 @@ public class LowonganTest {
     void testSetStatusLowonganToValidValue() {
         Lowongan lowongan = new Lowongan();
         lowongan.setStatusLowongan("DIBUKA");
-        assertEquals("DIBUKA", lowongan.getStatusLowongan());
+        assertEquals(StatusLowongan.DIBUKA, lowongan.getStatusLowongan());
     }
 
     @Test
@@ -101,7 +103,7 @@ public class LowonganTest {
         lowongan.setIdAsdosDiterima(List.of("mahasiswa-003"));
 
         assertEquals(UUID.fromString("13652556-012a-4c07-b546-54eb1396d79b"), lowongan.getLowonganId());
-        assertEquals("DITUTUP", lowongan.getStatusLowongan());
+        assertEquals(StatusLowongan.DITUTUP, lowongan.getStatusLowongan());
         assertEquals("mahasiswa-003", lowongan.getIdAsdosDiterima().get(0));
     }
 }

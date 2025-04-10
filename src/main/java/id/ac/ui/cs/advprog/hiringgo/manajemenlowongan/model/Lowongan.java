@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,18 +18,19 @@ public class Lowongan {
     @GeneratedValue
     private UUID lowonganId;
 
-    // Masih pakai String id karena model MataKuliah belum ada
     private String idMataKuliah;
     private String tahunAjaran;
 
-    private String semester;
-    private String statusLowongan;
+    @Enumerated(EnumType.STRING)
+    private Semester semester;
+
+    @Enumerated(EnumType.STRING)
+    private StatusLowongan statusLowongan;
 
     private int jumlahAsdosDibutuhkan;
     private int jumlahAsdosDiterima;
     private int jumlahAsdosPendaftar;
 
-    // Masih pakai String id karena model Mahasiswa belum ada
     @ElementCollection
     private List<String> idAsdosDiterima;
 
@@ -43,19 +46,19 @@ public class Lowongan {
                     int jumlahAsdosPendaftar,
                     List<String> idAsdosDiterima) {
 
-        if (!statusLowongan.equals("DIBUKA") && !statusLowongan.equals("DITUTUP")) {
+        if (!StatusLowongan.contains(statusLowongan)) {
             throw new IllegalArgumentException("Status lowongan tidak valid: " + statusLowongan);
         }
 
-        if (!semester.equals("GANJIL") && !semester.equals("GENAP")) {
+        if (!Semester.contains(semester)) {
             throw new IllegalArgumentException("Semester tidak valid: " + semester);
         }
 
         this.lowonganId = UUID.fromString(lowonganId);
         this.idMataKuliah = idMataKuliah;
         this.tahunAjaran = tahunAjaran;
-        this.statusLowongan = statusLowongan;
-        this.semester = semester;
+        this.statusLowongan = StatusLowongan.valueOf(statusLowongan.toUpperCase());
+        this.semester = Semester.valueOf(semester.toUpperCase());
         this.jumlahAsdosDibutuhkan = jumlahAsdosDibutuhkan;
         this.jumlahAsdosDiterima = jumlahAsdosDiterima;
         this.jumlahAsdosPendaftar = jumlahAsdosPendaftar;
@@ -63,16 +66,16 @@ public class Lowongan {
     }
 
     public void setStatusLowongan(String statusLowongan) {
-        if (!statusLowongan.equals("DIBUKA") && !statusLowongan.equals("DITUTUP")) {
+        if (!StatusLowongan.contains(statusLowongan)) {
             throw new IllegalArgumentException("Status lowongan tidak valid: " + statusLowongan);
         }
-        this.statusLowongan = statusLowongan;
+        this.statusLowongan = StatusLowongan.valueOf(statusLowongan.toUpperCase());
     }
 
     public void setSemester(String semester) {
-        if (!semester.equals("GANJIL") && !semester.equals("GENAP")) {
+        if (!Semester.contains(semester)) {
             throw new IllegalArgumentException("Semester tidak valid: " + semester);
         }
-        this.semester = semester;
+        this.semester = Semester.valueOf(semester.toUpperCase());
     }
 }
