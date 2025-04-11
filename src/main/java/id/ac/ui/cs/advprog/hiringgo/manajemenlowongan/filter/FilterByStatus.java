@@ -11,10 +11,13 @@ public class FilterByStatus implements LowonganFilterStrategy {
     private StatusLowongan status;
 
     public FilterByStatus(StatusLowongan status) {
+        this.status = status;
     }
 
     @Override
     public List<Lowongan> filter(List<Lowongan> lowonganList) {
-        return null;
+        return lowonganList.stream()
+                .filter(lowongan -> lowongan.getStatusLowongan() == status)
+                .collect(Collectors.toList());
     }
 }

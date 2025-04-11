@@ -11,10 +11,13 @@ public class FilterBySemester implements LowonganFilterStrategy {
     private Semester semester;
 
     public FilterBySemester(Semester semester) {
+        this.semester = semester;
     }
 
     @Override
     public List<Lowongan> filter(List<Lowongan> lowonganList) {
-        return null;
+        return lowonganList.stream()
+                .filter(lowongan -> lowongan.getSemester() == semester)
+                .collect(Collectors.toList());
     }
 }

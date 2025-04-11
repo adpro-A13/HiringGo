@@ -10,9 +10,11 @@ public class LowonganFilterService {
     private LowonganFilterStrategy strategy;
 
     public void setStrategy(LowonganFilterStrategy strategy) {
+        this.strategy = strategy;
     }
 
     public List<Lowongan> filter(List<Lowongan> lowonganList) {
-        return null;
+        if (strategy == null) return lowonganList;
+        return strategy.filter(lowonganList);
     }
 }

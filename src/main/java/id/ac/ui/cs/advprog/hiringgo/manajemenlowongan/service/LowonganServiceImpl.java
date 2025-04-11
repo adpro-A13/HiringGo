@@ -19,16 +19,19 @@ public class LowonganServiceImpl implements LowonganService {
 
     @Override
     public Lowongan findById(UUID id) {
-        return null;
+        return lowonganRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lowongan tidak ditemukan"));
     }
 
     @Override
     public List<Lowongan> findAll() {
-        return null;
+        return lowonganRepository.findAll();
     }
 
     @Override
     public List<Lowongan> filterLowongan(LowonganFilterStrategy strategy) {
-        return null;
+        filterService.setStrategy(strategy);
+        List<Lowongan> allLowongan = findAll(); // atau bisa langsung dari repository
+        return filterService.filter(allLowongan);
     }
 }
