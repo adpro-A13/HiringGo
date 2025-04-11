@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.hiringgo.service;
+package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
@@ -86,4 +86,6 @@ class LowonganServiceImplTest {
         assertEquals(1, result.size());
         assertEquals(Semester.GANJIL, result.get(0).getSemester());
     }
+
+
 }

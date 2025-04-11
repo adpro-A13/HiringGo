@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
+
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.LowonganFilterStrategy;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -34,4 +35,24 @@ public class LowonganServiceImpl implements LowonganService {
         List<Lowongan> allLowongan = findAll(); // atau bisa langsung dari repository
         return filterService.filter(allLowongan);
     }
+
+    @Override
+    public Lowongan createLowongan(Lowongan lowongan) {
+        return lowonganRepository.save(lowongan);
+    }
+
+    private void ensureQuotaAvailable(Lowongan lowongan) {
+        if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
+            throw new IllegalStateException("Kuota lowongan sudah penuh!");
+        }
+    }
+
+    @Override
+    public void registerLowongan(UUID lowonganId, String candidateId) {
+        Lowongan lowongan = findById(lowonganId);
+        ensureQuotaAvailable(lowongan);
+        lowongan.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar() + 1);
+        lowonganRepository.save(lowongan);
+    }
+
 }
