@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemen_akun.repository;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.factory.UserFactory;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Admin;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.User;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.UserRole;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -44,9 +45,9 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public List<User> findByRole(String role) {
+    public List<User> findByRole(UserRole role) {
         return users.values().stream()
-                .filter(user -> user.getRole().equals(role))
+                .filter(user -> user.getRole() == role)
                 .collect(Collectors.toList());
     }
 
@@ -59,7 +60,7 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean updateUserToAdmin(String email) {
         User user = users.get(email);
         if (user != null) {
-            if (user.getRole().equalsIgnoreCase("ADMIN")) {
+            if (user.getRole() == UserRole.ADMIN) {
                 return true;
             }
             
@@ -74,7 +75,7 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean updateUserToDosen(String email, String nip, String name) {
         User user = users.get(email);
         if (user != null) {
-            if (user.getRole().equalsIgnoreCase("DOSEN")) {
+            if (user.getRole() == UserRole.DOSEN) {
                 return true;
             }
             
@@ -89,7 +90,7 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean updateUserToMahasiswa(String email, String nim, String name) {
         User user = users.get(email);
         if (user != null) {
-            if (user.getRole().equalsIgnoreCase("MAHASISWA")) {
+            if (user.getRole() == UserRole.MAHASISWA) {
                 return true;
             }
             

@@ -9,6 +9,6 @@ public class Admin extends User {
     public Admin(String email, String password) {
         this.email = email;
         this.password = password;
-        this.role = "ADMIN";
+        this.role = UserRole.ADMIN;
     }
 }

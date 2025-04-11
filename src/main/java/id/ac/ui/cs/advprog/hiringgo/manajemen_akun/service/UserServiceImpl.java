@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemen_akun.service;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.factory.UserFactory;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.User;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.repository.UserRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +45,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getUsersByRole(String role) {
+    public List<User> getUsersByRole(UserRole role) {
         return userRepository.findByRole(role);
     }
     

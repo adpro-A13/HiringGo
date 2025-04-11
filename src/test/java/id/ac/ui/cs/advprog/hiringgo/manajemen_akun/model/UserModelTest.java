@@ -14,7 +14,7 @@ class UserModelTest {
         
         assertEquals(email, admin.getEmail());
         assertEquals(password, admin.getPassword());
-        assertEquals("ADMIN", admin.getRole());
+        assertEquals(UserRole.ADMIN, admin.getRole());
     }
     
     @Test
@@ -30,7 +30,7 @@ class UserModelTest {
         assertEquals(name, dosen.getName());
         assertEquals(email, dosen.getEmail());
         assertEquals(password, dosen.getPassword());
-        assertEquals("DOSEN", dosen.getRole());
+        assertEquals(UserRole.DOSEN, dosen.getRole());
     }
     
     @Test
@@ -46,7 +46,7 @@ class UserModelTest {
         assertEquals(nim, mahasiswa.getNim());
         assertEquals(email, mahasiswa.getEmail());
         assertEquals(password, mahasiswa.getPassword());
-        assertEquals("MAHASISWA", mahasiswa.getRole());
+        assertEquals(UserRole.MAHASISWA, mahasiswa.getRole());
     }
     
     @Test

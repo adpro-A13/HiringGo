@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Admin;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.User;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.UserRole;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,12 +98,12 @@ class UserServiceImplTest {
     @Test
     void testGetUsersByRole() {
         List<User> expectedAdmins = Arrays.asList(testAdmin);
-        when(userRepository.findByRole("ADMIN")).thenReturn(expectedAdmins);
+        when(userRepository.findByRole(UserRole.ADMIN)).thenReturn(expectedAdmins);
         
-        List<User> actualAdmins = userService.getUsersByRole("ADMIN");
+        List<User> actualAdmins = userService.getUsersByRole(UserRole.ADMIN);
         
         assertEquals(expectedAdmins, actualAdmins);
-        verify(userRepository).findByRole("ADMIN");
+        verify(userRepository).findByRole(UserRole.ADMIN);
     }
     
     @Test

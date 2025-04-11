@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Admin;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.User;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,10 +91,9 @@ class UserRepositoryImplTest {
         userRepository.save(testDosen);
         userRepository.save(testMahasiswa);
         
-        List<User> admins = userRepository.findByRole("ADMIN");
-        List<User> dosens = userRepository.findByRole("DOSEN");
-        List<User> mahasiswas = userRepository.findByRole("MAHASISWA");
-        List<User> nonExistentRole = userRepository.findByRole("NONEXISTENT");
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
+        List<User> dosens = userRepository.findByRole(UserRole.DOSEN);
+        List<User> mahasiswas = userRepository.findByRole(UserRole.MAHASISWA);
         
         assertEquals(1, admins.size());
         assertTrue(admins.contains(testAdmin));
@@ -103,8 +103,6 @@ class UserRepositoryImplTest {
         
         assertEquals(1, mahasiswas.size());
         assertTrue(mahasiswas.contains(testMahasiswa));
-        
-        assertTrue(nonExistentRole.isEmpty());
     }
     
     @Test
@@ -136,7 +134,7 @@ class UserRepositoryImplTest {
         
         Optional<User> updatedUser = userRepository.findByEmail("dosen@test.com");
         assertTrue(updatedUser.isPresent());
-        assertEquals("ADMIN", updatedUser.get().getRole());
+        assertEquals(UserRole.ADMIN, updatedUser.get().getRole());
         assertTrue(updatedUser.get() instanceof Admin);
     }
     
@@ -155,7 +153,7 @@ class UserRepositoryImplTest {
         
         Optional<User> updatedUser = userRepository.findByEmail("student@test.com");
         assertTrue(updatedUser.isPresent());
-        assertEquals("DOSEN", updatedUser.get().getRole());
+        assertEquals(UserRole.DOSEN, updatedUser.get().getRole());
         assertTrue(updatedUser.get() instanceof Dosen);
         Dosen castedDosen = (Dosen) updatedUser.get();
         assertEquals("D54321", castedDosen.getNip());
@@ -177,7 +175,7 @@ class UserRepositoryImplTest {
         
         Optional<User> updatedUser = userRepository.findByEmail("dosen@test.com");
         assertTrue(updatedUser.isPresent());
-        assertEquals("MAHASISWA", updatedUser.get().getRole());
+        assertEquals(UserRole.MAHASISWA, updatedUser.get().getRole());
         assertTrue(updatedUser.get() instanceof Mahasiswa);
         Mahasiswa castedMahasiswa = (Mahasiswa) updatedUser.get();
         assertEquals("M54321", castedMahasiswa.getNim());

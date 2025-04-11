@@ -8,5 +8,5 @@ import lombok.Setter;
 public abstract class User {
     protected String email;
     protected String password;
-    protected String role;
+    protected UserRole role;
 }

@@ -14,6 +14,6 @@ public class Mahasiswa extends User {
         this.nim = nim;
         this.email = email;
         this.password = password;
-        this.role = "MAHASISWA";
+        this.role = UserRole.MAHASISWA;
     }
 }

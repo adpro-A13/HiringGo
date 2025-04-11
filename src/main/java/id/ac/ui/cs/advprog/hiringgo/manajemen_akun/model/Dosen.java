@@ -14,6 +14,6 @@ public class Dosen extends User{
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = "DOSEN";
+        this.role = UserRole.DOSEN;
     }
 }

@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Admin;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.User;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ class UserFactoryTest {
         assertTrue(admin instanceof Admin);
         assertEquals(email, admin.getEmail());
         assertEquals(password, admin.getPassword());
-        assertEquals("ADMIN", admin.getRole());
+        assertEquals(UserRole.ADMIN, admin.getRole());
     }
     
     @Test
@@ -49,7 +50,7 @@ class UserFactoryTest {
         assertEquals(name, castedDosen.getName());
         assertEquals(email, castedDosen.getEmail());
         assertEquals(password, castedDosen.getPassword());
-        assertEquals("DOSEN", castedDosen.getRole());
+        assertEquals(UserRole.DOSEN, castedDosen.getRole());
     }
     
     @Test
@@ -69,7 +70,7 @@ class UserFactoryTest {
         assertEquals(nim, castedMahasiswa.getNim());
         assertEquals(email, castedMahasiswa.getEmail());
         assertEquals(password, castedMahasiswa.getPassword());
-        assertEquals("MAHASISWA", castedMahasiswa.getRole());
+        assertEquals(UserRole.MAHASISWA, castedMahasiswa.getRole());
     }
     
     @Test
@@ -82,7 +83,7 @@ class UserFactoryTest {
         assertTrue(admin instanceof Admin);
         assertEquals("john@example.com", admin.getEmail());
         assertEquals("pass123", admin.getPassword());
-        assertEquals("ADMIN", admin.getRole());
+        assertEquals(UserRole.ADMIN, admin.getRole());
     }
     
     @Test
@@ -101,7 +102,7 @@ class UserFactoryTest {
         assertEquals(name, castedDosen.getName());
         assertEquals("admin@example.com", castedDosen.getEmail());
         assertEquals("adminpass", castedDosen.getPassword());
-        assertEquals("DOSEN", castedDosen.getRole());
+        assertEquals(UserRole.DOSEN, castedDosen.getRole());
     }
     
     @Test
@@ -120,6 +121,6 @@ class UserFactoryTest {
         assertEquals(name, castedMahasiswa.getName());
         assertEquals("admin@example.com", castedMahasiswa.getEmail());
         assertEquals("adminpass", castedMahasiswa.getPassword());
-        assertEquals("MAHASISWA", castedMahasiswa.getRole());
+        assertEquals(UserRole.MAHASISWA, castedMahasiswa.getRole());
     }
 }

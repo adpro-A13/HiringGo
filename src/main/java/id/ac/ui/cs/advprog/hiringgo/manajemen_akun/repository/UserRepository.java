@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemen_akun.repository;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.User;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.model.UserRole;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +11,7 @@ public interface UserRepository {
     
     List<User> findAll();
     Optional<User> findByEmail(String email);
-    List<User> findByRole(String role);
+    List<User> findByRole(UserRole role);
     
     boolean updateUserToAdmin(String email);
     boolean updateUserToDosen(String email, String nip, String name);
