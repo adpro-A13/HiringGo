@@ -43,12 +43,12 @@ public class LowonganServiceImpl implements LowonganService {
 
     @Override
     public void registerLowongan(UUID lowonganId, String candidateId) {
-        // Minimal code for test passing
         Lowongan lowongan = findById(lowonganId);
-        // just increment pendaftar
-        int current = lowongan.getJumlahAsdosPendaftar();
-        lowongan.setJumlahAsdosPendaftar(current + 1);
-
+        // Check if the quota has been reached
+        if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
+            throw new IllegalStateException("Kuota lowongan sudah penuh!");
+        }
+        lowongan.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar() + 1);
         lowonganRepository.save(lowongan);
     }
 }
