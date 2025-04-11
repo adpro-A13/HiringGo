@@ -73,7 +73,7 @@ public class MataKuliahRepositoryTest {
         assertNotNull(findResult);
         assertEquals(matkul.getKode(), findResult.getKode());
         assertEquals(matkul.getNama(), findResult.getNama());
-        assertEquals(matkul.getDeskripsi(), findResult.getDeskripsi());
+        assertEquals("Mata Kuliah baru", findResult.getDeskripsi());
         assertEquals(1, findResult.getDosenPengampu().size());
     }
 
