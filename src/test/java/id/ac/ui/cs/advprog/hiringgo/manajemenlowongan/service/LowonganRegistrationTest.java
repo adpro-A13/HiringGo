@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.hiringgo.service;
+package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
