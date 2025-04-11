@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.hiringgo.controller;
+package id.ac.ui.cs.advprog.hiringgo.log.controller;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,18 +28,26 @@ class LogControllerTest {
 
     @Test
     void testCreateLog() throws Exception {
-        Log log = new Log();
-        log.setJudul("Asistensi");
-        log.setWaktuMulai(LocalTime.of(8, 0));
-        log.setWaktuSelesai(LocalTime.of(9, 0));
-        log.setTanggalLog(LocalDate.now());
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setWaktuMulai(LocalTime.of(8, 0));
+        request.setWaktuSelesai(LocalTime.of(9, 0));
+        request.setTanggalLog(LocalDate.now());
+
+        Log log = new Log.Builder()
+                .judul("Asistensi")
+                .waktuMulai(LocalTime.of(8, 0))
+                .waktuSelesai(LocalTime.of(9, 0))
+                .tanggalLog(LocalDate.now())
+                .build();
 
         when(logService.createLog(any(Log.class))).thenReturn(log);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/log")
-                        .contentType("application/json")
-                        .content("{\"judul\":\"Asistensi\",\"waktuMulai\":\"08:00\",\"waktuSelesai\":\"09:00\",\"tanggalLog\":\"2024-04-11\"}"))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/log")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.judul").value("Asistensi"));
     }
 
     @Test

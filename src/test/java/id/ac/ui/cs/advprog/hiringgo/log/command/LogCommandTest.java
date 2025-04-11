@@ -1,6 +1,5 @@
-package id.ac.ui.cs.advprog.hiringgo.command;
+package id.ac.ui.cs.advprog.hiringgo.log.command;
 
-import id.ac.ui.cs.advprog.hiringgo.log.command.UpdateStatusCommand;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;

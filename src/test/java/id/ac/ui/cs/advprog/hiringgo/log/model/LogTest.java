@@ -1,8 +1,7 @@
-package id.ac.ui.cs.advprog.hiringgo.model;
+package id.ac.ui.cs.advprog.hiringgo.log.model;
 
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
-import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
