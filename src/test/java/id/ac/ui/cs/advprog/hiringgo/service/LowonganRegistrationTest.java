@@ -24,8 +24,8 @@ public class LowonganRegistrationTest {
         // minimal setup
         lowongan.setIdMataKuliah("MK101");
         lowongan.setTahunAjaran("2023/2024");
-        lowongan.setSemester(Semester.GANJIL);
-        lowongan.setStatusLowongan(StatusLowongan.DIBUKA);
+        lowongan.setSemester(String.valueOf(Semester.GANJIL));
+        lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
         lowongan.setJumlahAsdosDibutuhkan(quota);
         lowongan.setJumlahAsdosDiterima(0);
         lowongan.setJumlahAsdosPendaftar(0);
