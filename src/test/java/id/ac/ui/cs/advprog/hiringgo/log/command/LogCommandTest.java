@@ -10,12 +10,14 @@ import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LogCommandTest {
+
     @Test
     void testUpdateStatusCommand() {
         LogService mockService = mock(LogService.class);
-        Log updatedLog = new Log();
-        updatedLog.setId(1L);
-        updatedLog.setStatus(LogStatus.DITERIMA);
+
+        Log updatedLog = new Log.Builder()
+                .status(LogStatus.DITERIMA)
+                .build();
 
         when(mockService.updateStatus(1L, LogStatus.DITERIMA)).thenReturn(updatedLog);
 
@@ -25,5 +27,4 @@ public class LogCommandTest {
         assertTrue(result instanceof Log);
         assertEquals(LogStatus.DITERIMA, ((Log) result).getStatus());
     }
-
 }

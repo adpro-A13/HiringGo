@@ -21,12 +21,13 @@ public class LogRepositoryTest {
 
     @Test
     public void testSaveAndFindById() {
-        Log log = new Log();
-        log.setJudul("Asistensi");
-        log.setKategori(LogKategori.ASISTENSI);
-        log.setWaktuMulai(LocalTime.of(9, 0));
-        log.setWaktuSelesai(LocalTime.of(11, 0));
-        log.setTanggalLog(LocalDate.now());
+        Log log = new Log.Builder()
+                .judul("Asistensi")
+                .kategori(LogKategori.ASISTENSI)
+                .waktuMulai(LocalTime.of(9, 0))
+                .waktuSelesai(LocalTime.of(11, 0))
+                .tanggalLog(LocalDate.now())
+                .build();
 
         Log saved = logRepository.save(log);
         assertNotNull(saved.getId());
@@ -38,11 +39,12 @@ public class LogRepositoryTest {
 
     @Test
     public void testFindByStatus() {
-        Log log = new Log();
-        log.setJudul("Koreksi");
-        log.setKategori(LogKategori.MENGOREKSI);
-        log.setTanggalLog(LocalDate.now());
-        log.setStatus(LogStatus.DITERIMA);
+        Log log = new Log.Builder()
+                .judul("Koreksi")
+                .kategori(LogKategori.MENGOREKSI)
+                .tanggalLog(LocalDate.now())
+                .status(LogStatus.DITERIMA)
+                .build();
 
         logRepository.save(log);
 

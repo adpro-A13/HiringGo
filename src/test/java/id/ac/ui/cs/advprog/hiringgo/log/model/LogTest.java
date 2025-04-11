@@ -13,13 +13,14 @@ public class LogTest {
 
     @Test
     public void testValidLogCreation() {
-        Log log = new Log();
-        log.setJudul("Mengoreksi Tugas");
-        log.setKeterangan("Mengoreksi tugas mahasiswa");
-        log.setKategori(LogKategori.MENGOREKSI);
-        log.setWaktuMulai(LocalTime.of(10, 0));
-        log.setWaktuSelesai(LocalTime.of(12, 0));
-        log.setTanggalLog(LocalDate.now());
+        Log log = new Log.Builder()
+                .judul("Mengoreksi Tugas")
+                .keterangan("Mengoreksi tugas mahasiswa")
+                .kategori(LogKategori.MENGOREKSI)
+                .waktuMulai(LocalTime.of(10, 0))
+                .waktuSelesai(LocalTime.of(12, 0))
+                .tanggalLog(LocalDate.now())
+                .build();
 
         assertDoesNotThrow(log::validate);
         assertEquals(LogStatus.MENUNGGU, log.getStatus());
@@ -27,9 +28,10 @@ public class LogTest {
 
     @Test
     public void testWaktuMulaiDanSelesaiHarusValid() {
-        Log log = new Log();
-        log.setWaktuMulai(LocalTime.of(14, 0));
-        log.setWaktuSelesai(LocalTime.of(13, 0));
+        Log log = new Log.Builder()
+                .waktuMulai(LocalTime.of(14, 0))
+                .waktuSelesai(LocalTime.of(13, 0))
+                .build();
 
         Exception exception = assertThrows(IllegalArgumentException.class, log::validate);
         assertEquals("Waktu selesai harus setelah waktu mulai.", exception.getMessage());
@@ -37,9 +39,10 @@ public class LogTest {
 
     @Test
     public void testWaktuTidakBolehKosong() {
-        Log log = new Log();
-        log.setWaktuMulai(null);
-        log.setWaktuSelesai(null);
+        Log log = new Log.Builder()
+                .waktuMulai(null)
+                .waktuSelesai(null)
+                .build();
 
         Exception exception = assertThrows(IllegalArgumentException.class, log::validate);
         assertEquals("Waktu mulai dan selesai harus diisi.", exception.getMessage());
@@ -47,7 +50,8 @@ public class LogTest {
 
     @Test
     public void testDefaultStatusAdalahMenunggu() {
-        Log log = new Log();
+        Log log = new Log.Builder().build();
+
         assertEquals(LogStatus.MENUNGGU, log.getStatus());
     }
 

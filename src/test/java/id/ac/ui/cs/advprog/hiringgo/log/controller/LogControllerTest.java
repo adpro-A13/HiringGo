@@ -2,16 +2,20 @@ package id.ac.ui.cs.advprog.hiringgo.log.controller;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -25,6 +29,9 @@ class LogControllerTest {
 
     @MockitoBean
     private LogService logService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void testCreateLog() throws Exception {
@@ -45,38 +52,49 @@ class LogControllerTest {
 
         mockMvc.perform(post("/api/log")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.judul").value("Asistensi"));
+                .andExpect(jsonPath("$.data.judul").value("Asistensi"));
     }
 
     @Test
     void testGetLogsByStatus() throws Exception {
-        when(logService.getLogsByStatus(LogStatus.MENUNGGU)).thenReturn(List.of(new Log()));
+        Log log = new Log.Builder()
+                .judul("Asistensi")
+                .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/log/status/MENUNGGU"))
-                .andExpect(status().isOk());
+        when(logService.getLogsByStatus(LogStatus.MENUNGGU)).thenReturn(List.of(log));
+
+        mockMvc.perform(get("/api/log/status/MENUNGGU"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].judul").value("Asistensi"));
     }
 
     @Test
     void testGetLogsByTanggal() throws Exception {
-        when(logService.getLogsByTanggal(any(), any())).thenReturn(List.of(new Log()));
+        Log log = new Log.Builder()
+                .judul("Asistensi")
+                .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/log/tanggal")
+        when(logService.getLogsByTanggal(any(), any())).thenReturn(List.of(log));
+
+        mockMvc.perform(get("/api/log/tanggal")
                         .param("from", "2024-04-01")
                         .param("to", "2024-04-11"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].judul").value("Asistensi"));
     }
 
     @Test
     void testUpdateStatus() throws Exception {
-        Log log = new Log();
-        log.setId(1L);
-        log.setStatus(LogStatus.DITERIMA);
+        Log log = new Log.Builder()
+                .status(LogStatus.DITERIMA)
+                .build();
 
         when(logService.updateStatus(1L, LogStatus.DITERIMA)).thenReturn(log);
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/log/1/status/DITERIMA"))
-                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/log/1/status/DITERIMA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DITERIMA"));
     }
 }

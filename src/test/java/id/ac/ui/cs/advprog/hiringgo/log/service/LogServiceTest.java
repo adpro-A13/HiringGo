@@ -2,10 +2,10 @@ package id.ac.ui.cs.advprog.hiringgo.log.service;
 
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -27,12 +27,13 @@ public class LogServiceTest {
 
     @Test
     void testCreateLogValid() {
-        Log log = new Log();
-        log.setJudul("Asistensi");
-        log.setKategori(LogKategori.ASISTENSI);
-        log.setTanggalLog(LocalDate.now());
-        log.setWaktuMulai(LocalTime.of(9, 0));
-        log.setWaktuSelesai(LocalTime.of(10, 0));
+        Log log = new Log.Builder()
+                .judul("Asistensi")
+                .kategori(LogKategori.ASISTENSI)
+                .tanggalLog(LocalDate.now())
+                .waktuMulai(LocalTime.of(9, 0))
+                .waktuSelesai(LocalTime.of(10, 0))
+                .build();
 
         when(logRepository.save(any())).thenReturn(log);
 
@@ -44,22 +45,21 @@ public class LogServiceTest {
 
     @Test
     void testCreateLogInvalidTime() {
-        Log log = new Log();
-        log.setWaktuMulai(LocalTime.of(14, 0));
-        log.setWaktuSelesai(LocalTime.of(12, 0));
+        Log log = new Log.Builder()
+                .waktuMulai(LocalTime.of(14, 0))
+                .waktuSelesai(LocalTime.of(12, 0))
+                .build();
 
-        Exception e = assertThrows(IllegalArgumentException.class, () -> {
-            logService.createLog(log);
-        });
+        Exception e = assertThrows(IllegalArgumentException.class, () -> logService.createLog(log));
 
         assertTrue(e.getMessage().contains("Waktu mulai harus sebelum"));
     }
 
     @Test
     void testUpdateStatus() {
-        Log log = new Log();
-        log.setId(1L);
-        log.setStatus(LogStatus.MENUNGGU);
+        Log log = new Log.Builder()
+                .status(LogStatus.MENUNGGU)
+                .build();
 
         when(logRepository.findById(1L)).thenReturn(Optional.of(log));
         when(logRepository.save(any())).thenReturn(log);
@@ -69,4 +69,3 @@ public class LogServiceTest {
         assertEquals(LogStatus.DITERIMA, updated.getStatus());
     }
 }
-
