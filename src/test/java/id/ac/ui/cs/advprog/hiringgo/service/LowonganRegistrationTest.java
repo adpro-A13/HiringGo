@@ -65,4 +65,19 @@ public class LowonganRegistrationTest {
         });
     }
 
+    @Test
+    public void testReadLowonganDetailsAfterRegistration() {
+        // Arrange: Create a lowongan with quota 2
+        Lowongan lowongan = createTestLowongan(2);
+        UUID lowonganId = lowongan.getLowonganId();
+
+        // Act: Register a candidate
+        lowonganService.registerLowongan(lowonganId, "candidate1");
+
+        // Assert: The retrieved lowongan should reflect the updated registration count
+        Lowongan retrieved = lowonganService.findById(lowonganId);
+        assertEquals(1, retrieved.getJumlahAsdosPendaftar());
+    }
+
+
 }
