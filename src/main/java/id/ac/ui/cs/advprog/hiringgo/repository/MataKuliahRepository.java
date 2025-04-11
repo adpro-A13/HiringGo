@@ -15,17 +15,35 @@ public class MataKuliahRepository {
 
     public MataKuliah save(MataKuliah mataKuliah) {
 
+        if (!mataKuliahStorage.isEmpty()) {
+            int i = 0;
+            for (MataKuliah m : mataKuliahStorage) {
+                if (m.getKode().equals(mataKuliah.getKode())) {
+                    mataKuliahStorage.remove(i);
+                    mataKuliahStorage.add(i, mataKuliah);
+                    return mataKuliah;
+                }
+                i += 1;
+            }
+        }
+        mataKuliahStorage.add(mataKuliah);
+        return mataKuliah;
     }
 
     public MataKuliah findByKode(String kode) {
-
+        for (MataKuliah m : mataKuliahStorage) {
+            if (m.getKode().equals(kode)) {
+                return m;
+            }
+        }
+        return null;
     }
 
     public Iterator<MataKuliah> findAll() {
-
+        return mataKuliahStorage.iterator();
     }
 
     public void delete(String kode) {
-
+        mataKuliahStorage.removeIf(m -> m.getKode().equals(kode));
     }
 }

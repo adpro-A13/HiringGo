@@ -116,7 +116,7 @@ public class MataKuliahRepositoryTest {
 
     @Test
     void testFindAllMataKuliahIfEmpty(){
-        Iterator<MataKuliah> mataKuliahIterator = MataKuliahRepository.findAll();
+        Iterator<MataKuliah> mataKuliahIterator = mataKuliahRepository.findAll();
         assertFalse(mataKuliahIterator.hasNext());
     }
 
@@ -126,7 +126,7 @@ public class MataKuliahRepositoryTest {
             mataKuliahRepository.save(matkul);
         }
 
-        Iterator<MataKuliah> mataKuliahIterator = MataKuliahRepository.findAll();
+        Iterator<MataKuliah> mataKuliahIterator = mataKuliahRepository.findAll();
         assertTrue(mataKuliahIterator.hasNext());
         MataKuliah findResult = mataKuliahIterator.next();
         String kode = findResult.getKode();
