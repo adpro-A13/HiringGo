@@ -49,4 +49,20 @@ public class LowonganRegistrationTest {
         assertEquals(1, updated.getJumlahAsdosPendaftar(),
                 "Jumlah pendaftar should increment by 1 after successful registration");
     }
+
+    @Test
+    public void testRegistrationFailsWhenQuotaExceeded() {
+        // Arrange: Create a lowongan with quota 1
+        Lowongan lowongan = createTestLowongan(1);
+        UUID lowonganId = lowongan.getLowonganId();
+
+        // Act: Register the first candidate (should work)
+        lowonganService.registerLowongan(lowonganId, "candidate1");
+
+        // Assert: Attempting to register a second candidate should throw an exception
+        assertThrows(IllegalStateException.class, () -> {
+            lowonganService.registerLowongan(lowonganId, "candidate2");
+        });
+    }
+
 }

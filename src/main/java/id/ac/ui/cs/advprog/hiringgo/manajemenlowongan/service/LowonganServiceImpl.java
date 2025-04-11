@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
+
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.LowonganFilterStrategy;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
