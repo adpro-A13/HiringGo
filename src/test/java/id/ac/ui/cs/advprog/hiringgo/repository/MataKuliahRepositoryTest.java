@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -111,5 +112,29 @@ public class MataKuliahRepositoryTest {
 
         MataKuliah findResult = mataKuliahRepository.findByKode("ARISE");
         assertNull(findResult);
+    }
+
+    @Test
+    void testFindAllMataKuliahIfEmpty(){
+        Iterator<MataKuliah> mataKuliahIterator = MataKuliahRepository.findAll();
+        assertFalse(mataKuliahIterator.hasNext());
+    }
+
+    @Test
+    void testFindAllMataKuliahIfMoreThanOne(){
+        for (MataKuliah matkul : listMataKuliah) {
+            mataKuliahRepository.save(matkul);
+        }
+
+        Iterator<MataKuliah> mataKuliahIterator = MataKuliahRepository.findAll();
+        assertTrue(mataKuliahIterator.hasNext());
+        MataKuliah findResult = mataKuliahIterator.next();
+        String kode = findResult.getKode();
+        assertEquals(kode, mataKuliahRepository.findByKode(kode).getKode());
+        assertTrue(mataKuliahIterator.hasNext());
+        findResult = mataKuliahIterator.next();
+        kode = findResult.getKode();
+        assertEquals(kode, mataKuliahRepository.findByKode(kode).getKode());
+        assertFalse(mataKuliahIterator.hasNext());
     }
 }
