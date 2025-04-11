@@ -25,24 +25,24 @@ public class MataKuliah {
         String kode;
         String nama;
         String deskripsi;
-        List<String> dosenPengampu; = new ArrayList<>();
+        List<String> dosenPengampu = new ArrayList<>();
 
-        public Builder kode(String kode) {
+        public Builder withKode(String kode) {
             this.kode = kode;
             return this;
         }
 
-        public Builder nama(String nama) {
+        public Builder withNama(String nama) {
             this.nama = nama;
             return this;
         }
 
-        public Builder deskripsi(String deskripsi) {
+        public Builder withDeskripsi(String deskripsi) {
             this.deskripsi = deskripsi;
             return this;
         }
 
-        public Builder dosenPengampu(String dosenPengampu) {
+        public Builder addDosenPengampu(String dosenPengampu) {
             this.dosenPengampu.add(dosenPengampu);
             return this;
         }

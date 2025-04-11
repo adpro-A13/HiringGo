@@ -8,7 +8,7 @@ class MataKuliahTest {
 
     @Test
     void testCreateMataKuliah_Success(){
-        MataKuliah mataKuliah = new MataKuliahBuilder()
+        MataKuliah mataKuliah = new MataKuliah.Builder()
                 .withKode("CSCM602023 - 01.00.12.01-2020")
                 .withNama("Pemrograman Lanjut")
                 .withDeskripsi("Membahas Java & Spring Boot")
@@ -25,7 +25,7 @@ class MataKuliahTest {
     @Test
     void testCreateMataKuliahWithoutNama() {
         assertThrows(IllegalArgumentException.class, () -> {
-            new MataKuliahBuilder()
+            new MataKuliah.Builder()
                     .withKode("CSCM602023 - 01.00.12.01-2020")
                     .withDeskripsi("Deskripsi")
                     .addDosenPengampu("Dosen A")
@@ -37,7 +37,7 @@ class MataKuliahTest {
     @Test
     void testCreateMataKuliahWithoutKode(){
         assertThrows(IllegalArgumentException.class, () -> {
-            MataKuliah mataKuliah = new MataKuliahBuilder()
+            new MataKuliah.Builder()
                     .withNama("Pemrograman Lanjut")
                     .withDeskripsi("Deskripsi")
                     .addDosenPengampu("Dosen A")
@@ -48,7 +48,7 @@ class MataKuliahTest {
     @Test
     void testCreateMataKuliahWithNoDosenPengampu(){
         assertThrows(IllegalArgumentException.class, () -> {
-            MataKuliah mataKuliah = new MataKuliahBuilder()
+            new MataKuliah.Builder()
                     .withKode("CSCM602023 - 01.00.12.01-2020")
                     .withNama("Pemrograman Lanjut")
                     .withDeskripsi("Deskripsi")
