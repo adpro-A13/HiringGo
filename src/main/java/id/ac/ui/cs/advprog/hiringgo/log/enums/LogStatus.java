@@ -1,4 +1,4 @@
-package enums.log;
+package id.ac.ui.cs.advprog.hiringgo.log.enums;
 import lombok.Getter;
 
 @Getter
