@@ -1,10 +1,13 @@
 package id.ac.ui.cs.advprog.hiringgo.service;
+
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
+import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
+import id.ac.ui.cs.advprog.hiringgo.log.service.LogServiceImpl;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -21,7 +24,7 @@ public class LogServiceTest {
     @BeforeEach
     void setUp() {
         logRepository = mock(LogRepository.class);
-        logService = new LogServiceimpl(logRepository);
+        logService = new LogServiceImpl(logRepository);
     }
 
     @Test
