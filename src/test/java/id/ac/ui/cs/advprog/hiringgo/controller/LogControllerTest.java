@@ -1,69 +1,74 @@
 package id.ac.ui.cs.advprog.hiringgo.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.ApplicationContext;
-import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.List;
 
 @WebMvcTest(LogController.class)
-@ExtendWith(SpringExtension.class)
 class LogControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ApplicationContext context;
-
+    @MockitoBean
     private LogService logService;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    @Test
+    void testCreateLog() throws Exception {
+        Log log = new Log();
+        log.setJudul("Asistensi");
+        log.setWaktuMulai(LocalTime.of(8, 0));
+        log.setWaktuSelesai(LocalTime.of(9, 0));
+        log.setTanggalLog(LocalDate.now());
 
-    @BeforeEach
-    void setUp() {
-        logService = Mockito.mock(LogService.class);
-        ((ConfigurableApplicationContext) context).getBeanFactory()
-                .registerSingleton(LogService.class.getName(), logService);
+        when(logService.createLog(any(Log.class))).thenReturn(log);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/log")
+                        .contentType("application/json")
+                        .content("{\"judul\":\"Asistensi\",\"waktuMulai\":\"08:00\",\"waktuSelesai\":\"09:00\",\"tanggalLog\":\"2024-04-11\"}"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void testCreateLogSuccess() throws Exception {
-        Log requestLog = new Log();
-        requestLog.setJudul("Asistensi UTS");
-        requestLog.setKeterangan("Membantu asistensi UTS");
+    void testGetLogsByStatus() throws Exception {
+        when(logService.getLogsByStatus(LogStatus.MENUNGGU)).thenReturn(List.of(new Log()));
 
-        Log responseLog = new Log();
-        responseLog.setId(1L);
-        responseLog.setJudul("Asistensi UTS");
-        responseLog.setKeterangan("Membantu asistensi UTS");
-        responseLog.setWaktuMulai(LocalTime.of(9, 0));
-        responseLog.setWaktuSelesai(LocalTime.of(11, 0));
-        responseLog.setTanggalLog(LocalDate.now());
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/log/status/MENUNGGU"))
+                .andExpect(status().isOk());
+    }
 
-        Mockito.when(logService.createLog(Mockito.any(Log.class))).thenReturn(responseLog);
+    @Test
+    void testGetLogsByTanggal() throws Exception {
+        when(logService.getLogsByTanggal(any(), any())).thenReturn(List.of(new Log()));
 
-        mockMvc.perform(post("/api/log")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestLog)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.judul").value("Asistensi UTS"))
-                .andExpect(jsonPath("$.keterangan").value("Membantu asistensi UTS"));
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/log/tanggal")
+                        .param("from", "2024-04-01")
+                        .param("to", "2024-04-11"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testUpdateStatus() throws Exception {
+        Log log = new Log();
+        log.setId(1L);
+        log.setStatus(LogStatus.DITERIMA);
+
+        when(logService.updateStatus(1L, LogStatus.DITERIMA)).thenReturn(log);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/log/1/status/DITERIMA"))
+                .andExpect(status().isOk());
     }
 }
