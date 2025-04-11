@@ -34,4 +34,20 @@ public class LowonganServiceImpl implements LowonganService {
         List<Lowongan> allLowongan = findAll(); // atau bisa langsung dari repository
         return filterService.filter(allLowongan);
     }
+
+    @Override
+    public Lowongan createLowongan(Lowongan lowongan) {
+        return lowonganRepository.save(lowongan);
+    }
+
+    @Override
+    public void registerLowongan(UUID lowonganId, String candidateId) {
+        // Minimal code for test passing
+        Lowongan lowongan = findById(lowonganId);
+        // just increment pendaftar
+        int current = lowongan.getJumlahAsdosPendaftar();
+        lowongan.setJumlahAsdosPendaftar(current + 1);
+
+        lowonganRepository.save(lowongan);
+    }
 }

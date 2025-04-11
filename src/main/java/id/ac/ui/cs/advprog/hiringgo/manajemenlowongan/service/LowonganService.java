@@ -10,4 +10,8 @@ public interface LowonganService {
     Lowongan findById(UUID id);
     List<Lowongan> findAll();
     List<Lowongan> filterLowongan(LowonganFilterStrategy strategy);
+    Lowongan createLowongan(Lowongan lowongan);
+
+    // The method that doesn't exist yet
+    void registerLowongan(UUID lowonganId, String candidateId);
 }

@@ -86,4 +86,6 @@ class LowonganServiceImplTest {
         assertEquals(1, result.size());
         assertEquals(Semester.GANJIL, result.get(0).getSemester());
     }
+
+
 }
