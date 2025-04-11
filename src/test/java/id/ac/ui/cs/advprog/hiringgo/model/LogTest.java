@@ -1,7 +1,10 @@
 package id.ac.ui.cs.advprog.hiringgo.model;
 
+import enums.log.LogStatus;
+import enums.log.LogKategori;
+import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -14,13 +17,13 @@ public class LogTest {
         Log log = new Log();
         log.setJudul("Mengoreksi Tugas");
         log.setKeterangan("Mengoreksi tugas mahasiswa");
-        log.setKategori(KategoriLog.MENGOREKSI);
+        log.setKategori(LogKategori.MENGOREKSI);
         log.setWaktuMulai(LocalTime.of(10, 0));
         log.setWaktuSelesai(LocalTime.of(12, 0));
         log.setTanggalLog(LocalDate.now());
 
         assertDoesNotThrow(log::validate);
-        assertEquals(StatusLog.MENUNGGU, log.getStatus());
+        assertEquals(LogStatus.MENUNGGU, log.getStatus());
     }
 
     @Test
@@ -46,7 +49,7 @@ public class LogTest {
     @Test
     public void testDefaultStatusAdalahMenunggu() {
         Log log = new Log();
-        assertEquals(StatusLog.MENUNGGU, log.getStatus());
+        assertEquals(LogStatus.MENUNGGU, log.getStatus());
     }
 
 }
