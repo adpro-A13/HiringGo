@@ -1,18 +1,34 @@
-package id.ac.ui.cs.advprog.hiringgo.model;
+package id.ac.ui.cs.advprog.hiringgo.matakuliah.model;
 
 import lombok.Getter;
 import lombok.Setter;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
+@Entity
+@Table(name = "mata_kuliah")
 public class MataKuliah {
+    @Id
     String kode;
+
     String nama;
     String deskripsi;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "mata_kuliah_dosen_pengampu",
+            joinColumns = @JoinColumn(name = "matkul_kode")
+    )
+    @Column(name = "dosen_pengampu")
     List<String> dosenPengampu;
+
+    // Constructor tanpa argumen
+    protected MataKuliah() {
+    }
 
     private MataKuliah(Builder builder) {
         this.kode = builder.kode;

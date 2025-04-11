@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.hiringgo.model;
+package id.ac.ui.cs.advprog.hiringgo.matakuliah.model;
 
 import org.junit.jupiter.api.Test;
 
