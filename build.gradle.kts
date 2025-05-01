@@ -44,6 +44,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    implementation ("io.github.cdimascio:dotenv-java:3.2.0")
 
     runtimeOnly("org.postgresql:postgresql")
 

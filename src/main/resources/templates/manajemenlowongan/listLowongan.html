@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Daftar Lowongan</title>
+</head>
+<body>
+<h1>Daftar Lowongan Asisten Dosen</h1>
+
+<a href="/lowongan/create">Buat Lowongan Baru</a>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>ID Mata Kuliah</th>
+        <th>Tahun Ajaran</th>
+        <th>Semester</th>
+        <th>Status</th>
+        <th>Jumlah Dibutuhkan</th>
+        <th>Jumlah Diterima</th>
+        <th>Jumlah Pendaftar</th>
+        <th>ID Asdos Diterima</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="lowongan : ${lowonganList}">
+        <td th:text="${lowongan.lowonganId}">UUID</td>
+        <td th:text="${lowongan.idMataKuliah}">CSXXX</td>
+        <td th:text="${lowongan.tahunAjaran}">2024/2025</td>
+        <td th:text="${lowongan.semester}">GENAP</td>
+        <td th:text="${lowongan.statusLowongan}">BUKA</td>
+        <td th:text="${lowongan.jumlahAsdosDibutuhkan}">3</td>
+        <td th:text="${lowongan.jumlahAsdosDiterima}">1</td>
+        <td th:text="${lowongan.jumlahAsdosPendaftar}">5</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
