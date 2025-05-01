@@ -12,5 +12,4 @@ public class RegisterUserDto {
     private String confirmPassword;
     private String fullName;
     private String nim;
-    private UserRoleEnums role = UserRoleEnums.MAHASISWA;
 }

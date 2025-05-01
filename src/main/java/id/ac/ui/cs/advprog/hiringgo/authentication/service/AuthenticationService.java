@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.Enums.UserRoleEnums;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.LoginUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
@@ -32,7 +33,7 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Password and confirm password do not match");
         }
         User user = UserFactory.createUser(
-                        input.getRole(),
+                        UserRoleEnums.MAHASISWA,
                         input.getEmail(), 
                         passwordEncoder.encode(input.getPassword()),
                         input.getFullName(),
