@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.Enums.UserRoleEnums;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -31,7 +32,7 @@ public class Mahasiswa extends User {
 
     @Override
     public List<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("MAHASISWA"));
+        return List.of(new SimpleGrantedAuthority(UserRoleEnums.MAHASISWA.getValue()));
     }
 
     public Mahasiswa() {}

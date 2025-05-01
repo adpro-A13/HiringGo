@@ -32,7 +32,7 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Password and confirm password do not match");
         }
         User user = UserFactory.createUser(
-                        "MAHASISWA",
+                        input.getRole(),
                         input.getEmail(), 
                         passwordEncoder.encode(input.getPassword()),
                         input.getFullName(),
@@ -62,5 +62,4 @@ public class AuthenticationService {
             return null;
         }
     }
-
 }

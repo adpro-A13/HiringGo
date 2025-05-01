@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.Enums.UserRoleEnums;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,7 +13,7 @@ import java.util.List;
 public class Admin extends User {
     @Override
     public List<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ADMIN"));
+        return List.of(new SimpleGrantedAuthority(UserRoleEnums.ADMIN.getValue()));
     }
 
     public Admin() {}

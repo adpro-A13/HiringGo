@@ -27,7 +27,6 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterUserDto registerUserDto) {
-        // Basic validation
         if (registerUserDto.getEmail() == null || registerUserDto.getEmail().isEmpty()) {
             return ResponseEntity.badRequest().body("Email is required");
         }
@@ -56,7 +55,6 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticate(@RequestBody LoginUserDto loginUserDto) {
-        // Validate input
         if (loginUserDto.getEmail() == null || loginUserDto.getEmail().isEmpty()) {
             return ResponseEntity.badRequest().body("Email is required");
         }

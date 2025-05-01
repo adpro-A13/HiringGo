@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.Enums.UserRoleEnums;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.LoginUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.factory.UserFactory;
@@ -72,7 +73,7 @@ public class AuthenticationServiceTest {
     void signup_withValidInput_shouldCreateAndReturnUser() {
         try (MockedStatic<UserFactory> mockedFactory = mockStatic(UserFactory.class)) {
             mockedFactory.when(() -> UserFactory.createUser(
-                            eq("MAHASISWA"),
+                            eq(UserRoleEnums.MAHASISWA),
                             eq(userEmail),
                             eq(encodedPassword),
                             eq("Test User"),
