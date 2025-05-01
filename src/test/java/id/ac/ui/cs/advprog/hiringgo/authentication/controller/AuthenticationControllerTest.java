@@ -88,13 +88,14 @@ public class AuthenticationControllerTest {
 
     @Test
     void register_withServiceException_shouldReturnBadRequest() {
+        String expectedErrorMessage = "Email already exists";
         when(authenticationService.signup(any(RegisterUserDto.class)))
-                .thenThrow(new IllegalArgumentException("Email already exists"));
+                .thenThrow(new IllegalArgumentException(expectedErrorMessage));
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Register failed, please try again.", response.getBody());
+        assertEquals(expectedErrorMessage, response.getBody());
         verify(authenticationService, times(1)).signup(validRegisterDto);
     }
 
@@ -140,13 +141,14 @@ public class AuthenticationControllerTest {
 
     @Test
     void authenticate_withInvalidCredentials_shouldReturnUnauthorized() {
+        String expectedErrorMessage = "Invalid email or password";
         when(authenticationService.authenticate(any(LoginUserDto.class)))
-                .thenThrow(new IllegalArgumentException("Invalid email or password"));
+                .thenThrow(new IllegalArgumentException(expectedErrorMessage));
 
         ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Authentication failed", response.getBody());
+        assertEquals(expectedErrorMessage, response.getBody());
         verify(authenticationService, times(1)).authenticate(validLoginDto);
     }
 

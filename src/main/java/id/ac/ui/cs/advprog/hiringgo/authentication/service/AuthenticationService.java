@@ -32,6 +32,11 @@ public class AuthenticationService {
         if (!input.getPassword().equals(input.getConfirmPassword())) {
             throw new IllegalArgumentException("Password and confirm password do not match");
         }
+        
+        if (userRepository.findByEmail(input.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        
         User user = UserFactory.createUser(
                         UserRoleEnums.MAHASISWA,
                         input.getEmail(), 
@@ -40,7 +45,16 @@ public class AuthenticationService {
                         input.getNim()
                     );
 
-        return userRepository.save(user);
+        try {
+            return userRepository.save(user);
+        } catch (Exception e) {
+            if (e.getMessage().contains("nim")) {
+                throw new IllegalArgumentException("NIM already exists");
+            } else if (e.getMessage().contains("nip")) {
+                throw new IllegalArgumentException("NIP already exists");
+            }
+            throw e;
+        }
     }
 
     public User authenticate(LoginUserDto input) {

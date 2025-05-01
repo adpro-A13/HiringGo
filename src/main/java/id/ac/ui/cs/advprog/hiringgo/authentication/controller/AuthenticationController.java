@@ -48,6 +48,8 @@ public class AuthenticationController {
         try {
             User registeredUser = authenticationService.signup(registerUserDto);
             return ResponseEntity.ok(registeredUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Register failed, please try again.");
         }
@@ -65,10 +67,12 @@ public class AuthenticationController {
         try {
             User authenticatedUser = authenticationService.authenticate(loginUserDto);
             String jwtToken = jwtService.generateToken(authenticatedUser);
-            LoginResponse loginResponse = new LoginResponse().setToken(jwtToken).setExpiresIn(jwtService.getExpirationTime());
+            LoginResponse loginResponse = new LoginResponse()
+                .setToken(jwtToken)
+                .setExpiresIn(jwtService.getExpirationTime());
             return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(401).body("Authentication failed");
+            return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(403).body("Authorization failed");
