@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,4 +91,29 @@ public class LowonganRepositoryTest {
         assertTrue(updated.isPresent());
         assertEquals(3, updated.get().getJumlahAsdosDiterima());
     }
+
+    @Test
+    void testDeleteById() {
+        Lowongan lowongan = new Lowongan();
+        lowongan.setIdMataKuliah("CSUI-MK1");
+        lowongan.setTahunAjaran("2024/2025");
+        lowongan.setSemester(String.valueOf(Semester.GANJIL));
+        lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
+        lowongan.setJumlahAsdosDibutuhkan(2);
+        lowongan.setJumlahAsdosDiterima(1);
+        lowongan.setJumlahAsdosPendaftar(4);
+        lowongan.setIdAsdosDiterima(new ArrayList<>());
+
+        Lowongan saved = lowonganRepository.save(lowongan);
+        UUID id = saved.getLowonganId();
+
+        Optional<Lowongan> foundBeforeDelete = lowonganRepository.findById(id);
+        assertTrue(foundBeforeDelete.isPresent());
+
+        lowonganRepository.deleteById(id);
+
+        Optional<Lowongan> foundAfterDelete = lowonganRepository.findById(id);
+        assertFalse(foundAfterDelete.isPresent());
+    }
+
 }
