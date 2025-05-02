@@ -24,7 +24,7 @@ public class MataKuliahController {
         this.mataKuliahMapper = mataKuliahMapper;
     }
 
-    @GetMapping
+    @GetMapping("/getAll")
     public ResponseEntity<List<MataKuliahDTO>> getAllMataKuliah() {
         List<MataKuliah> mataKuliahList = mataKuliahService.findAll();
         return ResponseEntity.ok(mataKuliahMapper.toDtoList(mataKuliahList));
@@ -39,7 +39,7 @@ public class MataKuliahController {
         return ResponseEntity.ok(mataKuliahMapper.toDto(mataKuliah));
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<MataKuliahDTO> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
         try {
             MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
@@ -50,7 +50,7 @@ public class MataKuliahController {
         }
     }
 
-    @PutMapping("/{kode}")
+    @PutMapping("update/{kode}")
     public ResponseEntity<MataKuliahDTO> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
         if (!kode.equals(mataKuliahDTO.getKode())) {
             return ResponseEntity.badRequest().build();
