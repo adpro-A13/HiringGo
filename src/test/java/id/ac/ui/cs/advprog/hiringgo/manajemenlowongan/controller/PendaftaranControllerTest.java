@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
@@ -44,8 +45,8 @@ class PendaftaranControllerTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setIdMataKuliah("IF1234");
         lowongan.setTahunAjaran("2024/2025");
-        lowongan.setSemester(Semester.GANJIL);
-        lowongan.setStatusLowongan(StatusLowongan.BUKA);
+        lowongan.setSemester(Semester.GANJIL.getValue());
+        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
         lowongan.setJumlahAsdosDibutuhkan(5);
         lowongan.setJumlahAsdosPendaftar(2);
     }
@@ -85,16 +86,16 @@ class PendaftaranControllerTest {
         form.setIpk(new BigDecimal("3.5"));
         form.setSks(100);
         BindingResult bindingResult = new BeanPropertyBindingResult(form, "daftarForm");
-        // Stub service supaya tidak lempar exception
+
+        // Siapkan dummy Pendaftaran untuk return
+        Pendaftaran dummy = new Pendaftaran();
         when(pendaftaranService.daftar(lowonganId, "user123", form.getIpk(), form.getSks()))
-                .thenReturn(new Lowongan()); // return value not used
+                .thenReturn(dummy);
 
         String viewName = controller.handleDaftar(lowonganId, form, bindingResult, model, principal);
 
-        // Setelah sukses, harus redirect (ke halaman detail lowongan)
         assertTrue(viewName.startsWith("redirect:/lowongan/" + lowonganId));
-        // Service daftar seharusnya dipanggil dengan parameter yang benar
-        verify(pendaftaranService).daftar(lowonganId, "user123", new BigDecimal("3.5"), 100);
+        verify(pendaftaranService).daftar(lowonganId, "user123", form.getIpk(), form.getSks());
     }
 
     @Test
