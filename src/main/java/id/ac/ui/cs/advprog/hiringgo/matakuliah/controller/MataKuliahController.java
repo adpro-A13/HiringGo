@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.dto.MataKuliahDTO;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.mapper.MataKuliahMapper;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.service.MataKuliahService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,46 +16,50 @@ import java.util.List;
 public class MataKuliahController {
 
     private final MataKuliahService mataKuliahService;
+    private final MataKuliahMapper mataKuliahMapper;
 
     @Autowired
-    public MataKuliahController(MataKuliahService mataKuliahService) {
+    public MataKuliahController(MataKuliahService mataKuliahService, MataKuliahMapper mataKuliahMapper) {
         this.mataKuliahService = mataKuliahService;
+        this.mataKuliahMapper = mataKuliahMapper;
     }
 
     @GetMapping
-    public ResponseEntity<List<MataKuliah>> getAllMataKuliah() {
+    public ResponseEntity<List<MataKuliahDTO>> getAllMataKuliah() {
         List<MataKuliah> mataKuliahList = mataKuliahService.findAll();
-        return ResponseEntity.ok(mataKuliahList);
+        return ResponseEntity.ok(mataKuliahMapper.toDtoList(mataKuliahList));
     }
 
     @GetMapping("/{kode}")
-    public ResponseEntity<MataKuliah> getMataKuliahByKode(@PathVariable String kode) {
+    public ResponseEntity<MataKuliahDTO> getMataKuliahByKode(@PathVariable String kode) {
         MataKuliah mataKuliah = mataKuliahService.findByKode(kode);
         if (mataKuliah == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(mataKuliah);
+        return ResponseEntity.ok(mataKuliahMapper.toDto(mataKuliah));
     }
 
     @PostMapping
-    public ResponseEntity<MataKuliah> createMataKuliah(@RequestBody MataKuliah mataKuliah) {
+    public ResponseEntity<MataKuliahDTO> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
         try {
+            MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
             MataKuliah createdMataKuliah = mataKuliahService.create(mataKuliah);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdMataKuliah);
+            return ResponseEntity.status(HttpStatus.CREATED).body(mataKuliahMapper.toDto(createdMataKuliah));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{kode}")
-    public ResponseEntity<MataKuliah> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliah mataKuliah) {
-        if (!kode.equals(mataKuliah.getKode())) {
+    public ResponseEntity<MataKuliahDTO> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
+        if (!kode.equals(mataKuliahDTO.getKode())) {
             return ResponseEntity.badRequest().build();
         }
 
         try {
+            MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
             MataKuliah updatedMataKuliah = mataKuliahService.update(mataKuliah);
-            return ResponseEntity.ok(updatedMataKuliah);
+            return ResponseEntity.ok(mataKuliahMapper.toDto(updatedMataKuliah));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }

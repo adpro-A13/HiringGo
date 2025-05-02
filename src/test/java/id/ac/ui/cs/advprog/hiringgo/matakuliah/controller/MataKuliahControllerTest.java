@@ -1,27 +1,28 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.dto.MataKuliahDTO;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.mapper.MataKuliahMapper;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.service.MataKuliahService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class MataKuliahControllerTest {
+
     @Mock
     private MataKuliahService mataKuliahService;
+
+    @Mock
+    private MataKuliahMapper mataKuliahMapper;
+
     @InjectMocks
     private MataKuliahController mataKuliahController;
 
@@ -32,105 +33,157 @@ class MataKuliahControllerTest {
 
     @Test
     void testGetAllMataKuliah() {
-        MataKuliah mk1 = new MataKuliah("CS101", "Pemrograman Dasar", "Deskripsi");
-        MataKuliah mk2 = new MataKuliah("CS102", "Algoritma", "Deskripsi");
-        List<MataKuliah> mataKuliahList = Arrays.asList(mk1, mk2);
+        MataKuliah m1 = new MataKuliah("CS101","Dasar","Desc");
+        MataKuliah m2 = new MataKuliah("CS102","Lanjut","Desc");
+        List<MataKuliah> entities = List.of(m1, m2);
 
-        when(mataKuliahService.findAll()).thenReturn(mataKuliahList);
+        MataKuliahDTO dto1 = new MataKuliahDTO();
+        dto1.setKode("CS101"); dto1.setNama("Dasar"); dto1.setDeskripsi("Desc"); dto1.setDosenPengampu(List.of());
+        MataKuliahDTO dto2 = new MataKuliahDTO();
+        dto2.setKode("CS102"); dto2.setNama("Lanjut"); dto2.setDeskripsi("Desc"); dto2.setDosenPengampu(List.of());
+        List<MataKuliahDTO> dtos = List.of(dto1, dto2);
 
-        ResponseEntity<List<MataKuliah>> response = mataKuliahController.getAllMataKuliah();
+        when(mataKuliahService.findAll()).thenReturn(entities);
+        when(mataKuliahMapper.toDtoList(entities)).thenReturn(dtos);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(2, Objects.requireNonNull(response.getBody()).size());
-        verify(mataKuliahService, times(1)).findAll();
+        ResponseEntity<List<MataKuliahDTO>> resp = mataKuliahController.getAllMataKuliah();
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals(2, Objects.requireNonNull(resp.getBody()).size());
+        assertSame(dtos, resp.getBody());
+
+        verify(mataKuliahService).findAll();
+        verify(mataKuliahMapper).toDtoList(entities);
     }
 
     @Test
     void testGetMataKuliahByKode_Found() {
-        String kode = "CS101";
-        MataKuliah mk = new MataKuliah(kode, "Pemrograman Dasar", "Deskripsi");
+        MataKuliah domain = new MataKuliah("CS101","Dasar","Desc");
+        MataKuliahDTO dto = new MataKuliahDTO();
+        dto.setKode("CS101"); dto.setNama("Dasar"); dto.setDeskripsi("Desc"); dto.setDosenPengampu(List.of());
 
-        when(mataKuliahService.findByKode(kode)).thenReturn(mk);
+        when(mataKuliahService.findByKode("CS101")).thenReturn(domain);
+        when(mataKuliahMapper.toDto(domain)).thenReturn(dto);
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.getMataKuliahByKode(kode);
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.getMataKuliahByKode("CS101");
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(kode, response.getBody().getKode());
-        verify(mataKuliahService, times(1)).findByKode(kode);
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("CS101", Objects.requireNonNull(resp.getBody()).getKode());
+
+        verify(mataKuliahService).findByKode("CS101");
+        verify(mataKuliahMapper).toDto(domain);
     }
 
     @Test
     void testGetMataKuliahByKode_NotFound() {
-        String kode = "CS101";
-        when(mataKuliahService.findByKode(kode)).thenReturn(null);
+        when(mataKuliahService.findByKode("CS999")).thenReturn(null);
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.getMataKuliahByKode(kode);
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.getMataKuliahByKode("CS999");
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(mataKuliahService, times(1)).findByKode(kode);
+        assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
+        verify(mataKuliahService).findByKode("CS999");
+        verifyNoMoreInteractions(mataKuliahMapper);
     }
 
     @Test
     void testCreateMataKuliah_Success() {
-        MataKuliah newMk = new MataKuliah("CS101", "Pemrograman Dasar", "Deskripsi");
+        MataKuliahDTO dtoIn = new MataKuliahDTO();
+        dtoIn.setKode("CS101"); dtoIn.setNama("Dasar"); dtoIn.setDeskripsi("Desc"); dtoIn.setDosenPengampu(List.of("Dosen A"));
 
-        when(mataKuliahService.create(any(MataKuliah.class))).thenReturn(newMk);
+        MataKuliah entityIn = new MataKuliah("CS101","Dasar","Desc");
+        entityIn.addDosenPengampu("Dosen A");
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.createMataKuliah(newMk);
+        when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
+        when(mataKuliahService.create(entityIn)).thenReturn(entityIn);
+        when(mataKuliahMapper.toDto(entityIn)).thenReturn(dtoIn);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("CS101", response.getBody().getKode());
-        verify(mataKuliahService, times(1)).create(any(MataKuliah.class));
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn);
+
+        assertEquals(HttpStatus.CREATED, resp.getStatusCode());
+        assertEquals("CS101", Objects.requireNonNull(resp.getBody()).getKode());
+
+        InOrder ord = inOrder(mataKuliahMapper, mataKuliahService);
+        ord.verify(mataKuliahMapper).toEntity(dtoIn);
+        ord.verify(mataKuliahService).create(entityIn);
+        ord.verify(mataKuliahMapper).toDto(entityIn);
     }
 
     @Test
     void testCreateMataKuliah_Duplicate() {
-        MataKuliah dupMk = new MataKuliah("CS101", "Pemrograman Dasar", "Deskripsi");
+        MataKuliahDTO dtoIn = new MataKuliahDTO();
+        dtoIn.setKode("CS101"); dtoIn.setNama("Dasar"); dtoIn.setDeskripsi("Desc"); dtoIn.setDosenPengampu(List.of());
 
-        when(mataKuliahService.create(any(MataKuliah.class))).thenThrow(new IllegalArgumentException("Kode sudah digunakan."));
+        when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(new MataKuliah("CS101","Dasar","Desc"));
+        when(mataKuliahService.create(any())).thenThrow(new IllegalArgumentException("Kode sudah digunakan."));
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.createMataKuliah(dupMk);
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn);
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        verify(mataKuliahService, times(1)).create(any(MataKuliah.class));
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+        verify(mataKuliahMapper).toEntity(dtoIn);
+        verify(mataKuliahService).create(any());
+        verifyNoMoreInteractions(mataKuliahMapper);
     }
 
     @Test
     void testUpdateMataKuliah_Success() {
-        MataKuliah updated = new MataKuliah("CS101", "PKPL", "Deskripsi");
+        MataKuliahDTO dtoIn = new MataKuliahDTO();
+        dtoIn.setKode("CS101"); dtoIn.setNama("Update"); dtoIn.setDeskripsi("New"); dtoIn.setDosenPengampu(List.of());
 
-        when(mataKuliahService.update(any(MataKuliah.class))).thenReturn(updated);
+        MataKuliah entityIn = new MataKuliah("CS101","Update","New");
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.updateMataKuliah("CS101", updated);
+        when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
+        when(mataKuliahService.update(entityIn)).thenReturn(entityIn);
+        when(mataKuliahMapper.toDto(entityIn)).thenReturn(dtoIn);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("CS101", response.getBody().getKode());
-        verify(mataKuliahService, times(1)).update(any(MataKuliah.class));
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals("Update", Objects.requireNonNull(resp.getBody()).getNama());
+
+        InOrder ord = inOrder(mataKuliahMapper, mataKuliahService);
+        ord.verify(mataKuliahMapper).toEntity(dtoIn);
+        ord.verify(mataKuliahService).update(entityIn);
+        ord.verify(mataKuliahMapper).toDto(entityIn);
+    }
+
+    @Test
+    void testUpdateMataKuliah_PathMismatch() {
+        MataKuliahDTO dtoIn = new MataKuliahDTO();
+        dtoIn.setKode("CS999"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampu(List.of());
+
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
+
+        assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+        verifyNoInteractions(mataKuliahMapper, mataKuliahService);
     }
 
     @Test
     void testUpdateMataKuliah_NotFound() {
-        MataKuliah nonExistentMataKuliah = new MataKuliah("CS999", "Mata Kuliah Tidak Ada", "Deskripsi");
+        MataKuliahDTO dtoIn = new MataKuliahDTO();
+        dtoIn.setKode("CS101"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampu(List.of());
 
-        when(mataKuliahService.update(any(MataKuliah.class))).thenThrow(new IllegalArgumentException("Mata Kuliah tidak ditemukan."));
+        MataKuliah entityIn = new MataKuliah("CS101","X","D");
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.updateMataKuliah("CS999", nonExistentMataKuliah);
+        when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
+        when(mataKuliahService.update(entityIn))
+                .thenThrow(new IllegalArgumentException("Mata Kuliah tidak ditemukan."));
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(mataKuliahService, times(1)).update(any(MataKuliah.class));
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
+
+        assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
+        InOrder ord = inOrder(mataKuliahMapper, mataKuliahService);
+        ord.verify(mataKuliahMapper).toEntity(dtoIn);
+        ord.verify(mataKuliahService).update(entityIn);
     }
 
     @Test
     void testDeleteMataKuliah() {
-        String kode = "CS101";
-        doNothing().when(mataKuliahService).deleteByKode(kode);
+        doNothing().when(mataKuliahService).deleteByKode("CS101");
 
-        ResponseEntity<Void> response = mataKuliahController.deleteMataKuliah(kode);
+        ResponseEntity<Void> resp = mataKuliahController.deleteMataKuliah("CS101");
 
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(mataKuliahService, times(1)).deleteByKode(kode);
+        assertEquals(HttpStatus.NO_CONTENT, resp.getStatusCode());
+        verify(mataKuliahService).deleteByKode("CS101");
+        verifyNoMoreInteractions(mataKuliahMapper);
     }
 }
