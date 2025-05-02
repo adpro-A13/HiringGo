@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/lowongan")
 public class LowonganController {
@@ -35,5 +37,11 @@ public class LowonganController {
     public String listLowonganPage(Model model) {
         model.addAttribute("lowonganList", lowonganService.findAll());
         return "manajemenlowongan/listLowongan";
+    }
+
+    @PostMapping("/delete")
+    public String deleteLowongan(@RequestParam("id") UUID idLowongan) {
+        lowonganService.deleteLowonganById(idLowongan);
+        return "redirect:/lowongan/list";
     }
 }
