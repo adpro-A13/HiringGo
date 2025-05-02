@@ -1,35 +1,37 @@
-name: Deploy to Fargate
+name: Deploy to Vercel
 
 on:
   push:
-    branches: [main, staging]
+    branches:
+      - staging
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Grant execute permission for gradlew
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for Gradle
         run: chmod +x ./gradlew
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Build Spring Boot App
+        run: ./gradlew bootJar
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
+          node-version: '18'
 
-      - name: Build and push Docker image
-        run: |
-          ./gradlew bootBuildImage --imageName=hiringgo
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-          docker tag hiringgo:latest ${{ secrets.ECR_REGISTRY }}/hiringgo:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/hiringgo:latest
+      - name: Install Vercel CLI
+        run: npm install -g vercel
 
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
+      - name: Deploy to Vercel
+        run: vercel --prod --token=$VERCEL_TOKEN
