@@ -36,4 +36,4 @@ jobs:
         run: npm install -g vercel
       # test
       - name: Deploy to Vercel
-        run: vercel --prod --token=$VERCEL_TOKEN
+        run: vercel --prod --yes --token=$VERCEL_TOKEN
