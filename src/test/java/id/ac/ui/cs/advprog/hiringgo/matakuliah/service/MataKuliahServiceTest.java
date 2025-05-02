@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.hiringgo.matakuliah.service;
 
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +33,21 @@ class MataKuliahServiceTest {
     }
 
     @Test
+    void testCreateWhenKodeAlreadyExists_ShouldThrow() {
+        MataKuliah matkul = new MataKuliah("CS010", "Test", "Desc");
+        when(mataKuliahRepository.existsById("CS010")).thenReturn(true);
+
+        RuntimeException ex = assertThrows(
+                RuntimeException.class,
+                () -> mataKuliahService.create(matkul)
+        );
+        assertEquals("Kode sudah digunakan.", ex.getMessage());
+
+        verify(mataKuliahRepository).existsById("CS010");
+        verify(mataKuliahRepository, never()).save(any());
+    }
+
+    @Test
     void testFindByKodeExists() {
         MataKuliah matkul = new MataKuliah("CS001", "Dasar", "Deskripsi");
         when(mataKuliahRepository.findById("CS001")).thenReturn(Optional.of(matkul));
@@ -57,14 +71,36 @@ class MataKuliahServiceTest {
 
     @Test
     void testUpdateMataKuliah() {
-        MataKuliah matkul = new MataKuliah("CS003", "Pemrograman", "Spring Boot");
-        when(mataKuliahRepository.save(matkul)).thenReturn(matkul);
+        MataKuliah original = new MataKuliah("CS003", "Pemrograman", "Spring Boot");
 
-        MataKuliah result = mataKuliahService.update(matkul);
+        when(mataKuliahRepository.existsById("CS003")).thenReturn(true);
+        when(mataKuliahRepository.save(any(MataKuliah.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MataKuliah updated = new MataKuliah("CS003", "Pemrograman", "Belajar Design Pattern");
+
+        MataKuliah result = mataKuliahService.update(updated);
 
         assertEquals("CS003", result.getKode());
         assertEquals("Pemrograman", result.getNama());
-        verify(mataKuliahRepository).save(matkul);
+        assertEquals("Belajar Design Pattern", result.getDeskripsi());
+
+        verify(mataKuliahRepository).existsById("CS003");
+        verify(mataKuliahRepository).save(updated);
+    }
+
+    @Test
+    void testUpdateMataKuliahNotFound() {
+        MataKuliah matkul = new MataKuliah("CS020", "Test", "Desc");
+        when(mataKuliahRepository.existsById("CS020")).thenReturn(false);
+
+        RuntimeException ex = assertThrows(
+                RuntimeException.class,
+                () -> mataKuliahService.update(matkul)
+        );
+        assertEquals("Mata Kuliah tidak ditemukan.", ex.getMessage());
+
+        verify(mataKuliahRepository).existsById("CS020");
+        verify(mataKuliahRepository, never()).save(any());
     }
 
     @Test
