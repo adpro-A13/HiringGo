@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MataKuliahTest {
 
     @Test
-    void testCreateMataKuliahandDosenPengampu_Success() {
+    void testCreateMataKuliahandDosenPengampuSuccess() {
         MataKuliah mk = new MataKuliah(
                 "CSCM602023-01.00.12.01-2020",
                 "Pemrograman Lanjut",
