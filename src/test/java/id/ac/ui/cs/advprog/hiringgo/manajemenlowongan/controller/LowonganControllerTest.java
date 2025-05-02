@@ -19,8 +19,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -91,4 +93,17 @@ class LowonganControllerTest {
 
         verify(lowonganService).findAll();
     }
+
+    @Test
+    @WithMockUser
+    void shouldHandleDeleteAndRedirect() throws Exception {
+        UUID idLowongan = UUID.randomUUID(); // ID yang akan di-delete
+
+        mockMvc.perform(post("/lowongan/delete").param("id", idLowongan.toString()).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/lowongan/list"));
+
+        verify(lowonganService).deleteLowonganById(eq(idLowongan)); // Verifikasi bahwa service dipanggil dengan ID yang benar
+    }
+
 }
