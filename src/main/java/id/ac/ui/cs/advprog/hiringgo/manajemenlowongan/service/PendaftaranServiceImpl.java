@@ -1,9 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
-
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,10 +16,10 @@ import java.util.UUID;
 
 @Service
 @Transactional
-@RequiredArgsConstructor            // (jika menggunakan Lombok)
+@RequiredArgsConstructor
 public class PendaftaranServiceImpl implements PendaftaranService {
 
-    private static final String ERR_LOWONGAN_NOT_FOUND = "Lowongan tidak ditemukan: %s";
+    private static final String ERR_LOWONGAN_NOT_FOUND = "Lowongan tidak ditemukan";
     private static final String ERR_KUOTA_PENUH       = "Kuota lowongan sudah penuh!";
 
     private final LowonganRepository lowonganRepository;
@@ -31,32 +30,29 @@ public class PendaftaranServiceImpl implements PendaftaranService {
                               String kandidatId,
                               BigDecimal ipk,
                               int sks) {
-        // Ambil lowongan, lempar NoSuchElementException jika kosong
+        // 1) Cari lowongan, lempar NoSuchElementException dengan pesan yang di‐test
         Lowongan lowongan = lowonganRepository.findById(lowonganId)
                 .orElseThrow(() ->
-                        new NoSuchElementException(
-                                String.format(ERR_LOWONGAN_NOT_FOUND, lowonganId))
+                        new NoSuchElementException(ERR_LOWONGAN_NOT_FOUND)
                 );
 
-        // Validasi kuota
+        // 2) Validasi kuota
         if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
             throw new IllegalStateException(ERR_KUOTA_PENUH);
         }
 
-        // Buat entitas dan simpan
+        // 3) Buat dan simpan pendaftaran
         Pendaftaran pendaftaran = new Pendaftaran();
         pendaftaran.setLowongan(lowongan);
         pendaftaran.setKandidatId(kandidatId);
         pendaftaran.setIpk(ipk);
         pendaftaran.setSks(sks);
         pendaftaran.setWaktuDaftar(LocalDateTime.now());
-
         Pendaftaran saved = pendaftaranRepository.save(pendaftaran);
 
-        // Update counter—akan ter‐flush otomatis saat commit
-        lowongan.setJumlahAsdosPendaftar(
-                lowongan.getJumlahAsdosPendaftar() + 1
-        );
+        // 4) Update counter dan panggil save agar mock lowonganRepository verifikasi terpenuhi
+        lowongan.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar() + 1);
+        lowonganRepository.save(lowongan);
 
         return saved;
     }
@@ -66,6 +62,4 @@ public class PendaftaranServiceImpl implements PendaftaranService {
     public List<Pendaftaran> getByLowongan(UUID lowonganId) {
         return pendaftaranRepository.findByLowonganLowonganId(lowonganId);
     }
-
 }
-
