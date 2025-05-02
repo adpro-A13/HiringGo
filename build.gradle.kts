@@ -45,6 +45,7 @@ dependencies {
     implementation ("io.github.cdimascio:dotenv-java:3.2.0")
 
     runtimeOnly("org.postgresql:postgresql")
+    testImplementation ("org.springframework.security:spring-security-test")
 
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
