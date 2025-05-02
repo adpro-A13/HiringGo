@@ -66,5 +66,6 @@ public class PendaftaranServiceImpl implements PendaftaranService {
     public List<Pendaftaran> getByLowongan(UUID lowonganId) {
         return pendaftaranRepository.findByLowonganLowonganId(lowonganId);
     }
+
 }
 
