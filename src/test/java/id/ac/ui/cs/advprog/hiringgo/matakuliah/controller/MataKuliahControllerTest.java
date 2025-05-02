@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,7 +41,7 @@ class MataKuliahControllerTest {
         ResponseEntity<List<MataKuliah>> response = mataKuliahController.getAllMataKuliah();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(2, response.getBody().size());
+        assertEquals(2, Objects.requireNonNull(response.getBody()).size());
         verify(mataKuliahService, times(1)).findAll();
     }
 
@@ -76,7 +77,7 @@ class MataKuliahControllerTest {
 
         when(mataKuliahService.create(any(MataKuliah.class))).thenReturn(newMk);
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.createMataKuliah(newMataKuliah);
+        ResponseEntity<MataKuliah> response = mataKuliahController.createMataKuliah(newMk);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -102,7 +103,7 @@ class MataKuliahControllerTest {
 
         when(mataKuliahService.update(any(MataKuliah.class))).thenReturn(updated);
 
-        ResponseEntity<MataKuliah> response = mataKuliahController.updateMataKuliah("CS101", updatedMataKuliah);
+        ResponseEntity<MataKuliah> response = mataKuliahController.updateMataKuliah("CS101", updated);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
