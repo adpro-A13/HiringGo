@@ -4,14 +4,13 @@ FROM gradle:8.6-jdk21 as build
 WORKDIR /app
 COPY . .
 
-RUN ls -al /app
 # Build jar file and clean cache
-RUN ./gradlew clean && \
+RUN chmod +x ./gradlew && \
+    ./gradlew clean && \
     ./gradlew bootJar --no-daemon && \
     rm -rf /home/gradle/.gradle/caches
 
 
-RUN ls /app/build/libs
 # Stage 2: Run the app
 FROM eclipse-temurin:21-jdk-alpine AS runtime
 WORKDIR /app
