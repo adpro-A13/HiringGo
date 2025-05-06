@@ -55,4 +55,11 @@ public class LowonganServiceImpl implements LowonganService {
         lowonganRepository.save(lowongan);
     }
 
+    @Override
+    public void deleteLowonganById(UUID lowonganId) {
+        if (!lowonganRepository.existsById(lowonganId)) {
+            throw new RuntimeException("Lowongan tidak ditemukan");
+        }
+        lowonganRepository.deleteById(lowonganId);
+    }
 }

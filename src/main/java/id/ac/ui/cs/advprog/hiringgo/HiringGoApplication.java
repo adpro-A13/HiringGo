@@ -14,13 +14,19 @@ public class HiringGoApplication {
 
 
     public static void loadEnv() {
-        Dotenv dotenv = Dotenv.load();
+        // Fallback ke dotenv hanya kalau System.getenv belum ada
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
-        System.setProperty("DB_HOST", dotenv.get("DB_HOST"));
-        System.setProperty("DB_PORT", dotenv.get("DB_PORT"));
-        System.setProperty("DB_USER", dotenv.get("DB_USER"));
-        System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
-        System.setProperty("DB_NAME", dotenv.get("DB_NAME"));
+        System.setProperty("DB_HOST", getEnvOrDotenv("DB_HOST", dotenv));
+        System.setProperty("DB_PORT", getEnvOrDotenv("DB_PORT", dotenv));
+        System.setProperty("DB_USER", getEnvOrDotenv("DB_USER", dotenv));
+        System.setProperty("DB_PASSWORD", getEnvOrDotenv("DB_PASSWORD", dotenv));
+        System.setProperty("DB_NAME", getEnvOrDotenv("DB_NAME", dotenv));
+    }
+
+    private static String getEnvOrDotenv(String key, Dotenv dotenv) {
+        String value = System.getenv(key);
+        return (value != null) ? value : dotenv.get(key);
     }
 }
 

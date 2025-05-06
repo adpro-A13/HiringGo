@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,6 +86,35 @@ class LowonganServiceImplTest {
 
         assertEquals(1, result.size());
         assertEquals(Semester.GANJIL, result.get(0).getSemester());
+    }
+
+    @Test
+    void testDeleteLowonganByIdSuccess() {
+        UUID id = UUID.randomUUID();
+
+        // Perhatikan ini: kita mock existsById, bukan findById
+        when(lowonganRepository.existsById(id)).thenReturn(true);
+
+        lowonganService.deleteLowonganById(id);
+
+        verify(lowonganRepository).existsById(id);
+        verify(lowonganRepository).deleteById(id);
+    }
+
+
+
+    @Test
+    void testDeleteLowonganByIdThrowsWhenNotFound() {
+        UUID id = UUID.randomUUID();
+        when(lowonganRepository.existsById(id)).thenReturn(false);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            lowonganService.deleteLowonganById(id);
+        });
+
+        assertEquals("Lowongan tidak ditemukan", exception.getMessage());
+        verify(lowonganRepository).existsById(id);
+        verify(lowonganRepository, never()).deleteById(any());
     }
 
 
