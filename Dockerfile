@@ -3,7 +3,6 @@ FROM gradle:8.6-jdk21 as build
 
 WORKDIR /app
 COPY . .
-COPY .env .env
 
 RUN ls -al /app
 # Build jar file and clean cache
