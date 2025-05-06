@@ -32,7 +32,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
+                    //gw nerf bikin semua path dulu ya
+                .requestMatchers("/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
