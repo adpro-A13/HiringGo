@@ -41,7 +41,7 @@ public class PendaftaranController {
         model.addAttribute("lowongan", lowongan);
         model.addAttribute("kandidatId", kandidatId);
         model.addAttribute("daftarForm", new DaftarForm());
-
+//        nanti remove ini
         List<String> dummyPrasyarat = Arrays.asList(
                 "IF1010 - Dummy Course 1: A",
                 "IF1020 - Dummy Course 2: B"
