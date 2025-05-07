@@ -144,7 +144,6 @@ public class PendaftaranControllerTest {
         when(lowonganService.findById(lowonganId)).thenReturn(lowongan);
         when(bindingResult.hasErrors()).thenReturn(false);
 
-        // Fix the mock setup to properly match the method call
         when(pendaftaranService.daftar(
                 eq(lowonganId),
                 eq("mahasiswa1"),
