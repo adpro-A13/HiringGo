@@ -40,6 +40,13 @@ sonar {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
+    implementation ("io.github.cdimascio:dotenv-java:3.2.0")
+
+    runtimeOnly("org.postgresql:postgresql")
+    testImplementation ("org.springframework.security:spring-security-test")
+
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -48,8 +55,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.seleniumhq.selenium:selenium-java:$seleniumJavaVersion")
     testImplementation("io.github.bonigarcia:selenium-jupiter:$seleniumJupiterVersion")
@@ -62,8 +70,8 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.3")
     testImplementation("com.h2database:h2:2.2.224")
 
-
 }
+
 
 tasks.register<Test>("unitTest") {
     description = "Runs unit tests."

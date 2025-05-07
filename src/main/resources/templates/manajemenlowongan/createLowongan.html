@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Buat Lowongan</title>
+</head>
+<body>
+<h1>Buat Lowongan Baru</h1>
+<form th:action="@{/lowongan/create}" th:object="${lowongan}" method="post">
+
+    <label for="idMataKuliah">ID Mata Kuliah:</label><br>
+    <input type="text" id="idMataKuliah" th:field="*{idMataKuliah}" required><br><br>
+
+    <label for="tahunAjaran">Tahun Ajaran:</label><br>
+    <input type="text" id="tahunAjaran" th:field="*{tahunAjaran}" required><br><br>
+
+    <label for="semester">Semester:</label><br>
+    <select id="semester" th:field="*{semester}">
+        <option th:each="s : ${semesterList}" th:value="${s}" th:text="${s}"></option>
+    </select><br><br>
+
+    <label for="statusLowongan">Status Lowongan:</label><br>
+    <select id="statusLowongan" th:field="*{statusLowongan}">
+        <option th:each="status : ${statusList}" th:value="${status}" th:text="${status}"></option>
+    </select><br><br>
+
+    <label for="jumlahAsdosDibutuhkan">Jumlah Asdos Dibutuhkan:</label><br>
+    <input type="number" id="jumlahAsdosDibutuhkan" th:field="*{jumlahAsdosDibutuhkan}" required><br><br>
+
+    <label for="jumlahAsdosDiterima">Jumlah Asdos Diterima:</label><br>
+    <input type="number" id="jumlahAsdosDiterima" th:field="*{jumlahAsdosDiterima}" required><br><br>
+
+    <label for="jumlahAsdosPendaftar">Jumlah Asdos Pendaftar:</label><br>
+    <input type="number" id="jumlahAsdosPendaftar" th:field="*{jumlahAsdosPendaftar}" required><br><br>
+
+    <button type="submit">Submit</button>
+</form>
+
+<br>
+<a th:href="@{/lowongan/list}">Lihat Daftar Lowongan</a>
+</body>
+</html>

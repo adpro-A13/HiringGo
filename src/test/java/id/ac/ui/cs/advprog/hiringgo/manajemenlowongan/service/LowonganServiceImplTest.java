@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +55,66 @@ class LowonganServiceImplTest {
     }
 
     @Test
+    void testCreateLowonganWhenLowonganDoesNotExist() {
+        Lowongan newLowongan = new Lowongan();
+        newLowongan.setIdMataKuliah("CS101");
+        newLowongan.setSemester(Semester.GANJIL.getValue());
+        newLowongan.setTahunAjaran("2023");
+
+        // Mocking the repository method
+        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran())
+        ).thenReturn(Optional.empty());
+
+        when(lowonganRepository.save(any(Lowongan.class))).thenReturn(newLowongan);
+
+        // Call the method to test
+        Lowongan createdLowongan = lowonganService.createLowongan(newLowongan);
+
+        // Validate the results
+        assertNotNull(createdLowongan);
+        assertEquals(0, createdLowongan.getJumlahAsdosDiterima());
+        assertEquals(0, createdLowongan.getJumlahAsdosPendaftar());
+
+        // Verify interactions with the repository
+        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran());
+        verify(lowonganRepository).save(newLowongan);
+    }
+
+    @Test
+    void testCreateLowonganWhenLowonganAlreadyExists() {
+        Lowongan newLowongan = new Lowongan();
+        newLowongan.setIdMataKuliah("CS101");
+        newLowongan.setSemester(Semester.GANJIL.getValue());
+        newLowongan.setTahunAjaran("2023");
+
+        // Mocking the repository to return an existing lowongan
+        Lowongan existingLowongan = new Lowongan();
+        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran())
+        ).thenReturn(Optional.of(existingLowongan));
+
+        // Try to create a lowongan when one already exists, expect an exception
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
+            lowonganService.createLowongan(newLowongan);
+        });
+
+        // Verify that findByIdMataKuliahAndSemesterAndTahunAjaran was called
+        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran());
+        verify(lowonganRepository, times(0)).save(any(Lowongan.class)); // Ensure save was not called
+    }
+
+    @Test
     void testFilterByStatusLowongan() {
         Lowongan aktif = new Lowongan();
         aktif.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
@@ -85,6 +146,35 @@ class LowonganServiceImplTest {
 
         assertEquals(1, result.size());
         assertEquals(Semester.GANJIL, result.get(0).getSemester());
+    }
+
+    @Test
+    void testDeleteLowonganByIdSuccess() {
+        UUID id = UUID.randomUUID();
+
+        // Perhatikan ini: kita mock existsById, bukan findById
+        when(lowonganRepository.existsById(id)).thenReturn(true);
+
+        lowonganService.deleteLowonganById(id);
+
+        verify(lowonganRepository).existsById(id);
+        verify(lowonganRepository).deleteById(id);
+    }
+
+
+
+    @Test
+    void testDeleteLowonganByIdThrowsWhenNotFound() {
+        UUID id = UUID.randomUUID();
+        when(lowonganRepository.existsById(id)).thenReturn(false);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            lowonganService.deleteLowonganById(id);
+        });
+
+        assertEquals("Lowongan tidak ditemukan", exception.getMessage());
+        verify(lowonganRepository).existsById(id);
+        verify(lowonganRepository, never()).deleteById(any());
     }
 
 
