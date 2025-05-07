@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.hiringgo.authentication.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@Order(2) // Lower priority, will be used after MiddlewareSecurityConfig
 public class SecurityConfiguration {
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -30,7 +32,9 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http
+            .securityMatcher("/**") // This will apply to all URLs not matched by other security configs
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                     //gw nerf bikin semua path dulu ya
                 .requestMatchers("/**").permitAll()
