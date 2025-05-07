@@ -1,24 +1,28 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.validation.Valid;
+
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
-
-// Pastikan ini sesuai versi Boot:
-//  - Boot 3 → jakarta.validation.Valid
-//  - Boot 2 → javax.validation.Valid
-import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/lowongan/{id}")
@@ -26,52 +30,132 @@ public class PendaftaranController {
 
     private final LowonganService lowonganService;
     private final PendaftaranService pendaftaranService;
+    private final JwtService jwtService;
 
-    public PendaftaranController(LowonganService lowonganService,
-                                 PendaftaranService pendaftaranService) {
+    @Autowired
+    public PendaftaranController(
+            LowonganService lowonganService,
+            PendaftaranService pendaftaranService,
+            JwtService jwtService) {
         this.lowonganService = lowonganService;
         this.pendaftaranService = pendaftaranService;
+        this.jwtService = jwtService;
     }
 
     @GetMapping("/daftar")
-    public String showDaftarForm(@PathVariable UUID id, Model model, Principal principal) {
-        Lowongan lowongan = lowonganService.findById(id);
-        String kandidatId = principal != null ? principal.getName() : "anonymous";
+    public String showDaftarForm(
+            @PathVariable UUID id,
+            Model model,
+            Principal principal,
+            RedirectAttributes redirectAttributes) {
 
-        model.addAttribute("lowongan", lowongan);
-        model.addAttribute("kandidatId", kandidatId);
-        model.addAttribute("daftarForm", new DaftarForm());
-//        nanti remove ini
-        List<String> dummyPrasyarat = Arrays.asList(
-                "IF1010 - Dummy Course 1: A",
-                "IF1020 - Dummy Course 2: B"
-        );
-        model.addAttribute("prasyaratList", dummyPrasyarat);
+        // Authentication check
+        if (principal == null) {
+            redirectAttributes.addFlashAttribute("error", "Anda harus login terlebih dahulu");
+            return "redirect:/auth/login";
+        }
 
-        return "daftar";
+        try {
+            // Get lowongan data
+            Lowongan lowongan = lowonganService.findById(id);
+
+            // Get user information
+            String kandidatId = principal.getName();
+
+            // Add attributes to model
+            model.addAttribute("lowongan", lowongan);
+            model.addAttribute("kandidatId", kandidatId);
+            model.addAttribute("daftarForm", new DaftarForm());
+
+            // Sample prerequisites list
+            List<String> prasyaratList = Arrays.asList(
+                    "IF1010 - Dummy Course 1: A",
+                    "IF1020 - Dummy Course 2: B"
+            );
+            model.addAttribute("prasyaratList", prasyaratList);
+
+            return "daftar";
+
+        } catch (NoSuchElementException e) {
+            redirectAttributes.addFlashAttribute("error", "Lowongan tidak ditemukan");
+            return "redirect:/lowongan/list";
+        }
     }
 
     @PostMapping("/daftar")
-    public String handleDaftar(@PathVariable UUID id,
-                               @Valid @ModelAttribute("daftarForm") DaftarForm form,
-                               BindingResult bindingResult,
-                               Model model,
-                               Principal principal) {
-        if (bindingResult.hasErrors()) {
-            Lowongan lowongan = lowonganService.findById(id);
-            String kandidatId = principal != null ? principal.getName() : "anonymous";
+    public String handleDaftar(
+            @PathVariable UUID id,
+            @Valid @ModelAttribute("daftarForm") DaftarForm form,
+            BindingResult bindingResult,
+            Model model,
+            Principal principal,
+            RedirectAttributes redirectAttributes) {
 
-            model.addAttribute("lowongan", lowongan);
-            model.addAttribute("kandidatId", kandidatId);
-            model.addAttribute("prasyaratList", Arrays.asList(
-                    "IF1010 - Dummy Course 1: A",
-                    "IF1020 - Dummy Course 2: B"
-            ));
-            return "daftar";
+        // Authentication check
+        if (principal == null) {
+            redirectAttributes.addFlashAttribute("error", "Anda harus login terlebih dahulu");
+            return "redirect:/auth/login";
         }
 
-        String kandidatId = principal != null ? principal.getName() : "anonymous";
-        pendaftaranService.daftar(id, kandidatId, form.getIpk(), form.getSks());
-        return "redirect:/lowongan/" + id;
+        // Handle validation errors
+        if (bindingResult.hasErrors()) {
+            try {
+                Lowongan lowongan = lowonganService.findById(id);
+                String kandidatId = principal.getName();
+
+                model.addAttribute("lowongan", lowongan);
+                model.addAttribute("kandidatId", kandidatId);
+                model.addAttribute("prasyaratList", Arrays.asList(
+                        "IF1010 - Dummy Course 1: A",
+                        "IF1020 - Dummy Course 2: B"
+                ));
+
+                return "daftar";
+            } catch (NoSuchElementException e) {
+                redirectAttributes.addFlashAttribute("error", "Lowongan tidak ditemukan");
+                return "redirect:/lowongan/list";
+            }
+        }
+
+        // Process application
+        try {
+            String kandidatId = principal.getName();
+            Pendaftaran pendaftaran = pendaftaranService.daftar(id, kandidatId, BigDecimal.valueOf(form.getIpk()), form.getSks());
+            redirectAttributes.addFlashAttribute("success", "Berhasil mendaftar asisten dosen");
+            return "redirect:/lowongan/" + id;
+        } catch (NoSuchElementException e) {
+            redirectAttributes.addFlashAttribute("error", "Lowongan tidak ditemukan");
+            return "redirect:/lowongan/list";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/lowongan/" + id + "/daftar";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Terjadi kesalahan: " + e.getMessage());
+            return "redirect:/lowongan/" + id + "/daftar";
+        }
+    }
+
+    @GetMapping
+    public String showLowonganDetail(
+            @PathVariable UUID id,
+            Model model,
+            Principal principal,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            Lowongan lowongan = lowonganService.findById(id);
+            model.addAttribute("lowongan", lowongan);
+
+            // Add user info if authenticated
+            if (principal != null) {
+                String userId = principal.getName();
+                model.addAttribute("userId", userId);
+            }
+
+            return "lowonganDetail";
+        } catch (NoSuchElementException e) {
+            redirectAttributes.addFlashAttribute("error", "Lowongan tidak ditemukan");
+            return "redirect:/lowongan/list";
+        }
     }
 }
