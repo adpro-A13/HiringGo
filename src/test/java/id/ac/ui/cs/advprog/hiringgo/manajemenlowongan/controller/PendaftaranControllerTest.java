@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -65,8 +66,8 @@ public class PendaftaranControllerTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setIdMataKuliah("IF3270");
         lowongan.setTahunAjaran("2024/2025");
-        lowongan.setStatusLowongan(StatusLowongan.BUKA);
-        lowongan.setSemester(Semester.GANJIL);
+        lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
+        lowongan.setSemester(String.valueOf(Semester.GANJIL));
         lowongan.setJumlahAsdosDibutuhkan(3);
         lowongan.setJumlahAsdosDiterima(0);
         lowongan.setJumlahAsdosPendaftar(0);
@@ -114,7 +115,7 @@ public class PendaftaranControllerTest {
     public void testHandleDaftarSuccess() {
         when(lowonganService.findById(lowonganId)).thenReturn(lowongan);
         when(bindingResult.hasErrors()).thenReturn(false);
-        when(pendaftaranService.daftar(eq(lowonganId), eq("mahasiswa1"), eq(3.5), eq(100)))
+        when(pendaftaranService.daftar(eq(lowonganId), eq("mahasiswa1"), BigDecimal.valueOf(eq(3.5)), eq(100)))
                 .thenReturn(new Pendaftaran());
 
         String viewName = pendaftaranController.handleDaftar(
@@ -142,7 +143,13 @@ public class PendaftaranControllerTest {
     public void testHandleDaftarServiceException() {
         when(lowonganService.findById(lowonganId)).thenReturn(lowongan);
         when(bindingResult.hasErrors()).thenReturn(false);
-        when(pendaftaranService.daftar(eq(lowonganId), eq("mahasiswa1"), eq(3.5), eq(100)))
+
+        // Fix the mock setup to properly match the method call
+        when(pendaftaranService.daftar(
+                eq(lowonganId),
+                eq("mahasiswa1"),
+                eq(BigDecimal.valueOf(3.5)),
+                eq(100)))
                 .thenThrow(new IllegalStateException("Lowongan sudah ditutup"));
 
         String viewName = pendaftaranController.handleDaftar(
