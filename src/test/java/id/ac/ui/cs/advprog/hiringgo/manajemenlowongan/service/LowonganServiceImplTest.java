@@ -45,6 +45,62 @@ class LowonganServiceImplTest {
     }
 
     @Test
+    void testCreateLowonganWhenLowonganDoesNotExist() {
+        Lowongan newLowongan = new Lowongan();
+        newLowongan.setIdMataKuliah("CS101");
+        newLowongan.setSemester("GANJIL");
+        newLowongan.setTahunAjaran("2023");
+
+        // Mocking the repository method
+        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran())
+        ).thenReturn(Optional.empty());
+
+        when(lowonganRepository.save(any(Lowongan.class))).thenReturn(newLowongan);
+
+        // Call the method to test
+        Lowongan createdLowongan = lowonganService.createLowongan(newLowongan);
+
+        // Validate the results
+        assertNotNull(createdLowongan);
+        assertEquals(0, createdLowongan.getJumlahAsdosDiterima());
+        assertEquals(0, createdLowongan.getJumlahAsdosPendaftar());
+
+        // Verify interactions with the repository
+        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran());
+        verify(lowonganRepository).save(newLowongan);
+    }
+
+    @Test
+    void testCreateLowonganWhenLowonganAlreadyExists() {
+        Lowongan newLowongan = new Lowongan();
+        newLowongan.setIdMataKuliah("CS101");
+        newLowongan.setSemester("GANJIL");
+        newLowongan.setTahunAjaran("2023");
+
+        Lowongan existingLowongan = new Lowongan();
+        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran())
+        ).thenReturn(Optional.of(existingLowongan));
+
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
+            lowonganService.createLowongan(newLowongan);
+        });
+
+        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getIdMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran());
+        verify(lowonganRepository, times(0)).save(any(Lowongan.class)); // Ensure save was not called
+    }
+    @Test
     void testFindAllReturnsList() {
         List<Lowongan> dummyList = List.of(new Lowongan(), new Lowongan());
         when(lowonganRepository.findAll()).thenReturn(dummyList);
