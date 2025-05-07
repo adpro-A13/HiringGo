@@ -5,9 +5,12 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.LowonganFilterStrat
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -38,8 +41,24 @@ public class LowonganServiceImpl implements LowonganService {
 
     @Override
     public Lowongan createLowongan(Lowongan lowongan) {
+        Optional<Lowongan> existing = lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
+                lowongan.getIdMataKuliah(),
+                lowongan.getSemester(),
+                lowongan.getTahunAjaran()
+        );
+
+        if (existing.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lowongan dengan kombinasi tersebut sudah ada!");
+        }
+
+        // Set default values
+        lowongan.setJumlahAsdosDiterima(0);
+        lowongan.setJumlahAsdosPendaftar(0);
+
         return lowonganRepository.save(lowongan);
     }
+
+
 
     private void ensureQuotaAvailable(Lowongan lowongan) {
         if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
