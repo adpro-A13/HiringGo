@@ -24,7 +24,7 @@ import java.util.Map;
 @RestController
 public class AuthenticationController {
     private final JwtService jwtService;
-    
+
     private final AuthenticationService authenticationService;
 
     public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
@@ -75,8 +75,8 @@ public class AuthenticationController {
             User authenticatedUser = authenticationService.authenticate(loginUserDto);
             String jwtToken = jwtService.generateToken(authenticatedUser);
             LoginResponse loginResponse = new LoginResponse()
-                .setToken(jwtToken)
-                .setExpiresIn(jwtService.getExpirationTime());
+                    .setToken(jwtToken)
+                    .setExpiresIn(jwtService.getExpirationTime());
             return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(e.getMessage());
@@ -87,7 +87,8 @@ public class AuthenticationController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verify(@org.springframework.web.bind.annotation.RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> verify(
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(400).body("Missing or invalid Authorization header");
         }
@@ -99,16 +100,16 @@ public class AuthenticationController {
             return ResponseEntity.status(401).body("Invalid token");
         }
     }
-    
+
     private Map<String, Object> sanitizeUser(User user) {
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("email", user.getUsername());
-        
+
         userMap.put("role", user.getAuthorities().stream()
-            .findFirst()
-            .map(GrantedAuthority::getAuthority)
-            .orElse("UNKNOWN"));
-        
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse("UNKNOWN"));
+
         if (user instanceof Mahasiswa) {
             Mahasiswa mahasiswa = (Mahasiswa) user;
             userMap.put("fullName", mahasiswa.getFullName());
@@ -120,7 +121,7 @@ public class AuthenticationController {
         } else if (user instanceof Admin) {
             userMap.put("type", "admin");
         }
-        
+
         return userMap;
     }
 }
