@@ -1,6 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.middleware;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +17,7 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@Order(1) // Set a higher priority than the other security config
+@Order(1)
 public class MiddlewareSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -31,7 +30,7 @@ public class MiddlewareSecurityConfig {
     @Bean
     public SecurityFilterChain middlewareSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/api/**") // Specify which URLs this configuration applies to
+            .securityMatcher("/api/**")
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(middlewareCorsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
