@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,5 +53,22 @@ public class MahasiswaTest {
         assertTrue(mahasiswa.isAccountNonLocked());
         assertTrue(mahasiswa.isCredentialsNonExpired());
         assertTrue(mahasiswa.isEnabled());
+    }
+
+    @Test
+    public void testIdNotNull() {
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(null);
+        assertNull(mahasiswa.getId());
+    }
+
+    @Test
+    public void testSetId() {
+        Mahasiswa mahasiswa = new Mahasiswa();
+        UUID uuid = UUID.randomUUID();
+        mahasiswa.setId(uuid);
+        assertNotNull(mahasiswa.getId());
+        assertEquals(mahasiswa.getId().getClass(), UUID.class);
+        assertEquals(mahasiswa.getId(), uuid);
     }
 }

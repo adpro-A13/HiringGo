@@ -102,6 +102,7 @@ public class AuthenticationController {
     
     private Map<String, Object> sanitizeUser(User user) {
         Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
         userMap.put("email", user.getUsername());
         
         userMap.put("role", user.getAuthorities().stream()
