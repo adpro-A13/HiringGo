@@ -99,4 +99,29 @@ public class JwtAuthenticationFilterTest {
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals(mockUser, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
+
+    @Test
+    void shouldRejectRequestWithInvalidAuthorizationHeaderFormat() throws ServletException, IOException {
+        request.setServletPath("/api/someEndpoint");
+        request.addHeader("Authorization", "Basic dXNlcjpwYXNzd29yZA==");
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Authorization header with Bearer token is required"));
+        assertTrue(response.getContentAsString().contains("missing_token"));
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void shouldIncludeTimestampInErrorResponse() throws ServletException, IOException {
+        request.setServletPath("/api/someEndpoint");
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+        assertTrue(response.getContentAsString().contains("timestamp"));
+        assertTrue(response.getContentAsString().contains("error_code"));
+        assertTrue(response.getContentAsString().contains("status"));
+    }
 }

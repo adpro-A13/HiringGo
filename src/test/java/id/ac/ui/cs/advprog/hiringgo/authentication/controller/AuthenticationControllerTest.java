@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collections;
@@ -295,14 +294,12 @@ public class AuthenticationControllerTest {
 
     @Test
     void sanitizeUser_withMahasiswaUser_shouldReturnCorrectMap() {
-        // Mock a Mahasiswa user
         Mahasiswa mahasiswaUser = new Mahasiswa();
         mahasiswaUser.setUsername("student@example.com");
         mahasiswaUser.setPassword("hashedPassword");
         mahasiswaUser.setFullName("Student User");
         mahasiswaUser.setNim("12345678");
         
-        // Use reflection to access the private sanitizeUser method
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
         when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(mahasiswaUser);
         
@@ -319,14 +316,12 @@ public class AuthenticationControllerTest {
     
     @Test
     void sanitizeUser_withDosenUser_shouldReturnCorrectMap() {
-        // Mock a Dosen user
         Dosen dosenUser = new Dosen();
         dosenUser.setUsername("lecturer@example.com");
         dosenUser.setPassword("hashedPassword");
         dosenUser.setFullName("Lecturer User");
         dosenUser.setNip("87654321");
         
-        // Set up the controller to return this user
         when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(dosenUser);
         
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -342,12 +337,10 @@ public class AuthenticationControllerTest {
     
     @Test
     void sanitizeUser_withAdminUser_shouldReturnCorrectMap() {
-        // Mock an Admin user
         Admin adminUser = new Admin();
         adminUser.setUsername("admin@example.com");
         adminUser.setPassword("hashedPassword");
         
-        // Set up the controller to return this user
         when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(adminUser);
         
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -362,7 +355,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void register_withNullEmail_shouldReturnBadRequest() {
-        // Set email to null instead of empty string
         validRegisterDto.setEmail(null);
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -374,7 +366,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void register_withNullPassword_shouldReturnBadRequest() {
-        // Set password to null instead of empty string
         validRegisterDto.setPassword(null);
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -386,7 +377,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void register_withNullConfirmPassword_shouldReturnBadRequest() {
-        // Set confirmPassword to null instead of empty string
         validRegisterDto.setConfirmPassword(null);
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -398,7 +388,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void register_withNullFullName_shouldReturnBadRequest() {
-        // Set fullName to null instead of empty string
         validRegisterDto.setFullName(null);
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -410,7 +399,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void register_withNullNim_shouldReturnBadRequest() {
-        // Set nim to null instead of empty string
         validRegisterDto.setNim(null);
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
@@ -422,7 +410,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void authenticate_withNullEmail_shouldReturnBadRequest() {
-        // Set email to null instead of empty string
         validLoginDto.setEmail(null);
 
         ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
@@ -434,7 +421,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void authenticate_withNullPassword_shouldReturnBadRequest() {
-        // Set password to null instead of empty string
         validLoginDto.setPassword(null);
 
         ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
@@ -446,12 +432,10 @@ public class AuthenticationControllerTest {
 
     @Test
     void sanitizeUser_withNoAuthorities_shouldHandleGracefully() {
-        // Create a mock user that will return empty authorities list
         User userWithNoAuthorities = mock(User.class);
         when(userWithNoAuthorities.getUsername()).thenReturn("noauth@example.com");
         when(userWithNoAuthorities.getAuthorities()).thenReturn(Collections.emptyList());
         
-        // Use verify endpoint to test sanitizeUser with this user
         when(authenticationService.verifyToken(validToken)).thenReturn(userWithNoAuthorities);
         
         String authHeader = "Bearer " + validToken;
@@ -466,7 +450,6 @@ public class AuthenticationControllerTest {
 
     @Test
     void sanitizeUser_withUnknownUserType_shouldHaveBasicInfo() {
-        // Create a custom user implementation that doesn't match any of the expected types
         User customUser = new User() {
             @Override
             public List getAuthorities() {
@@ -504,7 +487,6 @@ public class AuthenticationControllerTest {
             }
         };
         
-        // Use verify endpoint to test sanitizeUser with this custom user
         when(authenticationService.verifyToken(validToken)).thenReturn(customUser);
         
         String authHeader = "Bearer " + validToken;
@@ -515,7 +497,6 @@ public class AuthenticationControllerTest {
         
         assertEquals("custom@example.com", responseBody.get("email"));
         assertEquals("CUSTOM", responseBody.get("role"));
-        // Should not have any other fields specific to Mahasiswa, Dosen, or Admin
         assertFalse(responseBody.containsKey("fullName"));
         assertFalse(responseBody.containsKey("nim"));
         assertFalse(responseBody.containsKey("nip"));
