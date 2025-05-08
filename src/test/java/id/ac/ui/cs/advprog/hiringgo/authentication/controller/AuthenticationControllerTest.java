@@ -2,6 +2,8 @@ package id.ac.ui.cs.advprog.hiringgo.authentication.controller;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.LoginUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Admin;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.response.LoginResponse;
@@ -14,6 +16,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,6 +60,8 @@ public class AuthenticationControllerTest {
 
         authenticatedUser = new Mahasiswa();
         authenticatedUser.setUsername("test@example.com");
+        ((Mahasiswa) authenticatedUser).setFullName("Test User");
+        ((Mahasiswa) authenticatedUser).setNim("12345678");
     }
 
     @Test
@@ -61,6 +71,15 @@ public class AuthenticationControllerTest {
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody() instanceof Map);
+        
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertEquals("test@example.com", responseBody.get("email"));
+        assertEquals("Test User", responseBody.get("fullName"));
+        assertEquals("12345678", responseBody.get("nim"));
+        assertFalse(responseBody.containsKey("password"), "Response should not contain password");
+        
         verify(authenticationService, times(1)).signup(validRegisterDto);
     }
 
@@ -96,6 +115,62 @@ public class AuthenticationControllerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(expectedErrorMessage, response.getBody());
+        verify(authenticationService, times(1)).signup(validRegisterDto);
+    }
+
+    @Test
+    void register_withMissingPassword_shouldReturnBadRequest() {
+        validRegisterDto.setPassword("");
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Password is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withMissingConfirmPassword_shouldReturnBadRequest() {
+        validRegisterDto.setConfirmPassword("");
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Confirm password is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withMissingFullName_shouldReturnBadRequest() {
+        validRegisterDto.setFullName("");
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Full name is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withMissingNim_shouldReturnBadRequest() {
+        validRegisterDto.setNim("");
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("NIM is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withGenericException_shouldReturnBadRequest() {
+        when(authenticationService.signup(any(RegisterUserDto.class)))
+                .thenThrow(new RuntimeException("Unexpected error"));
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Register failed, please try again.", response.getBody());
         verify(authenticationService, times(1)).signup(validRegisterDto);
     }
 
@@ -153,6 +228,18 @@ public class AuthenticationControllerTest {
     }
 
     @Test
+    void authenticate_withGenericException_shouldReturnForbidden() {
+        when(authenticationService.authenticate(any(LoginUserDto.class)))
+                .thenThrow(new RuntimeException("Unexpected error"));
+
+        ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertEquals("Authorization failed", response.getBody());
+        verify(authenticationService, times(1)).authenticate(validLoginDto);
+    }
+
+    @Test
     void verify_withValidToken_shouldReturnUser() {
         String authHeader = "Bearer " + validToken;
         when(authenticationService.verifyToken(validToken)).thenReturn(authenticatedUser);
@@ -160,7 +247,15 @@ public class AuthenticationControllerTest {
         ResponseEntity<?> response = authenticationController.verify(authHeader);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(authenticatedUser, response.getBody());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody() instanceof Map);
+        
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertEquals("test@example.com", responseBody.get("email"));
+        assertEquals("Test User", responseBody.get("fullName"));
+        assertEquals("12345678", responseBody.get("nim"));
+        assertFalse(responseBody.containsKey("password"), "Response should not contain password");
+        
         verify(authenticationService, times(1)).verifyToken(validToken);
     }
 
@@ -196,5 +291,234 @@ public class AuthenticationControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Missing or invalid Authorization header", response.getBody());
         verify(authenticationService, never()).verifyToken(anyString());
+    }
+
+    @Test
+    void sanitizeUser_withMahasiswaUser_shouldReturnCorrectMap() {
+        // Mock a Mahasiswa user
+        Mahasiswa mahasiswaUser = new Mahasiswa();
+        mahasiswaUser.setUsername("student@example.com");
+        mahasiswaUser.setPassword("hashedPassword");
+        mahasiswaUser.setFullName("Student User");
+        mahasiswaUser.setNim("12345678");
+        
+        // Use reflection to access the private sanitizeUser method
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(mahasiswaUser);
+        
+        response = authenticationController.register(validRegisterDto);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        
+        assertEquals("student@example.com", responseBody.get("email"));
+        assertEquals("Student User", responseBody.get("fullName"));
+        assertEquals("12345678", responseBody.get("nim"));
+        assertFalse(responseBody.containsKey("password"));
+    }
+    
+    @Test
+    void sanitizeUser_withDosenUser_shouldReturnCorrectMap() {
+        // Mock a Dosen user
+        Dosen dosenUser = new Dosen();
+        dosenUser.setUsername("lecturer@example.com");
+        dosenUser.setPassword("hashedPassword");
+        dosenUser.setFullName("Lecturer User");
+        dosenUser.setNip("87654321");
+        
+        // Set up the controller to return this user
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(dosenUser);
+        
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        
+        assertEquals("lecturer@example.com", responseBody.get("email"));
+        assertEquals("Lecturer User", responseBody.get("fullName"));
+        assertEquals("87654321", responseBody.get("nip"));
+        assertFalse(responseBody.containsKey("password"));
+    }
+    
+    @Test
+    void sanitizeUser_withAdminUser_shouldReturnCorrectMap() {
+        // Mock an Admin user
+        Admin adminUser = new Admin();
+        adminUser.setUsername("admin@example.com");
+        adminUser.setPassword("hashedPassword");
+        
+        // Set up the controller to return this user
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(adminUser);
+        
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        
+        assertEquals("admin@example.com", responseBody.get("email"));
+        assertEquals("admin", responseBody.get("type"));
+        assertFalse(responseBody.containsKey("password"));
+    }
+
+    @Test
+    void register_withNullEmail_shouldReturnBadRequest() {
+        // Set email to null instead of empty string
+        validRegisterDto.setEmail(null);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Email is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withNullPassword_shouldReturnBadRequest() {
+        // Set password to null instead of empty string
+        validRegisterDto.setPassword(null);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Password is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withNullConfirmPassword_shouldReturnBadRequest() {
+        // Set confirmPassword to null instead of empty string
+        validRegisterDto.setConfirmPassword(null);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Confirm password is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withNullFullName_shouldReturnBadRequest() {
+        // Set fullName to null instead of empty string
+        validRegisterDto.setFullName(null);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Full name is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void register_withNullNim_shouldReturnBadRequest() {
+        // Set nim to null instead of empty string
+        validRegisterDto.setNim(null);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("NIM is required", response.getBody());
+        verify(authenticationService, never()).signup(any(RegisterUserDto.class));
+    }
+
+    @Test
+    void authenticate_withNullEmail_shouldReturnBadRequest() {
+        // Set email to null instead of empty string
+        validLoginDto.setEmail(null);
+
+        ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Email is required", response.getBody());
+        verify(authenticationService, never()).authenticate(any(LoginUserDto.class));
+    }
+
+    @Test
+    void authenticate_withNullPassword_shouldReturnBadRequest() {
+        // Set password to null instead of empty string
+        validLoginDto.setPassword(null);
+
+        ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Password is required", response.getBody());
+        verify(authenticationService, never()).authenticate(any(LoginUserDto.class));
+    }
+
+    @Test
+    void sanitizeUser_withNoAuthorities_shouldHandleGracefully() {
+        // Create a mock user that will return empty authorities list
+        User userWithNoAuthorities = mock(User.class);
+        when(userWithNoAuthorities.getUsername()).thenReturn("noauth@example.com");
+        when(userWithNoAuthorities.getAuthorities()).thenReturn(Collections.emptyList());
+        
+        // Use verify endpoint to test sanitizeUser with this user
+        when(authenticationService.verifyToken(validToken)).thenReturn(userWithNoAuthorities);
+        
+        String authHeader = "Bearer " + validToken;
+        ResponseEntity<?> response = authenticationController.verify(authHeader);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        
+        assertEquals("noauth@example.com", responseBody.get("email"));
+        assertEquals("UNKNOWN", responseBody.get("role"));
+    }
+
+    @Test
+    void sanitizeUser_withUnknownUserType_shouldHaveBasicInfo() {
+        // Create a custom user implementation that doesn't match any of the expected types
+        User customUser = new User() {
+            @Override
+            public List getAuthorities() {
+                return Collections.singletonList(new SimpleGrantedAuthority("CUSTOM"));
+            }
+            
+            @Override
+            public String getPassword() {
+                return "password";
+            }
+            
+            @Override
+            public String getUsername() {
+                return "custom@example.com";
+            }
+            
+            @Override
+            public boolean isAccountNonExpired() {
+                return true;
+            }
+            
+            @Override
+            public boolean isAccountNonLocked() {
+                return true;
+            }
+            
+            @Override
+            public boolean isCredentialsNonExpired() {
+                return true;
+            }
+            
+            @Override
+            public boolean isEnabled() {
+                return true;
+            }
+        };
+        
+        // Use verify endpoint to test sanitizeUser with this custom user
+        when(authenticationService.verifyToken(validToken)).thenReturn(customUser);
+        
+        String authHeader = "Bearer " + validToken;
+        ResponseEntity<?> response = authenticationController.verify(authHeader);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        
+        assertEquals("custom@example.com", responseBody.get("email"));
+        assertEquals("CUSTOM", responseBody.get("role"));
+        // Should not have any other fields specific to Mahasiswa, Dosen, or Admin
+        assertFalse(responseBody.containsKey("fullName"));
+        assertFalse(responseBody.containsKey("nim"));
+        assertFalse(responseBody.containsKey("nip"));
+        assertFalse(responseBody.containsKey("type"));
     }
 }
