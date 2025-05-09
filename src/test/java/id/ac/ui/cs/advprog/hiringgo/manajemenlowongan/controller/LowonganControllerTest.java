@@ -204,4 +204,54 @@ class LowonganControllerTest {
                 .andExpect(jsonPath("$[0].statusLowongan").value("DIBUKA"));
     }
 
+    @Test
+    @WithMockUser
+    void shouldCallTerimaPendaftarEndpoint() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/lowongan/" + lowonganId + "/terima/" + pendaftaranId))
+                .andExpect(status().isOk());
+
+        verify(lowonganService).terimaPendaftar(eq(lowonganId), eq(pendaftaranId));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldCallTolakPendaftarEndpoint() throws Exception {
+        UUID pendaftaranId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/lowongan/tolak/" + pendaftaranId))
+                .andExpect(status().isOk());
+
+        verify(lowonganService).tolakPendaftar(eq(pendaftaranId));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldUpdateLowongan() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        Lowongan requestLowongan = new Lowongan();
+        requestLowongan.setIdMataKuliah("CS123");
+        requestLowongan.setTahunAjaran("2024/2025");
+        requestLowongan.setSemester("GANJIL");
+        requestLowongan.setStatusLowongan("DIBUKA");
+        requestLowongan.setJumlahAsdosDibutuhkan(5);
+        requestLowongan.setJumlahAsdosDiterima(0);
+        requestLowongan.setJumlahAsdosPendaftar(10);
+
+        when(lowonganService.updateLowongan(eq(id), any(Lowongan.class))).thenReturn(requestLowongan);
+
+        mockMvc.perform(put("/api/lowongan/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestLowongan)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idMataKuliah").value("CS123"))
+                .andExpect(jsonPath("$.semester").value("GANJIL"))
+                .andExpect(jsonPath("$.statusLowongan").value("DIBUKA"));
+
+        verify(lowonganService).updateLowongan(eq(id), any(Lowongan.class));
+    }
+
 }
