@@ -2,6 +2,8 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,4 +43,23 @@ public class LowonganController {
     public StatusLowongan[] getStatusList() {
         return StatusLowongan.values();
     }
+
+    @GetMapping("/filter")
+    public List<Lowongan> filterLowongan(
+            @RequestParam(required = false) Semester semester,
+            @RequestParam(required = false) StatusLowongan status) {
+
+        List<Lowongan> lowonganList = lowonganService.findAll();
+
+        if (semester != null) {
+            lowonganList = new FilterBySemester(semester).filter(lowonganList);
+        }
+
+        if (status != null) {
+            lowonganList = new FilterByStatus(status).filter(lowonganList);
+        }
+
+        return lowonganList;
+    }
+
 }
