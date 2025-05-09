@@ -4,7 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter @Setter
+@Getter
+@Setter
 public class DaftarForm {
 
     @NotNull(message = "IPK harus diisi")
@@ -25,4 +26,5 @@ public class DaftarForm {
         this.ipk = ipk;
         this.sks = sks;
     }
+
 }
