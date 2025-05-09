@@ -30,4 +30,5 @@ public class DaftarResponse {
             this.waktuDaftar = pendaftaran.getWaktuDaftar();
         }
     }
+
 }
