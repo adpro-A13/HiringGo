@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.dto.MataKuliahDTO;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.mapper.MataKuliahMapper;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
@@ -38,9 +39,9 @@ class MataKuliahControllerTest {
         List<MataKuliah> entities = List.of(m1, m2);
 
         MataKuliahDTO dto1 = new MataKuliahDTO();
-        dto1.setKode("CS101"); dto1.setNama("Dasar"); dto1.setDeskripsi("Desc"); dto1.setDosenPengampu(List.of());
+        dto1.setKode("CS101"); dto1.setNama("Dasar"); dto1.setDeskripsi("Desc"); dto1.setDosenPengampuEmails(List.of());
         MataKuliahDTO dto2 = new MataKuliahDTO();
-        dto2.setKode("CS102"); dto2.setNama("Lanjut"); dto2.setDeskripsi("Desc"); dto2.setDosenPengampu(List.of());
+        dto2.setKode("CS102"); dto2.setNama("Lanjut"); dto2.setDeskripsi("Desc"); dto2.setDosenPengampuEmails(List.of());
         List<MataKuliahDTO> dtos = List.of(dto1, dto2);
 
         when(mataKuliahService.findAll()).thenReturn(entities);
@@ -60,7 +61,7 @@ class MataKuliahControllerTest {
     void testGetMataKuliahByKode_Found() {
         MataKuliah domain = new MataKuliah("CS101","Dasar","Desc");
         MataKuliahDTO dto = new MataKuliahDTO();
-        dto.setKode("CS101"); dto.setNama("Dasar"); dto.setDeskripsi("Desc"); dto.setDosenPengampu(List.of());
+        dto.setKode("CS101"); dto.setNama("Dasar"); dto.setDeskripsi("Desc"); dto.setDosenPengampuEmails(List.of());
 
         when(mataKuliahService.findByKode("CS101")).thenReturn(domain);
         when(mataKuliahMapper.toDto(domain)).thenReturn(dto);
@@ -88,10 +89,11 @@ class MataKuliahControllerTest {
     @Test
     void testCreateMataKuliah_Success() {
         MataKuliahDTO dtoIn = new MataKuliahDTO();
-        dtoIn.setKode("CS101"); dtoIn.setNama("Dasar"); dtoIn.setDeskripsi("Desc"); dtoIn.setDosenPengampu(List.of("Dosen A"));
+        dtoIn.setKode("CS101"); dtoIn.setNama("Dasar"); dtoIn.setDeskripsi("Desc"); dtoIn.setDosenPengampuEmails(List.of("Dosen A"));
 
         MataKuliah entityIn = new MataKuliah("CS101","Dasar","Desc");
-        entityIn.addDosenPengampu("Dosen A");
+        Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
+        entityIn.addDosenPengampu(dosenA);
 
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
         when(mataKuliahService.create(entityIn)).thenReturn(entityIn);
@@ -111,7 +113,7 @@ class MataKuliahControllerTest {
     @Test
     void testCreateMataKuliah_Duplicate() {
         MataKuliahDTO dtoIn = new MataKuliahDTO();
-        dtoIn.setKode("CS101"); dtoIn.setNama("Dasar"); dtoIn.setDeskripsi("Desc"); dtoIn.setDosenPengampu(List.of());
+        dtoIn.setKode("CS101"); dtoIn.setNama("Dasar"); dtoIn.setDeskripsi("Desc"); dtoIn.setDosenPengampuEmails(List.of());
 
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(new MataKuliah("CS101","Dasar","Desc"));
         when(mataKuliahService.create(any())).thenThrow(new IllegalArgumentException("Kode sudah digunakan."));
@@ -127,7 +129,7 @@ class MataKuliahControllerTest {
     @Test
     void testUpdateMataKuliah_Success() {
         MataKuliahDTO dtoIn = new MataKuliahDTO();
-        dtoIn.setKode("CS101"); dtoIn.setNama("Update"); dtoIn.setDeskripsi("New"); dtoIn.setDosenPengampu(List.of());
+        dtoIn.setKode("CS101"); dtoIn.setNama("Update"); dtoIn.setDeskripsi("New"); dtoIn.setDosenPengampuEmails(List.of());
 
         MataKuliah entityIn = new MataKuliah("CS101","Update","New");
 
@@ -149,7 +151,7 @@ class MataKuliahControllerTest {
     @Test
     void testUpdateMataKuliah_PathMismatch() {
         MataKuliahDTO dtoIn = new MataKuliahDTO();
-        dtoIn.setKode("CS999"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampu(List.of());
+        dtoIn.setKode("CS999"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampuEmails(List.of());
 
         ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
 
@@ -160,7 +162,7 @@ class MataKuliahControllerTest {
     @Test
     void testUpdateMataKuliah_NotFound() {
         MataKuliahDTO dtoIn = new MataKuliahDTO();
-        dtoIn.setKode("CS101"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampu(List.of());
+        dtoIn.setKode("CS101"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampuEmails(List.of());
 
         MataKuliah entityIn = new MataKuliah("CS101","X","D");
 

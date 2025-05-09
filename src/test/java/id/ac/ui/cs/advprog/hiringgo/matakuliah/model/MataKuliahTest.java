@@ -1,8 +1,10 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,20 +24,23 @@ class MataKuliahTest {
 
         assertTrue(mk.getDosenPengampu().isEmpty());
 
-        MataKuliah returned = mk.addDosenPengampu("Dosen A");
+        Dosen dosenA = new Dosen("dosen1@univ.ac.id", "pass", "Dosen A", "12345");
+        MataKuliah returned = mk.addDosenPengampu(dosenA);
         assertSame(mk, returned);
 
         assertEquals(1, mk.getDosenPengampu().size());
-        assertEquals(List.of("Dosen A"), mk.getDosenPengampu());
+        assertTrue(mk.getDosenPengampu().contains(dosenA));
     }
 
     @Test
     void testCantModifyDosenPengampuOutsideOfClass() {
         MataKuliah mk = new MataKuliah("CS123", "Nama", "Desc");
-        mk.addDosenPengampu("D1");
+        Dosen dosenA = new Dosen("dosen1@univ.ac.id", "pass", "Dosen A", "12345");
+        mk.addDosenPengampu(dosenA);
 
-        List<String> list = mk.getDosenPengampu();
-        assertThrows(UnsupportedOperationException.class, () -> list.add("D2"));
+        Set<Dosen> dosenPengampu = mk.getDosenPengampu();
+        Dosen dosenB = new Dosen("dosen3@ITB.ac.id", "pass", "Dosen B", "12543");
+        assertThrows(UnsupportedOperationException.class, () -> dosenPengampu.add(dosenB));
     }
 
     @Test
@@ -74,9 +79,6 @@ class MataKuliahTest {
         MataKuliah mk = new MataKuliah("CS123", "Nama", "Desc");
 
         IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () -> mk.addDosenPengampu(null));
-        assertEquals("Nama dosen tidak boleh kosong", ex1.getMessage());
-
-        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class,() -> mk.addDosenPengampu("   "));
-        assertEquals("Nama dosen tidak boleh kosong", ex2.getMessage());
+        assertEquals("Dosen tidak boleh null", ex1.getMessage());
     }
 }
