@@ -62,4 +62,19 @@ public class LowonganController {
         return lowonganList;
     }
 
+    @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
+    public void terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+        lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+    }
+
+    @DeleteMapping("/tolak/{pendaftaranId}")
+    public void tolakPendaftar(@PathVariable UUID pendaftaranId) {
+        lowonganService.tolakPendaftar(pendaftaranId);
+    }
+
+    @PutMapping("/{id}")
+    public Lowongan updateLowongan(@PathVariable UUID id, @RequestBody Lowongan updatedLowongan) {
+        return lowonganService.updateLowongan(id, updatedLowongan);
+    }
+
 }
