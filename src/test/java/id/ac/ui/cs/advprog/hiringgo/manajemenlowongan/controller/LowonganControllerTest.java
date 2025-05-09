@@ -134,4 +134,74 @@ class LowonganControllerTest {
 
         verify(lowonganService).deleteLowonganById(eq(id));
     }
+
+    @Test
+    @WithMockUser
+    void shouldReturnFilteredLowonganBySemester() throws Exception {
+        Lowongan lowongan1 = new Lowongan();
+        lowongan1.setIdMataKuliah("CS123");
+        lowongan1.setSemester("GANJIL");
+        lowongan1.setStatusLowongan("DIBUKA");
+
+        Lowongan lowongan2 = new Lowongan();
+        lowongan2.setIdMataKuliah("CS456");
+        lowongan2.setSemester("GENAP");
+        lowongan2.setStatusLowongan("DIBUKA");
+
+        when(lowonganService.findAll()).thenReturn(List.of(lowongan1, lowongan2));
+
+        mockMvc.perform(get("/api/lowongan/filter")
+                        .param("semester", "GANJIL"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].idMataKuliah").value("CS123"));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturnFilteredLowonganByStatus() throws Exception {
+        Lowongan lowongan1 = new Lowongan();
+        lowongan1.setIdMataKuliah("CS123");
+        lowongan1.setSemester("GANJIL");
+        lowongan1.setStatusLowongan("DIBUKA");
+
+        Lowongan lowongan2 = new Lowongan();
+        lowongan2.setIdMataKuliah("CS456");
+        lowongan2.setSemester("GANJIL");
+        lowongan2.setStatusLowongan("DITUTUP");
+
+        when(lowonganService.findAll()).thenReturn(List.of(lowongan1, lowongan2));
+
+        mockMvc.perform(get("/api/lowongan/filter")
+                        .param("status", "DITUTUP"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].statusLowongan").value("DITUTUP"));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturnFilteredLowonganBySemesterAndStatus() throws Exception {
+        Lowongan lowongan1 = new Lowongan();
+        lowongan1.setIdMataKuliah("CS123");
+        lowongan1.setSemester("GANJIL");
+        lowongan1.setStatusLowongan("DIBUKA");
+
+        Lowongan lowongan2 = new Lowongan();
+        lowongan2.setIdMataKuliah("CS456");
+        lowongan2.setSemester("GANJIL");
+        lowongan2.setStatusLowongan("DITUTUP");
+
+        when(lowonganService.findAll()).thenReturn(List.of(lowongan1, lowongan2));
+
+        mockMvc.perform(get("/api/lowongan/filter")
+                        .param("semester", "GANJIL")
+                        .param("status", "DIBUKA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].idMataKuliah").value("CS123"))
+                .andExpect(jsonPath("$[0].semester").value("GANJIL"))
+                .andExpect(jsonPath("$[0].statusLowongan").value("DIBUKA"));
+    }
+
 }
