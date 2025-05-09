@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/lowongan")
+@RequestMapping("/api/lowongandaftar")
 public class PendaftaranRestController {
 
     private final LowonganService lowonganService;
