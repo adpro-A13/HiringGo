@@ -33,4 +33,5 @@ public class LowonganResponse {
         this.jumlahAsdosPendaftar  = lowongan.getJumlahAsdosPendaftar();
         this.idAsdosDiterima      = lowongan.getIdAsdosDiterima();
     }
+
 }
