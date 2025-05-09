@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemen_akun.controller;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.service.AccountManagementService;
 import org.springframework.http.HttpStatus;
@@ -53,6 +54,16 @@ public class AccountManagementController {
     public ResponseEntity<?> createAdminAccount(@RequestBody AdminDto adminDto) {
         try {
             UserResponseDto createdUser = accountManagementService.createAdminAccount(adminDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/mahasiswa")
+    public ResponseEntity<?> createMahasiswaAccount(@RequestBody MahasiswaDto mahasiswaDto) {
+        try {
+            UserResponseDto createdUser = accountManagementService.createMahasiswaAccount(mahasiswaDto);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
