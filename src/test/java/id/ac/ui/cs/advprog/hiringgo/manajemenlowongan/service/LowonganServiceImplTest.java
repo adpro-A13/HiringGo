@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganServiceImpl;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -109,6 +110,72 @@ class LowonganServiceImplTest {
                 newLowongan.getSemester(),
                 newLowongan.getTahunAjaran());
         verify(lowonganRepository, times(0)).save(any(Lowongan.class)); // Ensure save was not called
+    }
+
+    @Test
+    void testUpdateLowonganSuccess() {
+        UUID id = UUID.randomUUID();
+
+        Lowongan existingLowongan = new Lowongan();
+        existingLowongan.setLowonganId(id);
+        existingLowongan.setIdMataKuliah("CS101");
+        existingLowongan.setTahunAjaran("2024/2025");
+        existingLowongan.setSemester(String.valueOf(Semester.GANJIL));
+        existingLowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
+        existingLowongan.setJumlahAsdosDibutuhkan(5);
+        existingLowongan.setJumlahAsdosDiterima(2);
+        existingLowongan.setJumlahAsdosPendaftar(10);
+        existingLowongan.setIdAsdosDiterima(List.of("asdos1", "asdos2"));
+
+        Lowongan updatedLowongan = new Lowongan();
+        updatedLowongan.setIdMataKuliah("CS102");
+        updatedLowongan.setTahunAjaran("2025/2026");
+        updatedLowongan.setSemester(String.valueOf(Semester.GENAP));
+        updatedLowongan.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
+        updatedLowongan.setJumlahAsdosDibutuhkan(8);
+        updatedLowongan.setJumlahAsdosDiterima(4);
+        updatedLowongan.setJumlahAsdosPendaftar(15);
+        updatedLowongan.setIdAsdosDiterima(List.of("asdos3", "asdos4"));
+
+        when(lowonganRepository.findById(id)).thenReturn(Optional.of(existingLowongan));
+        when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Lowongan result = lowonganService.updateLowongan(id, updatedLowongan);
+
+        assertEquals("CS102", result.getIdMataKuliah());
+        assertEquals("2025/2026", result.getTahunAjaran());
+        assertEquals(Semester.GENAP, result.getSemester());
+        assertEquals(StatusLowongan.DITUTUP, result.getStatusLowongan());
+        assertEquals(8, result.getJumlahAsdosDibutuhkan());
+        assertEquals(4, result.getJumlahAsdosDiterima());
+        assertEquals(15, result.getJumlahAsdosPendaftar());
+        assertEquals(List.of("asdos3", "asdos4"), result.getIdAsdosDiterima());
+
+        verify(lowonganRepository).findById(id);
+        verify(lowonganRepository).save(existingLowongan);
+    }
+
+    @Test
+    void testUpdateLowonganFail() {
+        UUID id = UUID.randomUUID();
+        Lowongan updatedLowongan = new Lowongan();
+        updatedLowongan.setIdMataKuliah("CS102");
+        updatedLowongan.setTahunAjaran("2025/2026");
+        updatedLowongan.setSemester(String.valueOf(Semester.GENAP));
+        updatedLowongan.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
+        updatedLowongan.setJumlahAsdosDibutuhkan(8);
+        updatedLowongan.setJumlahAsdosDiterima(4);
+        updatedLowongan.setJumlahAsdosPendaftar(15);
+        updatedLowongan.setIdAsdosDiterima(List.of("asdos3", "asdos4"));
+
+        when(lowonganRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            lowonganService.updateLowongan(id, updatedLowongan);
+        });
+
+        verify(lowonganRepository).findById(id);
+        verify(lowonganRepository, never()).save(any());
     }
 
     @Test
