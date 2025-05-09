@@ -129,7 +129,7 @@ class LogControllerTest {
 
         when(logService.updateStatus(1L, LogStatus.DITERIMA)).thenReturn(updatedLog);
 
-        mockMvc.perform(put("/logs/{id}/status", 1L)
+        mockMvc.perform(patch("/logs/{id}/status", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"DITERIMA\""))
                 .andExpect(status().isOk())

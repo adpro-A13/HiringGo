@@ -65,7 +65,7 @@ public class LogController {
         return ResponseEntity.ok(logs);
     }
 
-    @PutMapping("/{id}/status")
+    @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateLogStatus(@PathVariable Long id, @RequestBody LogStatus status) {
         try {
             LogCommand cmd = new UpdateStatusCommand(logService, id, status);
