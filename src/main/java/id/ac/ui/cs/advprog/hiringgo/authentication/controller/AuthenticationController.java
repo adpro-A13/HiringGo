@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.LoginUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
@@ -7,11 +9,15 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.response.LoginResponse;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.AuthenticationService;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RequestMapping("/auth")
 @RestController
@@ -47,7 +53,7 @@ public class AuthenticationController {
         }
         try {
             User registeredUser = authenticationService.signup(registerUserDto);
-            return ResponseEntity.ok(registeredUser);
+            return ResponseEntity.ok(sanitizeUser(registeredUser));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
@@ -87,9 +93,32 @@ public class AuthenticationController {
         String token = authorizationHeader.substring(7);
         User user = authenticationService.verifyToken(token);
         if (user != null) {
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(sanitizeUser(user));
         } else {
             return ResponseEntity.status(401).body("Invalid token");
         }
+    }
+    
+    private Map<String, Object> sanitizeUser(User user) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("email", user.getUsername());
+        
+        userMap.put("role", user.getAuthorities().stream()
+            .findFirst()
+            .map(GrantedAuthority::getAuthority)
+            .orElse("UNKNOWN"));
+        
+        if (user instanceof Mahasiswa) {
+            Mahasiswa mahasiswa = (Mahasiswa) user;
+            userMap.put("fullName", mahasiswa.getFullName());
+            userMap.put("nim", mahasiswa.getNim());
+        } else if (user instanceof Dosen) {
+            Dosen dosen = (Dosen) user;
+            userMap.put("fullName", dosen.getFullName());
+            userMap.put("nip", dosen.getNip());
+        }
+
+        return userMap;
     }
 }
