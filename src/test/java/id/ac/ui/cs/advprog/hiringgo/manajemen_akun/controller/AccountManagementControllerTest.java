@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.service.AccountManagementService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ class AccountManagementControllerTest {
     private List<UserResponseDto> testUsersList;
     private DosenDto testDosenDto;
     private AdminDto testAdminDto;
+    private MahasiswaDto testMahasiswaDto;
     private ChangeRoleDto testChangeRoleDto;
     private final String TEST_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -63,6 +65,12 @@ class AccountManagementControllerTest {
         testAdminDto = new AdminDto();
         testAdminDto.setEmail("new.admin@example.com");
         testAdminDto.setPassword("password");
+
+        testMahasiswaDto = new MahasiswaDto();
+        testMahasiswaDto.setEmail("mahasiswa@example.com");
+        testMahasiswaDto.setPassword("password");
+        testMahasiswaDto.setFullName("New Mahasiswa");
+        testMahasiswaDto.setNim("13518000");
 
         testChangeRoleDto = new ChangeRoleDto();
         testChangeRoleDto.setNewRole("ADMIN");
@@ -154,6 +162,30 @@ class AccountManagementControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(errorMessage, response.getBody());
         verify(accountManagementService).createAdminAccount(testAdminDto);
+    }
+
+    @Test
+    void createMahasiswaAccount_withValidData_shouldReturnCreatedUser() {
+        when(accountManagementService.createMahasiswaAccount(any(MahasiswaDto.class))).thenReturn(testUserResponse);
+
+        ResponseEntity<?> response = accountManagementController.createMahasiswaAccount(testMahasiswaDto);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(testUserResponse, response.getBody());
+        verify(accountManagementService).createMahasiswaAccount(testMahasiswaDto);
+    }
+
+    @Test
+    void createMahasiswaAccount_withInvalidData_shouldReturnBadRequest() {
+        String errorMessage = "Email already exists";
+        when(accountManagementService.createMahasiswaAccount(any(MahasiswaDto.class)))
+                .thenThrow(new IllegalArgumentException(errorMessage));
+
+        ResponseEntity<?> response = accountManagementController.createMahasiswaAccount(testMahasiswaDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(errorMessage, response.getBody());
+        verify(accountManagementService).createMahasiswaAccount(testMahasiswaDto);
     }
 
     @Test
