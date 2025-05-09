@@ -10,17 +10,13 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,85 +24,158 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
-class PendaftaranRestControllerTest {
+@WebMvcTest(PendaftaranRestController.class)
+@AutoConfigureMockMvc(addFilters = false) // disable security filters
+public class PendaftaranRestControllerTest {
 
+    @Autowired
     private MockMvc mockMvc;
-    private ObjectMapper objectMapper = new ObjectMapper();
 
-    @Mock
-    private LowonganService lowonganService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @Mock
-    private PendaftaranService pendaftaranService;
+    @MockBean private LowonganService lowonganService;
+    @MockBean private PendaftaranService pendaftaranService;
+    @MockBean private JwtService jwtService;
 
-    @Mock
-    private JwtService jwtService;
-
-    @InjectMocks
-    private PendaftaranRestController controller;
+    private UUID lowonganId;
+    private Lowongan lowongan;
+    private Pendaftaran pendaftaran;
+    private DaftarForm daftarForm;
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setMessageConverters(new MappingJackson2HttpMessageConverter())
-                .alwaysDo(MockMvcResultHandlers.print())
-                .build();
-    }
+        lowonganId = UUID.randomUUID();
 
-    @Test
-    @DisplayName("GET /lowongan/{id} - Success")
-    void testGetLowonganDetailSuccess() throws Exception {
-        UUID id = UUID.randomUUID();
-        Lowongan lowongan = createTestLowongan(id);
-
-        when(lowonganService.findById(eq(id))).thenReturn(lowongan);
-
-        mockMvc.perform(get("/lowongan/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lowonganId", is(id.toString())));
-    }
-
-    @Test
-    @DisplayName("GET /lowongan/{id} - Not Found")
-    void testGetLowonganDetailNotFound() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(lowonganService.findById(eq(id))).thenThrow(new NoSuchElementException());
-
-        mockMvc.perform(get("/lowongan/{id}", id))
-                .andExpect(status().isNotFound());
-    }
-
-    // Helper method to create a fully populated test entity
-    private Lowongan createTestLowongan(UUID id) {
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(id);
-        lowongan.setIdMataKuliah("Test Course");
-        lowongan.setSemester(Semester.GANJIL.getValue());
+        lowongan = new Lowongan();
+        lowongan.setLowonganId(lowonganId);
+        lowongan.setIdMataKuliah("CSUI-ADVPROG");
         lowongan.setTahunAjaran("2024/2025");
+        lowongan.setSemester(Semester.GANJIL.getValue());
         lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
         lowongan.setJumlahAsdosDibutuhkan(3);
         lowongan.setJumlahAsdosDiterima(0);
         lowongan.setJumlahAsdosPendaftar(0);
         lowongan.setIdAsdosDiterima(new ArrayList<>());
-        return lowongan;
-    }
+        try {
+            lowongan.getClass().getMethod("setJudul", String.class)
+                    .invoke(lowongan, "Asisten Dosen Advanced Programming");
+            lowongan.getClass().getMethod("setDeskripsi", String.class)
+                    .invoke(lowongan, "Membantu mengajar Pemrograman Lanjut");
+            lowongan.getClass().getMethod("setPersyaratan", String.class)
+                    .invoke(lowongan, "IPK minimal 3.0");
+        } catch (Exception ignored) {}
 
-    private Pendaftaran createTestPendaftaran(UUID id, Lowongan lowongan) {
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(id);
+        pendaftaran = new Pendaftaran();
+        pendaftaran.setPendaftaranId(UUID.randomUUID());
         pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidatId("user123");
-        pendaftaran.setIpk(BigDecimal.valueOf(3.5));
+        pendaftaran.setKandidatId("testUser");
+        pendaftaran.setIpk(BigDecimal.valueOf(3.75));
         pendaftaran.setSks(20);
         pendaftaran.setWaktuDaftar(LocalDateTime.now());
-        return pendaftaran;
+
+        daftarForm = new DaftarForm();
+        daftarForm.setIpk(3.75);
+        daftarForm.setSks(20);
+    }
+
+    @Test
+    void testGetLowonganDetail() throws Exception {
+        when(lowonganService.findById(lowonganId)).thenReturn(lowongan);
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}", lowonganId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lowonganId").value(lowonganId.toString()))
+                .andExpect(jsonPath("$.idMataKuliah").value("CSUI-ADVPROG"))
+                .andExpect(jsonPath("$.statusLowongan").value("DIBUKA"));
+    }
+
+    @Test
+    void testGetLowonganDetailNotFound() throws Exception {
+        when(lowonganService.findById(lowonganId)).thenThrow(new NoSuchElementException());
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}", lowonganId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDaftarNoAuthentication() throws Exception {
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(daftarForm)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testDaftarSuccess() throws Exception {
+        when(pendaftaranService.daftar(
+                eq(lowonganId),
+                eq("testUser"),
+                eq(BigDecimal.valueOf(3.75)),
+                eq(20)
+        )).thenReturn(pendaftaran);
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                        .with(csrf())
+                        .with(user("testUser"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(daftarForm)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void testDaftarLowonganNotFound() throws Exception {
+        when(pendaftaranService.daftar(
+                eq(lowonganId),
+                eq("testUser"),
+                eq(BigDecimal.valueOf(3.75)),
+                eq(20)
+        )).thenThrow(new NoSuchElementException("Lowongan tidak ditemukan"));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                        .with(csrf())
+                        .with(user("testUser"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(daftarForm)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDaftarQuotaFull() throws Exception {
+        when(pendaftaranService.daftar(
+                eq(lowonganId),
+                eq("testUser"),
+                eq(BigDecimal.valueOf(3.75)),
+                eq(20)
+        )).thenThrow(new IllegalStateException("Kuota lowongan sudah penuh!"));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                        .with(csrf())
+                        .with(user("testUser"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(daftarForm)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Kuota lowongan sudah penuh!"));
+    }
+
+    @Test
+    void testDaftarWithInvalidData() throws Exception {
+        DaftarForm invalid = new DaftarForm();
+        invalid.setIpk(5.0);
+        invalid.setSks(20);
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                        .with(csrf())
+                        .with(user("testUser"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isOk());
     }
 }
