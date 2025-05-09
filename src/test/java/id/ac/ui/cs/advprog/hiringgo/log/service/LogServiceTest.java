@@ -68,4 +68,71 @@ public class LogServiceTest {
 
         assertEquals(LogStatus.DITERIMA, updated.getStatus());
     }
+
+    @Test
+    void testGetLogById() {
+        Log log = new Log.Builder()
+                .judul("Review")
+                .build();
+
+        when(logRepository.findById(1L)).thenReturn(Optional.of(log));
+
+        Optional<Log> found = logService.getLogById(1L);
+
+        assertTrue(found.isPresent());
+        assertEquals("Review", found.get().getJudul());
+    }
+
+    @Test
+    void testGetLogByIdNotFound() {
+        when(logRepository.findById(99L)).thenReturn(Optional.empty());
+
+        Optional<Log> found = logService.getLogById(99L);
+
+        assertFalse(found.isPresent());
+    }
+
+    @Test
+    void testGetAllLogs() {
+        Log log1 = new Log.Builder().judul("Asistensi").build();
+        Log log2 = new Log.Builder().judul("Sidang").build();
+
+        when(logRepository.findAll()).thenReturn(List.of(log1, log2));
+
+        List<Log> logs = logService.getAllLogs();
+
+        assertEquals(2, logs.size());
+        verify(logRepository).findAll();
+    }
+
+    @Test
+    void testUpdateLog() {
+        Log existing = new Log.Builder()
+                .judul("Asistensi")
+                .waktuMulai(LocalTime.of(8, 0))
+                .waktuSelesai(LocalTime.of(9, 0))
+                .build();
+
+        Log updated = new Log.Builder()
+                .judul("Sidang")
+                .waktuMulai(LocalTime.of(10, 0))
+                .waktuSelesai(LocalTime.of(11, 0))
+                .build();
+
+        when(logRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(logRepository.save(any())).thenReturn(updated);
+
+        Log result = logService.updateLog(1L, updated);
+
+        assertEquals("Sidang", result.getJudul());
+        assertEquals(LocalTime.of(10, 0), result.getWaktuMulai());
+    }
+
+    @Test
+    void testDeleteLog() {
+        doNothing().when(logRepository).deleteById(1L);
+
+        assertDoesNotThrow(() -> logService.deleteLog(1L));
+        verify(logRepository).deleteById(1L);
+    }
 }
