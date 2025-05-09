@@ -1,6 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.controller;
 
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.Admin;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
@@ -119,8 +118,6 @@ public class AuthenticationController {
             Dosen dosen = (Dosen) user;
             userMap.put("fullName", dosen.getFullName());
             userMap.put("nip", dosen.getNip());
-        } else if (user instanceof Admin) {
-            userMap.put("type", "admin");
         }
 
         return userMap;
