@@ -1,5 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.log.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.log.command.LogCommand;
+import id.ac.ui.cs.advprog.hiringgo.log.command.LogCommandInvoker;
+import id.ac.ui.cs.advprog.hiringgo.log.command.UpdateStatusCommand;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
@@ -65,7 +68,10 @@ public class LogController {
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateLogStatus(@PathVariable Long id, @RequestBody LogStatus status) {
         try {
-            Log updatedLog = logService.updateStatus(id, status);
+            LogCommand cmd = new UpdateStatusCommand(logService, id, status);
+            LogCommandInvoker cmdInvoker= new LogCommandInvoker();
+            cmdInvoker.setCommand(cmd);
+            Log updatedLog = cmdInvoker.run();
             return ResponseEntity.ok(updatedLog);
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(e.getMessage());
