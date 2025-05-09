@@ -3,7 +3,9 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.LowonganFilterStrategy;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,7 +20,7 @@ public class LowonganServiceImpl implements LowonganService {
 
     @Autowired
     private LowonganRepository lowonganRepository;
-
+    private PendaftaranRepository pendaftaranRepository;
     private final LowonganFilterService filterService = new LowonganFilterService();
 
     @Override
@@ -80,5 +82,32 @@ public class LowonganServiceImpl implements LowonganService {
             throw new RuntimeException("Lowongan tidak ditemukan");
         }
         lowonganRepository.deleteById(lowonganId);
+    }
+
+    @Override
+    public void terimaPendaftar(UUID lowonganId, UUID pendaftaranId) {
+        Pendaftaran pendaftaran = pendaftaranRepository.findById(pendaftaranId)
+                .orElseThrow(() -> new IllegalArgumentException("Pendaftaran tidak ditemukan"));
+
+        Lowongan lowongan = lowonganRepository.findById(lowonganId)
+                .orElseThrow(() -> new IllegalArgumentException("Lowongan tidak ditemukan"));
+
+        String kandidatId = pendaftaran.getKandidatId();
+
+        if (!lowongan.getIdAsdosDiterima().contains(kandidatId)) {
+            lowongan.getIdAsdosDiterima().add(kandidatId);
+            lowongan.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima() + 1);
+            lowonganRepository.save(lowongan);
+        }
+
+        pendaftaranRepository.deleteById(pendaftaranId);
+    }
+
+    @Override
+    public void tolakPendaftar(UUID pendaftaranId) {
+        if (!pendaftaranRepository.existsById(pendaftaranId)) {
+            throw new IllegalArgumentException("Pendaftaran tidak ditemukan");
+        }
+        pendaftaranRepository.deleteById(pendaftaranId);
     }
 }
