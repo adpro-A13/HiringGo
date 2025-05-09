@@ -1,4 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
@@ -176,4 +177,26 @@ class PendaftaranRestControllerTest {
                 )
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void testDaftarGeneralException() throws Exception {
+        when(pendaftaranService.daftar(
+                eq(lowonganId),
+                eq("testUser"),
+                eq(BigDecimal.valueOf(3.75)),
+                eq(20)
+        )).thenThrow(new RuntimeException("Unexpected server error"));
+
+        mockMvc.perform(
+                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(daftarForm))
+                )
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Terjadi kesalahan: Unexpected server error"));
+    }
+
+
+
 }
