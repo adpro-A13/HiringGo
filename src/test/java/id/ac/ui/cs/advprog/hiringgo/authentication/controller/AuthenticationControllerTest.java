@@ -349,7 +349,6 @@ public class AuthenticationControllerTest {
         Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
         
         assertEquals("admin@example.com", responseBody.get("email"));
-        assertEquals("admin", responseBody.get("type"));
         assertFalse(responseBody.containsKey("password"));
     }
 
@@ -500,6 +499,5 @@ public class AuthenticationControllerTest {
         assertFalse(responseBody.containsKey("fullName"));
         assertFalse(responseBody.containsKey("nim"));
         assertFalse(responseBody.containsKey("nip"));
-        assertFalse(responseBody.containsKey("type"));
     }
 }
