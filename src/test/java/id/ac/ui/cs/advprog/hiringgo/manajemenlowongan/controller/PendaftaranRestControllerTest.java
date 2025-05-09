@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 import org.springframework.security.test.context.support.WithAnonymousUser;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
@@ -196,7 +198,17 @@ class PendaftaranRestControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Terjadi kesalahan: Unexpected server error"));
     }
+    @Test
+    void testDaftarWithNullPrincipal() throws Exception {
+        PendaftaranRestController controller = new PendaftaranRestController(
+                lowonganService, pendaftaranService, jwtService);
 
+        ResponseEntity<?> response = controller.daftar(
+                lowonganId, daftarForm, null);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Anda harus login terlebih dahulu", response.getBody());
+    }
 
 
 }
