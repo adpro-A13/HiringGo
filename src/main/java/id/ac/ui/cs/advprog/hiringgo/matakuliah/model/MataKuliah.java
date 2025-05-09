@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,11 +23,13 @@ public class MataKuliah {
     @Setter
     private String deskripsi;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "mata_kuliah_dosen_pengampu",
-            joinColumns = @JoinColumn(name = "matkul_kode"))
-    @Column(name = "dosen_pengampu")
-    private List<String> dosenPengampu = new ArrayList<>();
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "mata_kuliah_dosen",
+            joinColumns = @JoinColumn(name = "matkul_kode"),
+            inverseJoinColumns = @JoinColumn(name = "dosen_id")
+    )
+    private Set<Dosen> dosenPengampu = new HashSet<>();
 
     public MataKuliah(String kode, String nama, String deskripsi) {
         if (kode == null || kode.isBlank())
@@ -39,14 +42,14 @@ public class MataKuliah {
         this.deskripsi = deskripsi;
     }
 
-    public MataKuliah addDosenPengampu(String dosen) {
-        if (dosen == null || dosen.isBlank())
-            throw new IllegalArgumentException("Nama dosen tidak boleh kosong");
+    public MataKuliah addDosenPengampu(Dosen dosen) {
+        if (dosen == null || dosen.getNip().isBlank())
+            throw new IllegalArgumentException("Dosen tidak boleh null");
         this.dosenPengampu.add(dosen);
         return this;
     }
 
-    public List<String> getDosenPengampu() {
-        return Collections.unmodifiableList(dosenPengampu);
+    public Set<Dosen> getDosenPengampu() {
+        return Collections.unmodifiableSet(dosenPengampu);
     }
 }

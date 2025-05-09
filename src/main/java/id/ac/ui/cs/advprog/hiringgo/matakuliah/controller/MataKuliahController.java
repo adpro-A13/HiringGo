@@ -7,6 +7,7 @@ import id.ac.ui.cs.advprog.hiringgo.matakuliah.service.MataKuliahService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,12 +26,14 @@ public class MataKuliahController {
     }
 
     @GetMapping("/getAll")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<MataKuliahDTO>> getAllMataKuliah() {
         List<MataKuliah> mataKuliahList = mataKuliahService.findAll();
         return ResponseEntity.ok(mataKuliahMapper.toDtoList(mataKuliahList));
     }
 
     @GetMapping("/{kode}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MataKuliahDTO> getMataKuliahByKode(@PathVariable String kode) {
         MataKuliah mataKuliah = mataKuliahService.findByKode(kode);
         if (mataKuliah == null) {
@@ -40,6 +43,7 @@ public class MataKuliahController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<MataKuliahDTO> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
         try {
             MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
@@ -51,6 +55,7 @@ public class MataKuliahController {
     }
 
     @PutMapping("update/{kode}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<MataKuliahDTO> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
         if (!kode.equals(mataKuliahDTO.getKode())) {
             return ResponseEntity.badRequest().build();
@@ -66,6 +71,7 @@ public class MataKuliahController {
     }
 
     @DeleteMapping("/{kode}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteMataKuliah(@PathVariable String kode) {
         mataKuliahService.deleteByKode(kode);
         return ResponseEntity.noContent().build();
