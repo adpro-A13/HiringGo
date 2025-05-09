@@ -24,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/lowongandaftar")
+@PreAuthorize("hasRole('MAHASISWA')")
 public class PendaftaranRestController {
 
     private final LowonganService lowonganService;
