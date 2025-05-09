@@ -10,6 +10,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -104,6 +105,33 @@ public class AccountManagementService {
         Admin admin = new Admin(adminDto.getEmail(), passwordEncoder.encode(adminDto.getPassword()));
         User savedAdmin = userRepository.save(admin);
         return mapUserToDto(savedAdmin);
+    }
+
+    public UserResponseDto createMahasiswaAccount(MahasiswaDto mahasiswaDto) {
+        if (mahasiswaDto.getEmail() == null || mahasiswaDto.getEmail().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (mahasiswaDto.getPassword() == null || mahasiswaDto.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (mahasiswaDto.getFullName() == null || mahasiswaDto.getFullName().isEmpty()) {
+            throw new IllegalArgumentException("Full name is required");
+        }
+        if (mahasiswaDto.getNim() == null || mahasiswaDto.getNim().isEmpty()) {
+            throw new IllegalArgumentException("NIM is required");
+        }
+        if (userRepository.findByEmail(mahasiswaDto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+        User mahasiswa = UserFactory.createUser(
+            UserRoleEnums.MAHASISWA,
+            mahasiswaDto.getEmail(),
+            passwordEncoder.encode(mahasiswaDto.getPassword()),
+            mahasiswaDto.getFullName(),
+            mahasiswaDto.getNim()
+        );
+        User savedMahasiswa = userRepository.save(mahasiswa);
+        return mapUserToDto(savedMahasiswa);
     }
 
     public UserResponseDto changeUserRole(String id, ChangeRoleDto changeRoleDto) {
