@@ -110,4 +110,25 @@ public class LowonganServiceImpl implements LowonganService {
         }
         pendaftaranRepository.deleteById(pendaftaranId);
     }
+
+    @Override
+    public Lowongan updateLowongan(UUID id, Lowongan updatedLowongan) {
+        Optional<Lowongan> existingOpt = lowonganRepository.findById(id);
+
+        if (existingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Lowongan dengan ID " + id + " tidak ditemukan.");
+        }
+
+        Lowongan existing = existingOpt.get();
+        existing.setIdMataKuliah(updatedLowongan.getIdMataKuliah());
+        existing.setTahunAjaran(updatedLowongan.getTahunAjaran());
+        existing.setSemester(String.valueOf(updatedLowongan.getSemester()));
+        existing.setStatusLowongan(String.valueOf(updatedLowongan.getStatusLowongan()));
+        existing.setJumlahAsdosDibutuhkan(updatedLowongan.getJumlahAsdosDibutuhkan());
+        existing.setJumlahAsdosDiterima(updatedLowongan.getJumlahAsdosDiterima());
+        existing.setJumlahAsdosPendaftar(updatedLowongan.getJumlahAsdosPendaftar());
+        existing.setIdAsdosDiterima(updatedLowongan.getIdAsdosDiterima());
+
+        return lowonganRepository.save(existing);
+    }
 }

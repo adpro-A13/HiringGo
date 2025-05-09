@@ -11,8 +11,8 @@ public interface LowonganService {
     List<Lowongan> findAll();
     List<Lowongan> filterLowongan(LowonganFilterStrategy strategy);
     Lowongan createLowongan(Lowongan lowongan);
+    Lowongan updateLowongan(UUID id, Lowongan updatedLowongan);
     void deleteLowonganById(UUID id);
-    // The method that doesn't exist yet
     void registerLowongan(UUID lowonganId, String candidateId);
     void terimaPendaftar(UUID lowonganId, UUID pendaftaranId);
     void tolakPendaftar(UUID pendaftaranId);
