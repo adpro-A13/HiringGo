@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
@@ -7,10 +8,14 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/lowongan")
@@ -20,32 +25,7 @@ public class LowonganController {
     private LowonganService lowonganService;
 
     @GetMapping
-    public List<Lowongan> getAllLowongan() {
-        return lowonganService.findAll();
-    }
-
-    @PostMapping
-    public Lowongan createLowongan(@RequestBody Lowongan lowongan) {
-        return lowonganService.createLowongan(lowongan);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteLowongan(@PathVariable UUID id) {
-        lowonganService.deleteLowonganById(id);
-    }
-
-    @GetMapping("/semester")
-    public Semester[] getSemesterList() {
-        return Semester.values();
-    }
-
-    @GetMapping("/status")
-    public StatusLowongan[] getStatusList() {
-        return StatusLowongan.values();
-    }
-
-    @GetMapping("/filter")
-    public List<Lowongan> filterLowongan(
+    public ResponseEntity<List<LowonganDetailResponse>> getAllLowongan(
             @RequestParam(required = false) Semester semester,
             @RequestParam(required = false) StatusLowongan status) {
 
@@ -59,19 +39,74 @@ public class LowonganController {
             lowonganList = new FilterByStatus(status).filter(lowonganList);
         }
 
-        return lowonganList;
+        List<LowonganDetailResponse> responses = lowonganList.stream()
+                .map(LowonganDetailResponse::new)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
     }
 
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {
+        try {
+            Lowongan lowongan = lowonganService.findById(id);
+            LowonganDetailResponse response = new LowonganDetailResponse(lowongan);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lowongan dengan ID " + id + " tidak ditemukan");
+        }
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('DOSEN')")
+    public ResponseEntity<?> createLowongan(@RequestBody Lowongan lowongan) {
+        try {
+            Lowongan created = lowonganService.createLowongan(lowongan);
+            LowonganDetailResponse response = new LowonganDetailResponse(created);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Gagal membuat lowongan: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('DOSEN')")
+    public ResponseEntity<?> deleteLowongan(@PathVariable UUID id) {
+        try {
+            lowonganService.deleteLowonganById(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lowongan dengan ID " + id + " tidak ditemukan");
+        }
+    }
+
+    @GetMapping("/enums/semester")
+    public ResponseEntity<Semester[]> getAllSemesters() {
+        return ResponseEntity.ok(Semester.values());
+    }
+
+    @GetMapping("/enums/status")
+    public ResponseEntity<StatusLowongan[]> getAllStatuses() {
+        return ResponseEntity.ok(StatusLowongan.values());
+    }
+
+    @PreAuthorize("hasRole('DOSEN')")
     @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
     public void terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
     }
 
+    @PreAuthorize("hasRole('DOSEN')")
     @DeleteMapping("/tolak/{pendaftaranId}")
     public void tolakPendaftar(@PathVariable UUID pendaftaranId) {
         lowonganService.tolakPendaftar(pendaftaranId);
     }
 
+    @PreAuthorize("hasRole('DOSEN')")
     @PutMapping("/{id}")
     public Lowongan updateLowongan(@PathVariable UUID id, @RequestBody Lowongan updatedLowongan) {
         return lowonganService.updateLowongan(id, updatedLowongan);

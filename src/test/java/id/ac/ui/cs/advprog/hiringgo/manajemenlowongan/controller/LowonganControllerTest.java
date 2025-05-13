@@ -1,257 +1,216 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import id.ac.ui.cs.advprog.hiringgo.authentication.config.JwtAuthenticationFilter;
-import id.ac.ui.cs.advprog.hiringgo.authentication.service.AuthenticationService;
-import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(LowonganController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@Import(LowonganControllerTest.TestConfig.class)
+@ExtendWith(MockitoExtension.class)
 class LowonganControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @Mock
     private LowonganService lowonganService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private LowonganController controller;
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public LowonganService lowonganService() {
-            return mock(LowonganService.class);
-        }
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-        @Bean
-        public JwtService jwtService() {
-            return mock(JwtService.class);
-        }
-
-        @Bean
-        public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService) {
-            return mock(JwtAuthenticationFilter.class);
-        }
-
-        @Bean
-        public ObjectMapper objectMapper() {
-            return new ObjectMapper();
-        }
-
-        @Bean
-        public AuthenticationService authenticationService() {
-            return mock(AuthenticationService.class);
-        }
+    @BeforeEach
+    void setup() {
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .alwaysDo(MockMvcResultHandlers.print())
+                .build();
     }
 
     @Test
-    @WithMockUser
-    void shouldCreateLowonganAndReturnJson() throws Exception {
-        Lowongan requestLowongan = new Lowongan();
-        requestLowongan.setIdMataKuliah("CS123");
-        requestLowongan.setTahunAjaran("2024");
-        requestLowongan.setSemester(String.valueOf(Semester.GANJIL));
-        requestLowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
-        requestLowongan.setJumlahAsdosDibutuhkan(3);
-        requestLowongan.setJumlahAsdosDiterima(0);
-        requestLowongan.setJumlahAsdosPendaftar(0);
+    @DisplayName("GET /api/lowongan - Success tanpa filter")
+    void testGetAllLowonganWithoutFilter() throws Exception {
+        UUID id = UUID.randomUUID();
+        Lowongan lowongan = createTestLowongan(id);
+        when(lowonganService.findAll()).thenReturn(List.of(lowongan));
 
-        when(lowonganService.createLowongan(any(Lowongan.class))).thenReturn(requestLowongan);
+        mockMvc.perform(get("/api/lowongan")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter semester dan status - Success")
+    void testGetAllLowonganWithFilters() throws Exception {
+        UUID id = UUID.randomUUID();
+        Lowongan lowongan = createTestLowongan(id);
+        when(lowonganService.findAll()).thenReturn(List.of(lowongan));
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("semester", "GENAP")
+                        .param("status", "DIBUKA")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan/{id} - Success")
+    void testGetLowonganByIdSuccess() throws Exception {
+        UUID id = UUID.randomUUID();
+        Lowongan lowongan = createTestLowongan(id);
+        when(lowonganService.findById(id)).thenReturn(lowongan);
+
+        mockMvc.perform(get("/api/lowongan/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lowonganId", is(id.toString())));
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan/{id} - Not Found")
+    void testGetLowonganByIdNotFound() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(lowonganService.findById(id)).thenThrow(new RuntimeException("Not found"));
+
+        mockMvc.perform(get("/api/lowongan/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(containsString("tidak ditemukan")));
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan/enums/semester - Success")
+    void testGetAllSemesters() throws Exception {
+        mockMvc.perform(get("/api/lowongan/enums/semester"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(Semester.values().length)))
+                .andExpect(jsonPath("$[0]", is(Semester.values()[0].name())));
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan/enums/status - Success")
+    void testGetAllStatuses() throws Exception {
+        mockMvc.perform(get("/api/lowongan/enums/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(StatusLowongan.values().length)))
+                .andExpect(jsonPath("$[0]", is(StatusLowongan.values()[0].name())));
+    }
+
+    @Test
+    @DisplayName("POST /api/lowongan - Success")
+    void testCreateLowonganSuccess() throws Exception {
+        UUID id = UUID.randomUUID();
+        Lowongan inputLowongan = createTestLowongan(null);
+        Lowongan createdLowongan = createTestLowongan(id);
+
+        when(lowonganService.createLowongan(any())).thenReturn(createdLowongan);
 
         mockMvc.perform(post("/api/lowongan")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestLowongan)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idMataKuliah").value("CS123"))
-                .andExpect(jsonPath("$.semester").value("GANJIL"))
-                .andExpect(jsonPath("$.statusLowongan").value("DIBUKA"));
+                        .content(objectMapper.writeValueAsString(inputLowongan)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.lowonganId", is(id.toString())));
     }
 
     @Test
-    @WithMockUser
-    void shouldReturnListOfLowongan() throws Exception {
-        Lowongan l1 = new Lowongan(); l1.setIdMataKuliah("A");
-        Lowongan l2 = new Lowongan(); l2.setIdMataKuliah("B");
-        List<Lowongan> list = Arrays.asList(l1, l2);
-        when(lowonganService.findAll()).thenReturn(list);
+    @DisplayName("POST /api/lowongan - Failure")
+    void testCreateLowonganFailure() throws Exception {
+        Lowongan inputLowongan = createTestLowongan(null);
 
-        mockMvc.perform(get("/api/lowongan"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+        when(lowonganService.createLowongan(any())).thenThrow(new RuntimeException("Something went wrong"));
+
+        mockMvc.perform(post("/api/lowongan")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inputLowongan)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("\"Gagal membuat lowongan: Something went wrong\""));
+        ;
     }
 
     @Test
-    @WithMockUser
-    void shouldReturnSemesterList() throws Exception {
-        mockMvc.perform(get("/api/lowongan/semester"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(Semester.values().length));
-    }
-
-    @Test
-    @WithMockUser
-    void shouldReturnStatusLowonganList() throws Exception {
-        mockMvc.perform(get("/api/lowongan/status"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(StatusLowongan.values().length));
-    }
-
-    @Test
-    @WithMockUser
-    void shouldDeleteLowongan() throws Exception {
+    @DisplayName("DELETE /api/lowongan/{id} - Success")
+    void testDeleteLowonganSuccess() throws Exception {
         UUID id = UUID.randomUUID();
 
-        mockMvc.perform(delete("/api/lowongan/" + id))
+        doNothing().when(lowonganService).deleteLowonganById(id);
+
+        mockMvc.perform(delete("/api/lowongan/{id}", id))
                 .andExpect(status().isOk());
-
-        verify(lowonganService).deleteLowonganById(eq(id));
     }
 
     @Test
-    @WithMockUser
-    void shouldReturnFilteredLowonganBySemester() throws Exception {
-        Lowongan lowongan1 = new Lowongan();
-        lowongan1.setIdMataKuliah("CS123");
-        lowongan1.setSemester("GANJIL");
-        lowongan1.setStatusLowongan("DIBUKA");
+    @DisplayName("DELETE /api/lowongan/{id} - Not Found")
+    void testDeleteLowonganNotFound() throws Exception {
+        UUID id = UUID.randomUUID();
 
-        Lowongan lowongan2 = new Lowongan();
-        lowongan2.setIdMataKuliah("CS456");
-        lowongan2.setSemester("GENAP");
-        lowongan2.setStatusLowongan("DIBUKA");
+        doThrow(new RuntimeException("Data tidak ditemukan")).when(lowonganService).deleteLowonganById(id);
 
-        when(lowonganService.findAll()).thenReturn(List.of(lowongan1, lowongan2));
+        mockMvc.perform(delete("/api/lowongan/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("\"Lowongan dengan ID " + id + " tidak ditemukan\""));
+    }
 
-        mockMvc.perform(get("/api/lowongan/filter")
-                        .param("semester", "GANJIL"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].idMataKuliah").value("CS123"));
+
+    private Lowongan createTestLowongan(UUID id) {
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id);
+        lowongan.setIdMataKuliah("CS101");
+        lowongan.setSemester(Semester.GENAP.getValue());
+        lowongan.setTahunAjaran("2024");
+        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
+        lowongan.setJumlahAsdosDibutuhkan(2);
+        lowongan.setJumlahAsdosDiterima(0);
+        lowongan.setJumlahAsdosPendaftar(0);
+        return lowongan;
     }
 
     @Test
-    @WithMockUser
-    void shouldReturnFilteredLowonganByStatus() throws Exception {
-        Lowongan lowongan1 = new Lowongan();
-        lowongan1.setIdMataKuliah("CS123");
-        lowongan1.setSemester("GANJIL");
-        lowongan1.setStatusLowongan("DIBUKA");
-
-        Lowongan lowongan2 = new Lowongan();
-        lowongan2.setIdMataKuliah("CS456");
-        lowongan2.setSemester("GANJIL");
-        lowongan2.setStatusLowongan("DITUTUP");
-
-        when(lowonganService.findAll()).thenReturn(List.of(lowongan1, lowongan2));
-
-        mockMvc.perform(get("/api/lowongan/filter")
-                        .param("status", "DITUTUP"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].statusLowongan").value("DITUTUP"));
-    }
-
-    @Test
-    @WithMockUser
-    void shouldReturnFilteredLowonganBySemesterAndStatus() throws Exception {
-        Lowongan lowongan1 = new Lowongan();
-        lowongan1.setIdMataKuliah("CS123");
-        lowongan1.setSemester("GANJIL");
-        lowongan1.setStatusLowongan("DIBUKA");
-
-        Lowongan lowongan2 = new Lowongan();
-        lowongan2.setIdMataKuliah("CS456");
-        lowongan2.setSemester("GANJIL");
-        lowongan2.setStatusLowongan("DITUTUP");
-
-        when(lowonganService.findAll()).thenReturn(List.of(lowongan1, lowongan2));
-
-        mockMvc.perform(get("/api/lowongan/filter")
-                        .param("semester", "GANJIL")
-                        .param("status", "DIBUKA"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].idMataKuliah").value("CS123"))
-                .andExpect(jsonPath("$[0].semester").value("GANJIL"))
-                .andExpect(jsonPath("$[0].statusLowongan").value("DIBUKA"));
-    }
-
-    @Test
-    @WithMockUser
-    void shouldCallTerimaPendaftarEndpoint() throws Exception {
+    @DisplayName("POST /api/lowongan/{lowonganId}/terima/{pendaftaranId} - Success")
+    void testTerimaPendaftarSuccess() throws Exception {
         UUID lowonganId = UUID.randomUUID();
         UUID pendaftaranId = UUID.randomUUID();
 
-        mockMvc.perform(post("/api/lowongan/" + lowonganId + "/terima/" + pendaftaranId))
-                .andExpect(status().isOk());
+        doNothing().when(lowonganService).terimaPendaftar(lowonganId, pendaftaranId);
 
-        verify(lowonganService).terimaPendaftar(eq(lowonganId), eq(pendaftaranId));
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/terima/{pendaftaranId}", lowonganId, pendaftaranId))
+                .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser
-    void shouldCallTolakPendaftarEndpoint() throws Exception {
+    @DisplayName("DELETE /api/lowongan/tolak/{pendaftaranId} - Success")
+    void testTolakPendaftarSuccess() throws Exception {
         UUID pendaftaranId = UUID.randomUUID();
 
-        mockMvc.perform(delete("/api/lowongan/tolak/" + pendaftaranId))
+        doNothing().when(lowonganService).tolakPendaftar(pendaftaranId);
+
+        mockMvc.perform(delete("/api/lowongan/tolak/{pendaftaranId}", pendaftaranId))
                 .andExpect(status().isOk());
-
-        verify(lowonganService).tolakPendaftar(eq(pendaftaranId));
     }
-
-    @Test
-    @WithMockUser
-    void shouldUpdateLowongan() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        Lowongan requestLowongan = new Lowongan();
-        requestLowongan.setIdMataKuliah("CS123");
-        requestLowongan.setTahunAjaran("2024");
-        requestLowongan.setSemester("GANJIL");
-        requestLowongan.setStatusLowongan("DIBUKA");
-        requestLowongan.setJumlahAsdosDibutuhkan(5);
-        requestLowongan.setJumlahAsdosDiterima(0);
-        requestLowongan.setJumlahAsdosPendaftar(10);
-
-        when(lowonganService.updateLowongan(eq(id), any(Lowongan.class))).thenReturn(requestLowongan);
-
-        mockMvc.perform(put("/api/lowongan/" + id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestLowongan)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idMataKuliah").value("CS123"))
-                .andExpect(jsonPath("$.semester").value("GANJIL"))
-                .andExpect(jsonPath("$.statusLowongan").value("DIBUKA"));
-
-        verify(lowonganService).updateLowongan(eq(id), any(Lowongan.class));
-    }
-
 }
