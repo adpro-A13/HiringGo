@@ -102,6 +102,44 @@ public class AuthenticationServiceTest {
     }
 
     @Test
+    void signup_withNullEmail_shouldThrowException() {
+        validRegisterDto.setEmail(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.signup(validRegisterDto));
+        assertEquals("Email is required", exception.getMessage());
+    }
+
+    @Test
+    void signup_withNullPassword_shouldThrowException() {
+        validRegisterDto.setPassword(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.signup(validRegisterDto));
+        assertEquals("Password is required", exception.getMessage());
+    }
+
+    @Test
+    void signup_withNullFullName_shouldThrowException() {
+        validRegisterDto.setFullName(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.signup(validRegisterDto));
+        assertEquals("Full name is required", exception.getMessage());
+    }
+
+    @Test
+    void signup_withNullNim_shouldThrowException() {
+        validRegisterDto.setNim(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.signup(validRegisterDto));
+        assertEquals("NIM is required", exception.getMessage());
+    }
+
+    @Test
+    void signup_withExistingEmail_shouldThrowException() {
+        when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(mockUser));
+        try (MockedStatic<UserFactory> mockedFactory = mockStatic(UserFactory.class)) {
+            mockedFactory.when(() -> UserFactory.createUser(any(), any(), any(), any(), any())).thenReturn(mockUser);
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.signup(validRegisterDto));
+            assertEquals("User already exists", exception.getMessage());
+        }
+    }
+
+    @Test
     void authenticate_withValidCredentials_shouldReturnUser() {
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(mockUser));
         when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
@@ -139,6 +177,20 @@ public class AuthenticationServiceTest {
         assertEquals("Invalid email or password", exception.getMessage());
         verify(userRepository).findByEmail(userEmail);
         verify(passwordEncoder).matches(rawPassword, encodedPassword);
+    }
+
+    @Test
+    void authenticate_withNullEmail_shouldThrowException() {
+        validLoginDto.setEmail(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.authenticate(validLoginDto));
+        assertEquals("Email is required", exception.getMessage());
+    }
+
+    @Test
+    void authenticate_withNullPassword_shouldThrowException() {
+        validLoginDto.setPassword(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> authenticationService.authenticate(validLoginDto));
+        assertEquals("Password is required", exception.getMessage());
     }
 
     @Test
@@ -181,5 +233,19 @@ public class AuthenticationServiceTest {
         verify(jwtService).extractUsername(validToken);
         verify(userRepository).findByEmail(userEmail);
         verify(jwtService).isTokenValid(validToken, mockUser);
+    }
+
+    @Test
+    void verifyToken_withNullExtractedUsername_shouldReturnNull() {
+        when(jwtService.extractUsername(validToken)).thenReturn(null);
+        User result = authenticationService.verifyToken(validToken);
+        assertNull(result);
+    }
+
+    @Test
+    void verifyToken_withExceptionInExtractUsername_shouldReturnNull() {
+        when(jwtService.extractUsername(validToken)).thenThrow(new RuntimeException("JWT error"));
+        User result = authenticationService.verifyToken(validToken);
+        assertNull(result);
     }
 }

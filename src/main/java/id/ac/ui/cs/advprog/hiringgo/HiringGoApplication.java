@@ -26,7 +26,11 @@ public class HiringGoApplication {
 
     private static String getEnvOrDotenv(String key, Dotenv dotenv) {
         String value = System.getenv(key);
-        return (value != null) ? value : dotenv.get(key);
+        if (value != null) return value;
+
+        String dotenvValue = dotenv.get(key);
+        return (dotenvValue != null) ? dotenvValue : "";
     }
+
 }
 

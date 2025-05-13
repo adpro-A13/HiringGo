@@ -27,7 +27,7 @@ public class LowonganRepositoryTest {
     void setUp() {
         lowongan = new Lowongan();
         lowongan.setIdMataKuliah("CSUI-MK1");
-        lowongan.setTahunAjaran("2024");
+        lowongan.setTahunAjaran("2024/2025");
         lowongan.setSemester(String.valueOf(Semester.GANJIL));
         lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
         lowongan.setJumlahAsdosDibutuhkan(2);
@@ -49,7 +49,7 @@ public class LowonganRepositoryTest {
     void testFindAll() {
         Lowongan lowongan2 = new Lowongan();
         lowongan2.setIdMataKuliah("CSUI-MK2");
-        lowongan2.setTahunAjaran("2024");
+        lowongan2.setTahunAjaran("2024/2025");
         lowongan2.setSemester(String.valueOf(Semester.GENAP));
         lowongan2.setStatusLowongan(String.valueOf(StatusLowongan.DITUTUP));
         lowongan2.setJumlahAsdosDibutuhkan(3);
@@ -97,12 +97,12 @@ public class LowonganRepositoryTest {
         lowonganRepository.save(lowongan);
 
         Optional<Lowongan> result = lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
-                "CSUI-MK2", Semester.GANJIL, "2024"
+                "CSUI-MK2", Semester.GANJIL, "2024/2025"
         );
 
         assertTrue(result.isPresent());
         assertEquals("CSUI-MK2", result.get().getIdMataKuliah());
         assertEquals(Semester.GANJIL, result.get().getSemester());
-        assertEquals("2024", result.get().getTahunAjaran());
+        assertEquals("2024/2025", result.get().getTahunAjaran());
     }
 }
