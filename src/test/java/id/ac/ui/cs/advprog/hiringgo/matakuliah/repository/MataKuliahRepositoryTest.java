@@ -1,9 +1,12 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.repository;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import jakarta.persistence.EntityManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
@@ -14,16 +17,22 @@ class MataKuliahRepositoryTest {
     @Autowired
     MataKuliahRepository mataKuliahRepository;
 
+    @Autowired
+    EntityManager entityManager;
+
     @Test
     void testSaveMataKuliah() {
-        MataKuliah matkul = new MataKuliah.Builder()
-                .withKode("CSGE602023 - 01.00.12.01-2024")
-                .withNama("Pengantar Keamanan Perangkat Lunak")
-                .withDeskripsi("Membahas Keamanan Perangkat Lunak")
-                .addDosenPengampu("Dosen A")
-                .addDosenPengampu("Dosen B")
-                .addDosenPengampu("Dosen C")
-                .build();
+        Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
+        Dosen dosenB = new Dosen("b@u.id", "pass", "B", "124");
+        entityManager.persist(dosenA);
+        entityManager.persist(dosenB);
+
+        MataKuliah matkul = new MataKuliah(
+                "CSGE602023 - 01.00.12.01-2024",
+                "Pengantar Keamanan Perangkat Lunak",
+                "Membahas Keamanan Perangkat Lunak")
+                .addDosenPengampu(dosenA)
+                .addDosenPengampu(dosenB);
 
         mataKuliahRepository.save(matkul);
 
@@ -32,25 +41,28 @@ class MataKuliahRepositoryTest {
         assertEquals(matkul.getKode(), found.getKode());
         assertEquals(matkul.getNama(), found.getNama());
         assertEquals(matkul.getDeskripsi(), found.getDeskripsi());
-        assertEquals(matkul.getDosenPengampu().size(), found.getDosenPengampu().size());
+        assertEquals(2, found.getDosenPengampu().size());
     }
 
     @Test
     void testUpdateMataKuliah() {
-        MataKuliah matkul = new MataKuliah.Builder()
-                .withKode("CSGE602023 - 01.00.12.01-2024")
-                .withNama("Pengantar Keamanan Perangkat Lunak")
-                .withDeskripsi("Deskripsi Lama")
-                .addDosenPengampu("Dosen A")
-                .build();
+        Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
+        entityManager.persist(dosenA);
+
+        MataKuliah matkul = new MataKuliah(
+                "CSGE602023 - 01.00.12.01-2024",
+                "Pengantar Keamanan Perangkat Lunak",
+                "Membahas Keamanan Perangkat Lunak")
+                .addDosenPengampu(dosenA);
         mataKuliahRepository.save(matkul);
 
-        MataKuliah updatedMatkul = new MataKuliah.Builder()
-                .withKode(matkul.getKode())
-                .withNama(matkul.getNama()) // sama
-                .withDeskripsi("Mata Kuliah baru")
-                .addDosenPengampu("Dosen X")
-                .build();
+        Dosen dosenB = new Dosen("b@u.id", "pass", "B", "124");
+        entityManager.persist(dosenB);
+        MataKuliah updatedMatkul = new MataKuliah(
+                matkul.getKode(),
+                matkul.getNama(), // sama
+                "Mata Kuliah baru")
+                .addDosenPengampu(dosenB);
         mataKuliahRepository.save(updatedMatkul);
 
         MataKuliah found = mataKuliahRepository.findById(matkul.getKode()).orElse(null);
@@ -61,13 +73,7 @@ class MataKuliahRepositoryTest {
 
     @Test
     void testDeleteMataKuliah() {
-        MataKuliah matkul = new MataKuliah.Builder()
-                .withKode("CSCM602023 - 01.00.12.01-2020")
-                .withNama("Pemrograman Lanjut")
-                .withDeskripsi("Membahas Java & Spring Boot")
-                .addDosenPengampu("Dosen A")
-                .addDosenPengampu("Dosen B")
-                .build();
+        MataKuliah matkul = new MataKuliah("CSCM602023 - 01.00.12.01-2020", "Pemrograman Lanjut", "Membahas Java & Spring Boot" );
 
         mataKuliahRepository.save(matkul);
         assertTrue(mataKuliahRepository.findById(matkul.getKode()).isPresent());
@@ -84,19 +90,24 @@ class MataKuliahRepositoryTest {
 
     @Test
     void testFindAllMataKuliahIfMoreThanOne() {
-        MataKuliah mk1 = new MataKuliah.Builder()
-                .withKode("CSCM602023 - 01.00.12.01-2020")
-                .withNama("Pemrograman Lanjut")
-                .withDeskripsi("Membahas Java & Spring Boot")
-                .addDosenPengampu("Dosen A")
-                .build();
+        Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
+        entityManager.persist(dosenA);
 
-        MataKuliah mk2 = new MataKuliah.Builder()
-                .withKode("CSGE602023 - 01.00.12.01-2024")
-                .withNama("Pengantar Keamanan Perangkat Lunak")
-                .withDeskripsi("Membahas Keamanan Perangkat Lunak")
-                .addDosenPengampu("Dosen B")
-                .build();
+        MataKuliah mk1 = new MataKuliah(
+                "CSCM602023 - 01.00.12.01-2020",
+                "Pemrograman Lanjut",
+                "Membahas Java & Spring Boot"
+        )
+                .addDosenPengampu(dosenA);
+
+        Dosen dosenB = new Dosen("b@u.id", "pass", "B", "124");
+        entityManager.persist(dosenB);
+        MataKuliah mk2 = new MataKuliah(
+                "CSGE602023 - 01.00.12.01-2024",
+                "Pengantar Keamanan Perangkat Lunak",
+                "Membahas Keamanan Perangkat Lunak"
+        )
+                .addDosenPengampu(dosenB);
 
         mataKuliahRepository.save(mk1);
         mataKuliahRepository.save(mk2);
