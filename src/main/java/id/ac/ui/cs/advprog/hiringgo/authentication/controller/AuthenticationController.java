@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.LoginUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
@@ -7,11 +9,14 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.response.LoginResponse;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.AuthenticationService;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RequestMapping("/auth")
 @RestController
@@ -44,10 +49,15 @@ public class AuthenticationController {
         }
         if (registerUserDto.getNim() == null || registerUserDto.getNim().isEmpty()) {
             return ResponseEntity.badRequest().body("NIM is required");
-        }
-        try {
+        }        try {
             User registeredUser = authenticationService.signup(registerUserDto);
-            return ResponseEntity.ok(registeredUser);
+            Map<String, Object> userInfo = sanitizeUser(registeredUser);
+            String jwtToken = jwtService.generateToken(userInfo, registeredUser);
+            LoginResponse loginResponse = new LoginResponse()
+                .setToken(jwtToken)
+                .setExpiresIn(jwtService.getExpirationTime())
+                .setUser(userInfo);
+            return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
@@ -62,14 +72,14 @@ public class AuthenticationController {
         }
         if (loginUserDto.getPassword() == null || loginUserDto.getPassword().isEmpty()) {
             return ResponseEntity.badRequest().body("Password is required");
-        }
-
-        try {
+        }        try {
             User authenticatedUser = authenticationService.authenticate(loginUserDto);
-            String jwtToken = jwtService.generateToken(authenticatedUser);
+            Map<String, Object> userInfo = sanitizeUser(authenticatedUser);
+            String jwtToken = jwtService.generateToken(userInfo, authenticatedUser);
             LoginResponse loginResponse = new LoginResponse()
                 .setToken(jwtToken)
-                .setExpiresIn(jwtService.getExpirationTime());
+                .setExpiresIn(jwtService.getExpirationTime())
+                .setUser(userInfo);
             return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(e.getMessage());
@@ -78,18 +88,27 @@ public class AuthenticationController {
             return ResponseEntity.status(403).body("Authorization failed");
         }
     }
+    
+    private Map<String, Object> sanitizeUser(User user) {
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("email", user.getUsername());
+        
+        userMap.put("role", user.getAuthorities().stream()
+            .findFirst()
+            .map(GrantedAuthority::getAuthority)
+            .orElse("UNKNOWN"));
+        
+        if (user instanceof Mahasiswa) {
+            Mahasiswa mahasiswa = (Mahasiswa) user;
+            userMap.put("fullName", mahasiswa.getFullName());
+            userMap.put("nim", mahasiswa.getNim());
+        } else if (user instanceof Dosen) {
+            Dosen dosen = (Dosen) user;
+            userMap.put("fullName", dosen.getFullName());
+            userMap.put("nip", dosen.getNip());
+        }
 
-    @GetMapping("/verify")
-    public ResponseEntity<?> verify(@org.springframework.web.bind.annotation.RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(400).body("Missing or invalid Authorization header");
-        }
-        String token = authorizationHeader.substring(7);
-        User user = authenticationService.verifyToken(token);
-        if (user != null) {
-            return ResponseEntity.ok(user);
-        } else {
-            return ResponseEntity.status(401).body("Invalid token");
-        }
+        return userMap;
     }
 }

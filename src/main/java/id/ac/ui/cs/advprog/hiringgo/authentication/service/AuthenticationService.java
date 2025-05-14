@@ -6,15 +6,11 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.authentication.factory.UserFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
-
-    @Autowired
-    private JwtService jwtService;
 
     private final UserRepository userRepository;
     
@@ -29,14 +25,24 @@ public class AuthenticationService {
     }
 
     public User signup(RegisterUserDto input) {
+        if (input.getEmail() == null || input.getEmail().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (input.getPassword() == null || input.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (input.getFullName() == null || input.getFullName().isEmpty()) {
+            throw new IllegalArgumentException("Full name is required");
+        }
+        if (input.getNim() == null || input.getNim().isEmpty()) {
+            throw new IllegalArgumentException("NIM is required");
+        }
         if (!input.getPassword().equals(input.getConfirmPassword())) {
             throw new IllegalArgumentException("Password and confirm password do not match");
         }
-        
         if (userRepository.findByEmail(input.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new IllegalArgumentException("User already exists");
         }
-        
         User user = UserFactory.createUser(
                         UserRoleEnums.MAHASISWA,
                         input.getEmail(), 
@@ -44,13 +50,12 @@ public class AuthenticationService {
                         input.getFullName(),
                         input.getNim()
                     );
-
         try {
             return userRepository.save(user);
         } catch (Exception e) {
-            if (e.getMessage().contains("nim")) {
+            if (e.getMessage() != null && e.getMessage().contains("nim")) {
                 throw new IllegalArgumentException("NIM already exists");
-            } else if (e.getMessage().contains("nip")) {
+            } else if (e.getMessage() != null && e.getMessage().contains("nip")) {
                 throw new IllegalArgumentException("NIP already exists");
             }
             throw e;
@@ -58,23 +63,17 @@ public class AuthenticationService {
     }
 
     public User authenticate(LoginUserDto input) {
+        if (input.getEmail() == null || input.getEmail().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (input.getPassword() == null || input.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
         User user = userRepository.findByEmail(input.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
-        
         if (!passwordEncoder.matches(input.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Invalid email or password");
         }
-        
         return user;
-    }
-
-    public User verifyToken(String token) {
-        String username = jwtService.extractUsername(token);
-        User user = userRepository.findByEmail(username).orElse(null);
-        if (user != null && jwtService.isTokenValid(token, user)) {
-            return user;
-        } else {
-            return null;
-        }
     }
 }
