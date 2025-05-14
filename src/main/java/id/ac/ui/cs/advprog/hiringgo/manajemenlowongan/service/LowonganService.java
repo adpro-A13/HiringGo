@@ -15,5 +15,5 @@ public interface LowonganService {
     void deleteLowonganById(UUID id);
     void registerLowongan(UUID lowonganId, String candidateId);
     void terimaPendaftar(UUID lowonganId, UUID pendaftaranId);
-    void tolakPendaftar(UUID pendaftaranId);
+    void tolakPendaftar(UUID lowonganId, UUID pendaftaranId);
 }

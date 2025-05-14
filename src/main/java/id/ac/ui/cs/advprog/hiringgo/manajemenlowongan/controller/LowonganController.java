@@ -101,9 +101,9 @@ public class LowonganController {
     }
 
     @PreAuthorize("hasRole('DOSEN')")
-    @DeleteMapping("/tolak/{pendaftaranId}")
-    public void tolakPendaftar(@PathVariable UUID pendaftaranId) {
-        lowonganService.tolakPendaftar(pendaftaranId);
+    @DeleteMapping("/{lowonganId}/tolak/{pendaftaranId}")
+    public void tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+        lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
     }
 
     @PreAuthorize("hasRole('DOSEN')")
