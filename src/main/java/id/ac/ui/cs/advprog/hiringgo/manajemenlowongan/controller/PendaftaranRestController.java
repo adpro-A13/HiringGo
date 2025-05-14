@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarResponse;
@@ -66,10 +67,12 @@ public class PendaftaranRestController {
         }
 
         try {
+            Mahasiswa kandidat = new Mahasiswa();
+            // sebelumnya pake id ini
             String kandidatId = principal.getName();
             Pendaftaran pendaftaran = pendaftaranService.daftar(
                     id,
-                    kandidatId,
+                    kandidat,
                     BigDecimal.valueOf(form.getIpk()),
                     form.getSks()
             );

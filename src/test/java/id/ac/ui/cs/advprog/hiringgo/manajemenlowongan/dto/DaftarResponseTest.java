@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +21,9 @@ class DaftarResponseTest {
 
         UUID pendaftaranId = UUID.randomUUID();
         UUID lowonganId = UUID.randomUUID();
-        String kandidatId = "test123";
+        UUID kandidatId = UUID.randomUUID();
+        Mahasiswa kandidat = new Mahasiswa();
+        kandidat.setId(kandidatId);
         BigDecimal ipk = new BigDecimal("3.75");
         int sks = 100;
         LocalDateTime waktuDaftar = LocalDateTime.now();
@@ -31,7 +34,7 @@ class DaftarResponseTest {
         Pendaftaran pendaftaran = new Pendaftaran();
         pendaftaran.setPendaftaranId(pendaftaranId);
         pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidatId(kandidatId);
+        pendaftaran.setKandidat(kandidat);
         pendaftaran.setIpk(ipk);
         pendaftaran.setSks(sks);
         pendaftaran.setWaktuDaftar(waktuDaftar);
@@ -74,7 +77,8 @@ class DaftarResponseTest {
         response.setPendaftaranId(newPendaftaranId);
         UUID newLowonganId = UUID.randomUUID();
         response.setLowonganId(newLowonganId);
-        response.setKandidatId("newUser");
+        UUID newKandidatId = UUID.randomUUID();
+        response.setKandidatId(newKandidatId);
         BigDecimal newIpk = new BigDecimal("3.50");
         response.setIpk(newIpk);
         response.setSks(120);
@@ -85,7 +89,7 @@ class DaftarResponseTest {
         assertEquals("Updated message", response.getMessage());
         assertEquals(newPendaftaranId, response.getPendaftaranId());
         assertEquals(newLowonganId, response.getLowonganId());
-        assertEquals("newUser", response.getKandidatId());
+        assertEquals(newKandidatId, response.getKandidatId());
         assertEquals(newIpk, response.getIpk());
         assertEquals(120, response.getSks());
         assertEquals(newTime, response.getWaktuDaftar());

@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import lombok.Data;
 
@@ -13,7 +14,7 @@ public class DaftarResponse {
     private String message;
     private UUID pendaftaranId;
     private UUID lowonganId;
-    private String kandidatId;
+    private UUID kandidatId;
     private BigDecimal ipk;
     private int sks;
     private LocalDateTime waktuDaftar;
@@ -24,7 +25,7 @@ public class DaftarResponse {
         if (pendaftaran != null) {
             this.pendaftaranId = pendaftaran.getPendaftaranId();
             this.lowonganId = pendaftaran.getLowongan().getLowonganId();
-            this.kandidatId = pendaftaran.getKandidatId();
+            this.kandidatId = (pendaftaran.getKandidat().getId());
             this.ipk = pendaftaran.getIpk();
             this.sks = pendaftaran.getSks();
             this.waktuDaftar = pendaftaran.getWaktuDaftar();

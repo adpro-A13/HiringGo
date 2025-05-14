@@ -1,10 +1,12 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.Disabled;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,8 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-@Disabled("Temporarily disabled due to context loading issues")
+//
+//@Disabled("Temporarily disabled due to context loading issues")
 //tar remove dl
 @SpringBootTest
 public class LowonganRegistrationTest {
@@ -25,8 +27,9 @@ public class LowonganRegistrationTest {
     private Lowongan createTestLowongan(int quota) {
         Lowongan lowongan = new Lowongan();
         // minimal setup
-        lowongan.setIdMataKuliah("MK101");
-        lowongan.setTahunAjaran("2023/2024");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        lowongan.setMataKuliah(mataKuliah);
+        lowongan.setTahunAjaran("2023");
         lowongan.setSemester(String.valueOf(Semester.GANJIL));
         lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
         lowongan.setJumlahAsdosDibutuhkan(quota);
@@ -37,6 +40,7 @@ public class LowonganRegistrationTest {
         return lowonganService.createLowongan(lowongan);
     }
 
+    @Transactional
     @Test
     public void testSuccessfulRegistration() {
         // Arrange
@@ -53,6 +57,7 @@ public class LowonganRegistrationTest {
                 "Jumlah pendaftar should increment by 1 after successful registration");
     }
 
+    @Transactional
     @Test
     public void testRegistrationFailsWhenQuotaExceeded() {
         // Arrange: Create a lowongan with quota 1
@@ -68,6 +73,7 @@ public class LowonganRegistrationTest {
         });
     }
 
+    @Transactional
     @Test
     public void testReadLowonganDetailsAfterRegistration() {
         // Arrange: Create a lowongan with quota 2

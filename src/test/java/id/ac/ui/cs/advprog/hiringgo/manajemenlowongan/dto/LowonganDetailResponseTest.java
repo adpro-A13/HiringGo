@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -25,18 +26,17 @@ class LowonganDetailResponseTest {
         int jumlahAsdosDibutuhkan = 5;
         int jumlahAsdosDiterima = 2;
         int jumlahAsdosPendaftar = 10;
-        List<String> idAsdosDiterima = Arrays.asList("user1", "user2");
 
+        MataKuliah mataKuliah = new MataKuliah("CSGE602022", "AdvProg", "Design Pattern");
         Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(lowonganId);
-        lowongan.setIdMataKuliah(idMataKuliah);
+        lowongan.setMataKuliah(mataKuliah);
         lowongan.setTahunAjaran(tahunAjaran);
         lowongan.setSemester(semester.toString());  // Convert enum to String
         lowongan.setStatusLowongan(statusLowongan.toString());  // Convert enum to String
         lowongan.setJumlahAsdosDibutuhkan(jumlahAsdosDibutuhkan);
         lowongan.setJumlahAsdosDiterima(jumlahAsdosDiterima);
         lowongan.setJumlahAsdosPendaftar(jumlahAsdosPendaftar);
-        lowongan.setIdAsdosDiterima(idAsdosDiterima);
 
         LowonganDetailResponse response = new LowonganDetailResponse(lowongan);
         assertEquals(lowonganId, response.getLowonganId());
@@ -51,7 +51,6 @@ class LowonganDetailResponseTest {
         assertEquals(jumlahAsdosDibutuhkan, response.getJumlahAsdosDibutuhkan());
         assertEquals(jumlahAsdosDiterima, response.getJumlahAsdosDiterima());
         assertEquals(jumlahAsdosPendaftar, response.getJumlahAsdosPendaftar());
-        assertEquals(idAsdosDiterima, response.getIdAsdosDiterima());
     }
 
     @Test
@@ -59,7 +58,8 @@ class LowonganDetailResponseTest {
     void testLowonganDetailResponseSetters() {
         Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(UUID.randomUUID());
-        lowongan.setIdMataKuliah("TEST101");
+        MataKuliah mataKuliah = new MataKuliah("TEST101", "AdvProg", "Design Pattern");
+        lowongan.setMataKuliah(mataKuliah);
         lowongan.setSemester("GANJIL");
         lowongan.setStatusLowongan("DIBUKA");
         lowongan.setTahunAjaran("2023/2024");
@@ -80,8 +80,6 @@ class LowonganDetailResponseTest {
         response.setJumlahAsdosDibutuhkan(3);
         response.setJumlahAsdosDiterima(1);
         response.setJumlahAsdosPendaftar(5);
-        List<String> idAsdosDiterima = Arrays.asList("user3");
-        response.setIdAsdosDiterima(idAsdosDiterima);
 
         // Verify values
         assertEquals(lowonganId, response.getLowonganId());
@@ -96,6 +94,5 @@ class LowonganDetailResponseTest {
         assertEquals(3, response.getJumlahAsdosDibutuhkan());
         assertEquals(1, response.getJumlahAsdosDiterima());
         assertEquals(5, response.getJumlahAsdosPendaftar());
-        assertEquals(idAsdosDiterima, response.getIdAsdosDiterima());
     }
 }

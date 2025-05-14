@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -32,7 +33,7 @@ class PendaftaranServiceImplTest {
 
     private UUID lowonganId;
     private Lowongan lowongan;
-    private String kandidatId;
+    private Mahasiswa kandidat;
     private BigDecimal ipk;
     private int sks;
 
@@ -43,7 +44,7 @@ class PendaftaranServiceImplTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setJumlahAsdosDibutuhkan(5);
         lowongan.setJumlahAsdosPendaftar(2);
-        kandidatId = "user123";
+        kandidat = new Mahasiswa();
         ipk = new BigDecimal("3.5");
         sks = 100;
     }
@@ -58,12 +59,12 @@ class PendaftaranServiceImplTest {
             return saved;
         });
 
-        Pendaftaran result = pendaftaranService.daftar(lowonganId, kandidatId, ipk, sks);
+        Pendaftaran result = pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
 
         // Pastikan hasil tidak null dan field sesuai
         assertNotNull(result);
         assertEquals(lowongan, result.getLowongan());
-        assertEquals(kandidatId, result.getKandidatId());
+        assertEquals(kandidat, result.getKandidat());
         assertEquals(ipk, result.getIpk());
         assertEquals(sks, result.getSks());
         assertNotNull(result.getWaktuDaftar());
@@ -80,7 +81,7 @@ class PendaftaranServiceImplTest {
         when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.empty());
 
         NoSuchElementException exception = assertThrows(NoSuchElementException.class, () -> {
-            pendaftaranService.daftar(lowonganId, kandidatId, ipk, sks);
+            pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
         });
         assertEquals("Lowongan tidak ditemukan", exception.getMessage());
 
@@ -97,7 +98,7 @@ class PendaftaranServiceImplTest {
         when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            pendaftaranService.daftar(lowonganId, kandidatId, ipk, sks);
+            pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
         });
         assertEquals("Kuota lowongan sudah penuh!", exception.getMessage());
         // Pastikan pendaftaran tidak disimpan
@@ -108,8 +109,8 @@ class PendaftaranServiceImplTest {
     @Test
     void testGetByLowongan() {
         List<Pendaftaran> expectedPendaftaran = Arrays.asList(
-                createPendaftaran(UUID.randomUUID(), lowongan, "user1"),
-                createPendaftaran(UUID.randomUUID(), lowongan, "user2")
+                createPendaftaran(UUID.randomUUID(), lowongan, new Mahasiswa()),
+                createPendaftaran(UUID.randomUUID(), lowongan, new Mahasiswa())
         );
 
         when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(expectedPendaftaran);
@@ -131,11 +132,11 @@ class PendaftaranServiceImplTest {
         verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
     }
 
-    private Pendaftaran createPendaftaran(UUID id, Lowongan lowongan, String kandidatId) {
+    private Pendaftaran createPendaftaran(UUID id, Lowongan lowongan, Mahasiswa kandidat) {
         Pendaftaran pendaftaran = new Pendaftaran();
         pendaftaran.setPendaftaranId(id);
         pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidatId(kandidatId);
+        pendaftaran.setKandidat(kandidat);
         pendaftaran.setIpk(new BigDecimal("3.5"));
         pendaftaran.setSks(100);
         pendaftaran.setWaktuDaftar(LocalDateTime.now());
