@@ -1,4 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.Disabled;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
@@ -26,7 +27,8 @@ public class LowonganRegistrationTest {
     private Lowongan createTestLowongan(int quota) {
         Lowongan lowongan = new Lowongan();
         // minimal setup
-        lowongan.setIdMataKuliah("MK160");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        lowongan.setMataKuliah(mataKuliah);
         lowongan.setTahunAjaran("2023");
         lowongan.setSemester(String.valueOf(Semester.GANJIL));
         lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));

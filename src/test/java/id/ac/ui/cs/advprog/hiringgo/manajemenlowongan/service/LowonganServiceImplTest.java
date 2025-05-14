@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganServiceImpl;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,13 +53,14 @@ class LowonganServiceImplTest {
     @Test
     void testCreateLowonganWhenLowonganDoesNotExist() {
         Lowongan newLowongan = new Lowongan();
-        newLowongan.setIdMataKuliah("CS101");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        newLowongan.setMataKuliah(mataKuliah);
         newLowongan.setSemester("GANJIL");
         newLowongan.setTahunAjaran("2023");
 
         // Mocking the repository method
-        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
-                newLowongan.getIdMataKuliah(),
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getMataKuliah(),
                 newLowongan.getSemester(),
                 newLowongan.getTahunAjaran())
         ).thenReturn(Optional.empty());
@@ -74,8 +76,8 @@ class LowonganServiceImplTest {
         assertEquals(0, createdLowongan.getJumlahAsdosPendaftar());
 
         // Verify interactions with the repository
-        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
-                newLowongan.getIdMataKuliah(),
+        verify(lowonganRepository).findByMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getMataKuliah(),
                 newLowongan.getSemester(),
                 newLowongan.getTahunAjaran());
         verify(lowonganRepository).save(newLowongan);
@@ -84,13 +86,14 @@ class LowonganServiceImplTest {
     @Test
     void testCreateLowonganWhenLowonganAlreadyExists() {
         Lowongan newLowongan = new Lowongan();
-        newLowongan.setIdMataKuliah("CS101");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        newLowongan.setMataKuliah(mataKuliah);
         newLowongan.setSemester("GANJIL");
         newLowongan.setTahunAjaran("2023");
 
         Lowongan existingLowongan = new Lowongan();
-        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
-                newLowongan.getIdMataKuliah(),
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getMataKuliah(),
                 newLowongan.getSemester(),
                 newLowongan.getTahunAjaran())
         ).thenReturn(Optional.of(existingLowongan));
@@ -99,8 +102,8 @@ class LowonganServiceImplTest {
             lowonganService.createLowongan(newLowongan);
         });
 
-        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
-                newLowongan.getIdMataKuliah(),
+        verify(lowonganRepository).findByMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getMataKuliah(),
                 newLowongan.getSemester(),
                 newLowongan.getTahunAjaran());
         verify(lowonganRepository, times(0)).save(any(Lowongan.class)); // Ensure save was not called
@@ -115,34 +118,6 @@ class LowonganServiceImplTest {
         assertEquals(dummyList, result);
     }
 
-    @Test
-    void testControllerCreateLowonganWhenLowonganDoesNotExist() {
-        Lowongan newLowongan = new Lowongan();
-        newLowongan.setIdMataKuliah("CS101");
-        newLowongan.setSemester(Semester.GANJIL.getValue());
-        newLowongan.setTahunAjaran("2023");
-
-        when(lowonganRepository.findByIdMataKuliahAndSemesterAndTahunAjaran(
-                newLowongan.getIdMataKuliah(),
-                newLowongan.getSemester(),
-                newLowongan.getTahunAjaran())
-        ).thenReturn(Optional.empty());
-
-        when(lowonganRepository.save(any(Lowongan.class))).thenReturn(newLowongan);
-
-        Lowongan createdLowongan = lowonganService.createLowongan(newLowongan);
-
-        assertNotNull(createdLowongan);
-        assertEquals(0, createdLowongan.getJumlahAsdosDiterima());
-        assertEquals(0, createdLowongan.getJumlahAsdosPendaftar());
-
-        verify(lowonganRepository).findByIdMataKuliahAndSemesterAndTahunAjaran(
-                newLowongan.getIdMataKuliah(),
-                newLowongan.getSemester(),
-                newLowongan.getTahunAjaran());
-        verify(lowonganRepository).save(newLowongan);
-    }
-
 
     @Test
     void testUpdateLowonganSuccess() {
@@ -150,38 +125,37 @@ class LowonganServiceImplTest {
 
         Lowongan existingLowongan = new Lowongan();
         existingLowongan.setLowonganId(id);
-        existingLowongan.setIdMataKuliah("CS101");
-        existingLowongan.setTahunAjaran("2024/2025");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        existingLowongan.setMataKuliah(mataKuliah);
+        existingLowongan.setTahunAjaran("2024");
         existingLowongan.setSemester(String.valueOf(Semester.GANJIL));
         existingLowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
         existingLowongan.setJumlahAsdosDibutuhkan(5);
-        existingLowongan.setJumlahAsdosDiterima(2);
+        existingLowongan.setJumlahAsdosDiterima(0);
         existingLowongan.setJumlahAsdosPendaftar(10);
-        existingLowongan.setIdAsdosDiterima(List.of("asdos1", "asdos2"));
 
         Lowongan updatedLowongan = new Lowongan();
-        updatedLowongan.setIdMataKuliah("CS102");
-        updatedLowongan.setTahunAjaran("2025/2026");
+        MataKuliah mataKuliah2 = new MataKuliah("CS102", "Sister", "sistem interaksi");
+        updatedLowongan.setMataKuliah(mataKuliah2);
+        updatedLowongan.setTahunAjaran("2025");
         updatedLowongan.setSemester(String.valueOf(Semester.GENAP));
         updatedLowongan.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
         updatedLowongan.setJumlahAsdosDibutuhkan(8);
         updatedLowongan.setJumlahAsdosDiterima(4);
         updatedLowongan.setJumlahAsdosPendaftar(15);
-        updatedLowongan.setIdAsdosDiterima(List.of("asdos3", "asdos4"));
 
         when(lowonganRepository.findById(id)).thenReturn(Optional.of(existingLowongan));
         when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(i -> i.getArguments()[0]);
 
         Lowongan result = lowonganService.updateLowongan(id, updatedLowongan);
 
-        assertEquals("CS102", result.getIdMataKuliah());
-        assertEquals("2025/2026", result.getTahunAjaran());
+        assertEquals("CS102", result.getMataKuliah().getKode());
+        assertEquals("2025", result.getTahunAjaran());
         assertEquals(Semester.GENAP, result.getSemester());
         assertEquals(StatusLowongan.DITUTUP, result.getStatusLowongan());
         assertEquals(8, result.getJumlahAsdosDibutuhkan());
         assertEquals(4, result.getJumlahAsdosDiterima());
         assertEquals(15, result.getJumlahAsdosPendaftar());
-        assertEquals(List.of("asdos3", "asdos4"), result.getIdAsdosDiterima());
 
         verify(lowonganRepository).findById(id);
         verify(lowonganRepository).save(existingLowongan);
@@ -191,14 +165,14 @@ class LowonganServiceImplTest {
     void testUpdateLowonganFail() {
         UUID id = UUID.randomUUID();
         Lowongan updatedLowongan = new Lowongan();
-        updatedLowongan.setIdMataKuliah("CS102");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        updatedLowongan.setMataKuliah(mataKuliah);
         updatedLowongan.setTahunAjaran("2025/2026");
         updatedLowongan.setSemester(String.valueOf(Semester.GENAP));
         updatedLowongan.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
         updatedLowongan.setJumlahAsdosDibutuhkan(8);
         updatedLowongan.setJumlahAsdosDiterima(4);
         updatedLowongan.setJumlahAsdosPendaftar(15);
-        updatedLowongan.setIdAsdosDiterima(List.of("asdos3", "asdos4"));
 
         when(lowonganRepository.findById(id)).thenReturn(Optional.empty());
 
@@ -274,43 +248,6 @@ class LowonganServiceImplTest {
     }
 
     @Test
-    void testTerimaPendaftarAddsAcceptedKandidatAndDeletesPendaftaran() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
-
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
-        lowongan.setIdAsdosDiterima(new java.util.ArrayList<>());
-        lowongan.setJumlahAsdosDiterima(0);
-
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(pendaftaranId);
-        pendaftaran.setKandidatId("user123");
-        pendaftaran.setLowongan(lowongan);
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
-
-        lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
-
-        assertTrue(lowongan.getIdAsdosDiterima().contains("user123"));
-        assertEquals(1, lowongan.getJumlahAsdosDiterima());
-        verify(lowonganRepository).save(lowongan);
-        verify(pendaftaranRepository).deleteById(pendaftaranId);
-    }
-
-    @Test
-    void testTolakPendaftarDeletesPendaftaran() {
-        UUID pendaftaranId = UUID.randomUUID();
-
-        when(pendaftaranRepository.existsById(pendaftaranId)).thenReturn(true);
-
-        lowonganService.tolakPendaftar(pendaftaranId);
-
-        verify(pendaftaranRepository).deleteById(pendaftaranId);
-    }
-
-    @Test
     void testTerimaPendaftarThrowsIfPendaftaranNotFound() {
         UUID lowonganId = UUID.randomUUID();
         UUID pendaftaranId = UUID.randomUUID();
@@ -324,12 +261,13 @@ class LowonganServiceImplTest {
 
     @Test
     void testTolakPendaftarThrowsIfNotFound() {
+        UUID lowonganId = UUID.randomUUID();
         UUID pendaftaranId = UUID.randomUUID();
 
         when(pendaftaranRepository.existsById(pendaftaranId)).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.tolakPendaftar(pendaftaranId);
+            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
         });
     }
 

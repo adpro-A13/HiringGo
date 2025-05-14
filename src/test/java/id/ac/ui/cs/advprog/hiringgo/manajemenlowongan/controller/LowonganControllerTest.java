@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -180,8 +181,9 @@ class LowonganControllerTest {
 
     private Lowongan createTestLowongan(UUID id) {
         Lowongan lowongan = new Lowongan();
+        MataKuliah mataKuliah = new MataKuliah("CS100", "AdvProg", "Design Pattern");
         lowongan.setLowonganId(id);
-        lowongan.setIdMataKuliah("CS101");
+        lowongan.setMataKuliah(mataKuliah);
         lowongan.setSemester(Semester.GENAP.getValue());
         lowongan.setTahunAjaran("2024");
         lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
@@ -206,11 +208,11 @@ class LowonganControllerTest {
     @Test
     @DisplayName("DELETE /api/lowongan/tolak/{pendaftaranId} - Success")
     void testTolakPendaftarSuccess() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
         UUID pendaftaranId = UUID.randomUUID();
+        doNothing().when(lowonganService).tolakPendaftar(lowonganId, pendaftaranId);
 
-        doNothing().when(lowonganService).tolakPendaftar(pendaftaranId);
-
-        mockMvc.perform(delete("/api/lowongan/tolak/{pendaftaranId}", pendaftaranId))
+        mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}",lowonganId, pendaftaranId))
                 .andExpect(status().isOk());
     }
 }

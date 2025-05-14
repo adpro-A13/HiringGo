@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -34,7 +35,8 @@ class PendaftaranServiceTest {
 
     private UUID lowonganId;
     private Lowongan lowongan;
-    private String kandidatId;
+    private UUID kandidatId;
+    private Mahasiswa kandidat;
     private BigDecimal ipk;
     private int sks;
 
@@ -45,7 +47,9 @@ class PendaftaranServiceTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setJumlahAsdosDibutuhkan(5);
         lowongan.setJumlahAsdosPendaftar(2);
-        kandidatId = "user123";
+        kandidatId = UUID.randomUUID();
+        kandidat = new Mahasiswa();
+        kandidat.setId(kandidatId);
         ipk = new BigDecimal("3.5");
         sks = 100;
     }
@@ -60,12 +64,12 @@ class PendaftaranServiceTest {
             return saved;
         });
 
-        Pendaftaran result = pendaftaranService.daftar(lowonganId, kandidatId, ipk, sks);
+        Pendaftaran result = pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
 
         // Pastikan hasil tidak null dan field sesuai
         assertNotNull(result);
         assertEquals(lowongan, result.getLowongan());
-        assertEquals(kandidatId, result.getKandidatId());
+        assertEquals(kandidatId, result.getKandidat().getId());
         assertEquals(ipk, result.getIpk());
         assertEquals(sks, result.getSks());
         assertNotNull(result.getWaktuDaftar());
@@ -82,7 +86,7 @@ class PendaftaranServiceTest {
         when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            pendaftaranService.daftar(lowonganId, kandidatId, ipk, sks);
+            pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
         });
         assertEquals("Lowongan tidak ditemukan", exception.getMessage());
         // Repository pendaftaran dan simpan lowongan tidak dipanggil
@@ -98,7 +102,7 @@ class PendaftaranServiceTest {
         when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            pendaftaranService.daftar(lowonganId, kandidatId, ipk, sks);
+            pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
         });
         assertEquals("Kuota lowongan sudah penuh!", exception.getMessage());
         // Pastikan pendaftaran tidak disimpan

@@ -1,4 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,9 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -61,14 +65,14 @@ class PendaftaranRestControllerTest {
 
         lowongan = new Lowongan();
         lowongan.setLowonganId(lowonganId);
-        lowongan.setIdMataKuliah("CSUI-ADVPROG");
+        MataKuliah mataKuliah = new MataKuliah("CS100", "AdvProg", "sigma sigma boy");
+        lowongan.setMataKuliah(mataKuliah);
         lowongan.setTahunAjaran("2024/2025");
         lowongan.setSemester(Semester.GANJIL.getValue());
         lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
         lowongan.setJumlahAsdosDibutuhkan(3);
         lowongan.setJumlahAsdosDiterima(0);
         lowongan.setJumlahAsdosPendaftar(0);
-        lowongan.setIdAsdosDiterima(new ArrayList<>());
 
         daftarForm = new DaftarForm();
         daftarForm.setIpk(3.75);
@@ -76,8 +80,13 @@ class PendaftaranRestControllerTest {
 
         pendaftaran = new Pendaftaran();
         pendaftaran.setPendaftaranId(UUID.randomUUID());
+        Mahasiswa mahasiswa = mock(Mahasiswa.class);
+        when(mahasiswa.getFullName()).thenReturn("Mock Mahasiswa");
+
+        pendaftaran.setPendaftaranId(UUID.randomUUID());
+        pendaftaran.setKandidat(new Mahasiswa());
         pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidatId("testUser");
+        pendaftaran.setKandidat(mahasiswa);
         pendaftaran.setIpk(BigDecimal.valueOf(3.75));
         pendaftaran.setSks(20);
         pendaftaran.setWaktuDaftar(LocalDateTime.now());
@@ -90,7 +99,7 @@ class PendaftaranRestControllerTest {
         mockMvc.perform(get("/api/lowongandaftar/{id}", lowonganId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lowonganId").value(lowonganId.toString()))
-                .andExpect(jsonPath("$.idMataKuliah").value("CSUI-ADVPROG"))
+                .andExpect(jsonPath("$.idMataKuliah").value("CS100"))
                 .andExpect(jsonPath("$.statusLowongan").value("DIBUKA"));
     }
 
@@ -106,7 +115,7 @@ class PendaftaranRestControllerTest {
     void testDaftarSuccess() throws Exception {
         when(pendaftaranService.daftar(
                 eq(lowonganId),
-                eq("testUser"),
+                any(Mahasiswa.class),
                 eq(BigDecimal.valueOf(3.75)),
                 eq(20)
         )).thenReturn(pendaftaran);
@@ -122,7 +131,7 @@ class PendaftaranRestControllerTest {
                 .andExpect(jsonPath("$.message").value("Berhasil mendaftar asisten dosen"))
                 .andExpect(jsonPath("$.pendaftaranId").value(pendaftaran.getPendaftaranId().toString()))
                 .andExpect(jsonPath("$.lowonganId").value(lowonganId.toString()))
-                .andExpect(jsonPath("$.kandidatId").value("testUser"))
+                .andExpect(jsonPath("$.kandidatId").isNotEmpty())
                 .andExpect(jsonPath("$.ipk").value(3.75))
                 .andExpect(jsonPath("$.sks").value(20))
                 .andExpect(jsonPath("$.waktuDaftar").exists());
@@ -132,7 +141,7 @@ class PendaftaranRestControllerTest {
     void testDaftarLowonganNotFound() throws Exception {
         when(pendaftaranService.daftar(
                 eq(lowonganId),
-                eq("testUser"),
+                any(Mahasiswa.class),
                 eq(BigDecimal.valueOf(3.75)),
                 eq(20)
         )).thenThrow(new NoSuchElementException("Lowongan tidak ditemukan"));
@@ -150,7 +159,7 @@ class PendaftaranRestControllerTest {
     void testDaftarQuotaFull() throws Exception {
         when(pendaftaranService.daftar(
                 eq(lowonganId),
-                eq("testUser"),
+                any(Mahasiswa.class),
                 eq(BigDecimal.valueOf(3.75)),
                 eq(20)
         )).thenThrow(new IllegalStateException("Kuota lowongan sudah penuh!"));
@@ -184,7 +193,7 @@ class PendaftaranRestControllerTest {
     void testDaftarGeneralException() throws Exception {
         when(pendaftaranService.daftar(
                 eq(lowonganId),
-                eq("testUser"),
+                any(Mahasiswa.class),
                 eq(BigDecimal.valueOf(3.75)),
                 eq(20)
         )).thenThrow(new RuntimeException("Unexpected server error"));
