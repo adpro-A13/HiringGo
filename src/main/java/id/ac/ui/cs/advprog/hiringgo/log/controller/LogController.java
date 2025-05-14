@@ -57,11 +57,11 @@ public class LogController {
         return ResponseEntity.ok(logs);
     }
 
-    @GetMapping("/date")
-    public ResponseEntity<List<Log>> getLogsByDateRange(
-            @RequestParam LocalDate from,
-            @RequestParam LocalDate to) {
-        List<Log> logs = logService.getLogsByTanggal(from, to);
+    @GetMapping("/month")
+    public ResponseEntity<List<Log>> getLogsByMonth(
+            @RequestParam int bulan,
+            @RequestParam int tahun) {
+        List<Log> logs = logService.getLogsByMonth(bulan, tahun);
         return ResponseEntity.ok(logs);
     }
 

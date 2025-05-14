@@ -8,6 +8,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Trim;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -109,12 +110,12 @@ class LogControllerTest {
 
     @Test
     void getLogsByDateRange_shouldReturnLogs() throws Exception {
-        when(logService.getLogsByTanggal(any(LocalDate.class), any(LocalDate.class)))
+        when(logService.getLogsByMonth(any(Integer.class), any(Integer.class)))
                 .thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/logs/date")
-                        .param("from", "2025-05-01")
-                        .param("to", "2025-05-09"))
+        mockMvc.perform(get("/logs/month")
+                        .param("bulan", String.valueOf(LocalDate.now().getMonthValue()))
+                        .param("tahun", String.valueOf(LocalDate.now().getYear())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
