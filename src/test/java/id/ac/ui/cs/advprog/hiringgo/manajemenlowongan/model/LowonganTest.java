@@ -63,6 +63,21 @@ public class LowonganTest {
             );
         });
     }
+    @Test
+    void testCreateLowonganInvalidSemester() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Lowongan(
+                    "a2c62328-4a37-4664-83c7-f32db8620155",
+                    mataKuliah,
+                    "2024/2025",
+                    "DIBUKA", // status tidak valid
+                    "semester 200",
+                    2,
+                    0,
+                    1
+            );
+        });
+    }
 
     @Test
     void testSetStatusLowonganToValidValue() {

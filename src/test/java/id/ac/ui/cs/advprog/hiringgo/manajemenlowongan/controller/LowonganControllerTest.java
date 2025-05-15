@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -215,4 +216,85 @@ class LowonganControllerTest {
         mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}",lowonganId, pendaftaranId))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("PUT /api/lowongan/{id} - Success")
+    void testUpdateLowonganSuccess() throws Exception {
+        UUID id = UUID.randomUUID();
+        Lowongan updatedLowongan = createTestLowongan(id);
+        when(lowonganService.updateLowongan(eq(id), ArgumentMatchers.<Lowongan>any()))
+                .thenReturn(updatedLowongan);
+
+        mockMvc.perform(put("/api/lowongan/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(updatedLowongan)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lowonganId").value(id.toString()));
+    }
+
+
+    @Test
+    @DisplayName("PUT /api/lowongan/{id} - ID mismatch")
+    void testUpdateLowonganIdMismatch() throws Exception {
+        UUID pathId = UUID.randomUUID();
+        UUID bodyId = UUID.randomUUID(); // different ID
+        Lowongan updatedLowongan = createTestLowongan(bodyId);
+
+        mockMvc.perform(put("/api/lowongan/{id}", pathId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(updatedLowongan)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("\"ID di URL dan body tidak cocok\""));
+    }
+
+    @Test
+    void testTerimaPendaftarException() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+
+        doThrow(new IllegalArgumentException("Pendaftaran tidak valid"))
+                .when(lowonganService).terimaPendaftar(lowonganId, pendaftaranId);
+
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/terima/{pendaftaranId}", lowonganId, pendaftaranId))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("\"Gagal menerima pendaftar: Pendaftaran tidak valid\""));
+    }
+
+    @Test
+    void testTolakPendaftarException() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+
+        doThrow(new IllegalArgumentException("Pendaftaran tidak valid"))
+                .when(lowonganService).tolakPendaftar(lowonganId, pendaftaranId);
+
+        mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}", lowonganId, pendaftaranId))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("\"Gagal menolak pendaftar: Pendaftaran tidak valid\""));
+    }
+
+    @Test
+    void testUpdateLowonganException() throws Exception {
+        UUID id = UUID.randomUUID();
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id);
+        lowongan.setSemester("GANJIL");
+        lowongan.setTahunAjaran("2023");
+        lowongan.setJumlahAsdosDibutuhkan(3);
+        lowongan.setJumlahAsdosPendaftar(1);
+        lowongan.setJumlahAsdosDiterima(0);
+        lowongan.setStatusLowongan("DIBUKA");
+        MataKuliah mk = new MataKuliah("CS100", "Advpro", "Advanced Programming");
+        lowongan.setMataKuliah(mk);
+
+        when(lowonganService.updateLowongan(eq(id), org.mockito.ArgumentMatchers.any(Lowongan.class)))
+                .thenThrow(new RuntimeException("Update gagal"));
+
+        mockMvc.perform(put("/api/lowongan/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(lowongan)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("\"Gagal memperbarui lowongan: Update gagal\""));
+    }
+
 }
