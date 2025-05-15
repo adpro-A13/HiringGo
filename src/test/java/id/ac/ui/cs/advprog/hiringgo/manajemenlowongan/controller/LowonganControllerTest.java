@@ -20,6 +20,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -60,7 +63,15 @@ class LowonganControllerTest {
     void testGetAllLowonganWithoutFilter() throws Exception {
         UUID id = UUID.randomUUID();
         Lowongan lowongan = createTestLowongan(id);
-        when(lowonganService.findAll()).thenReturn(List.of(lowongan));
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(List.of(lowongan));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
 
         mockMvc.perform(get("/api/lowongan")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -68,12 +79,22 @@ class LowonganControllerTest {
                 .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
     }
 
+
     @Test
     @DisplayName("GET /api/lowongan dengan filter semester dan status - Success")
     void testGetAllLowonganWithFilters() throws Exception {
         UUID id = UUID.randomUUID();
         Lowongan lowongan = createTestLowongan(id);
-        when(lowonganService.findAll()).thenReturn(List.of(lowongan));
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(List.of(lowongan));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
 
         mockMvc.perform(get("/api/lowongan")
                         .param("semester", "GENAP")
@@ -82,6 +103,7 @@ class LowonganControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
     }
+
 
     @Test
     @DisplayName("GET /api/lowongan/{id} - Success")
