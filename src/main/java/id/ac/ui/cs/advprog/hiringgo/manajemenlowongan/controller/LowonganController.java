@@ -96,20 +96,40 @@ public class LowonganController {
 
     @PreAuthorize("hasRole('DOSEN')")
     @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
-    public void terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
-        lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+    public ResponseEntity<?> terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+        try {
+            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+            return ResponseEntity.ok("Pendaftar berhasil diterima");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Gagal menerima pendaftar: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasRole('DOSEN')")
     @DeleteMapping("/{lowonganId}/tolak/{pendaftaranId}")
-    public void tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
-        lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+    public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+        try {
+            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+            return ResponseEntity.ok("Pendaftar berhasil ditolak");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Gagal menolak pendaftar: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasRole('DOSEN')")
     @PutMapping("/{id}")
-    public Lowongan updateLowongan(@PathVariable UUID id, @RequestBody Lowongan updatedLowongan) {
-        return lowonganService.updateLowongan(id, updatedLowongan);
+    public ResponseEntity<?> updateLowongan(@PathVariable UUID id, @RequestBody Lowongan updatedLowongan) {
+            if (!id.equals(updatedLowongan.getLowonganId())) {
+                return ResponseEntity.badRequest().body("ID di URL dan body tidak cocok");
+            }
+            try {
+                Lowongan updated = lowonganService.updateLowongan(id, updatedLowongan);
+                return ResponseEntity.ok(new LowonganDetailResponse(updated));
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Gagal memperbarui lowongan: " + e.getMessage());
+            }
     }
-
 }
