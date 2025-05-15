@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,12 +25,16 @@ public class LowonganController {
     @Autowired
     private LowonganService lowonganService;
 
+    @PreAuthorize("hasRole('DOSEN')")
     @GetMapping
     public ResponseEntity<List<LowonganDetailResponse>> getAllLowongan(
             @RequestParam(required = false) Semester semester,
             @RequestParam(required = false) StatusLowongan status) {
 
-        List<Lowongan> lowonganList = lowonganService.findAll();
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Panggil method service untuk dapatkan lowongan sesuai dosen
+        List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
         if (semester != null) {
             lowonganList = new FilterBySemester(semester).filter(lowonganList);
