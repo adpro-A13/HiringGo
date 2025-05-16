@@ -36,3 +36,10 @@ Sementara itu, di area ketiga yaitu Database yang menggunakan Supabase (PostgreS
 <br><br>
 Sebagai langkah mitigasi terhadap risiko-risiko ini, kami menyadari perlunya perubahan arsitektur secara menyeluruh dari monolitik menuju pendekatan berbasis microservices. Dengan memisahkan Web Application, layanan otentikasi, logika bisnis, dan layanan database ke dalam service-service terpisah, kami dapat menerapkan kontrol keamanan yang lebih spesifik, meningkatkan isolasi antar modul, serta membatasi dampak jika salah satu komponen mengalami kegagalan atau diserang. Selain itu, pengelolaan akses, validasi input, serta konfigurasi produksi akan lebih terfokus dan terkontrol di setiap microservice. Namun, transisi ini tentu tidak tanpa risiko baru, kompleksitas dalam implementasinya, kebutuhan untuk observabilitas dan monitoring yang lebih canggih, serta potensi latency jaringan menjadi tantangan yang perlu dipertimbangkan dan dikelola dengan matang.
 <br><br>
+
+### Individual Diagram
+### Henry Aditya Kosasi
+#### Component Diagram
+![](images/componentdiagram-manajemenlowongan.drawio.png)
+#### Code Diagram (saya satukan semua komponen di satu image, kecuali auth)
+![](images/cdmanajemenlowongan.drawio.png)
