@@ -32,14 +32,15 @@ Berdasarkan identification yang kami lakukan dan consensus yang kami capai, dite
 <br><br>
 Pada area kedua, yaitu API Application yang menggunakan Spring Boot dan menangani logika bisnis, autentikasi, serta otorisasi, kami menilai adanya potensi risiko tinggi apabila pengelolaan otorisasi tidak dilakukan secara ketat. Ancaman seperti privilege escalation dapat terjadi, terlebih karena seluruh modul bisnis saat ini masih berada dalam satu aplikasi besar yang terintegrasi. Hal ini membuat satu celah di satu bagian bisa berdampak luas ke bagian lain. Risiko terkait autentikasi dan otorisasi yang salah konfigurasi, serta kurangnya isolasi antar domain fungsional, dipandang sebagai risiko tinggi (high).
 <br><br>
-Sementara itu, di area ketiga yaitu Database yang menggunakan Supabase (PostgreSQL), peserta mengidentifikasi risiko terkait kurangnya segmentasi akses serta enkripsi data yang tidak menyeluruh. Kekhawatiran muncul terhadap kemungkinan akses langsung ke data sensitif oleh pihak yang tidak berwenang, terutama karena seluruh layanan menggunakan koneksi dan skema basis data yang sama. Walaupun database ini tidak secara langsung terekspos ke publik dan hanya diakses melalui API, tim menyepakati bahwa risikonya masih berada pada tingkat sedang (medium).
+Sementara itu, di area ketiga yaitu Database yang menggunakan Supabase (PostgreSQL), kami mengidentifikasi risiko terkait kurangnya segmentasi akses serta enkripsi data yang tidak menyeluruh. Kekhawatiran muncul terhadap kemungkinan akses langsung ke data sensitif oleh pihak yang tidak berwenang, terutama karena seluruh layanan menggunakan koneksi dan skema basis data yang sama. Walaupun database ini tidak secara langsung terekspos ke publik dan hanya diakses melalui API, tim menyepakati bahwa risikonya masih berada pada tingkat sedang (medium).
 <br><br>
 Sebagai langkah mitigasi terhadap risiko-risiko ini, kami menyadari perlunya perubahan arsitektur secara menyeluruh dari monolitik menuju pendekatan berbasis microservices. Dengan memisahkan Web Application, layanan otentikasi, logika bisnis, dan layanan database ke dalam service-service terpisah, kami dapat menerapkan kontrol keamanan yang lebih spesifik, meningkatkan isolasi antar modul, serta membatasi dampak jika salah satu komponen mengalami kegagalan atau diserang. Selain itu, pengelolaan akses, validasi input, serta konfigurasi produksi akan lebih terfokus dan terkontrol di setiap microservice. Namun, transisi ini tentu tidak tanpa risiko baru, kompleksitas dalam implementasinya, kebutuhan untuk observabilitas dan monitoring yang lebih canggih, serta potensi latency jaringan menjadi tantangan yang perlu dipertimbangkan dan dikelola dengan matang.
 <br><br>
 
 ### Individual Diagram
-### Henry Aditya Kosasi
+### Nobel Julian Bintang
 #### Component Diagram
-![](images/componentdiagram-manajemenlowongan.drawio.png)
-#### Code Diagram (saya satukan semua komponen di satu image, kecuali auth)
-![](images/cdmanajemenlowongan.drawio.png)
+![](images/componentdiagramlog.png)
+![](images/architecturediagramlog.png)
+#### Code Diagram
+![](images/classdiagramlog.png)
