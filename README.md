@@ -16,3 +16,10 @@
 5. Manajemen Lowongan 🧑‍🏫 (C, R, U, D) **Henry Aditya Kosasi**
 6. Manajemen Log 🧑‍🎓(C, R, U, D) **Nobel Julian Bintang**
 7. Periksa Log 🧑‍🏫 (R, U) & Dashboard Honor 🧑‍🎓 **Akmal Nabil Fikri**
+
+### Context Diagram
+![](images/contextdiagram.drawio.png)
+### Container Diagram
+![](images/containerdiagram.drawio.png)
+### Deployment Diagram
+![](images/deploymentdiagram.drawio.png)
