@@ -363,3 +363,11 @@ classDiagram
 
 ##### Code diagram Pendaftaran (Lowongan)
 ![Image](https://github.com/user-attachments/assets/2345c5ce-192d-4d1b-9da2-376e4a82a386)
+
+### Muhammad Radhiya Arshq
+##### Component Diagram (Mata Kuliah)
+![image](https://github.com/user-attachments/assets/a7dd7570-0b81-401e-8d7b-714f4149f730)
+
+##### Code Diagram (Mata Kuliah)
+![image](https://github.com/user-attachments/assets/ac616b6a-2617-4404-8a71-a46b4b1c6dbd)
+
