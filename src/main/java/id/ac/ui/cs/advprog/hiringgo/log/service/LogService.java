@@ -12,7 +12,7 @@ public interface LogService {
     Optional<Log> getLogById(Long id);
     List<Log> getAllLogs();
     List<Log> getLogsByStatus(LogStatus status);
-    List<Log> getLogsByTanggal(LocalDate from, LocalDate to);
+    List<Log> getLogsByMonth(int bulan, int tahun);
 
     Log updateStatus(Long id, LogStatus status);
     Log updateLog(Long id, Log updatedLog);

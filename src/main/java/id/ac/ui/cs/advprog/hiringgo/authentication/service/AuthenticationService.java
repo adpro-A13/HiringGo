@@ -6,15 +6,11 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.dto.RegisterUserDto;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.authentication.factory.UserFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthenticationService {
-
-    @Autowired
-    private JwtService jwtService;
 
     private final UserRepository userRepository;
     
@@ -79,20 +75,5 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Invalid email or password");
         }
         return user;
-    }
-
-    public User verifyToken(String token) {
-        String username = null;
-        try {
-            username = jwtService.extractUsername(token);
-        } catch (Exception e) {
-            return null;
-        }
-        User user = userRepository.findByEmail(username).orElse(null);
-        if (user != null && jwtService.isTokenValid(token, user)) {
-            return user;
-        } else {
-            return null;
-        }
     }
 }
