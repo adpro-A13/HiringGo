@@ -41,6 +41,7 @@ Sebagai langkah mitigasi terhadap risiko-risiko ini, kami menyadari perlunya per
 ### Nobel Julian Bintang
 #### Component Diagram
 ![](images/componentdiagramlog.png)
-![](images/architecturediagramlog.png)
+
 #### Code Diagram
+![](images/architecturediagramlog.png)
 ![](images/classdiagramlog.png)
