@@ -23,3 +23,5 @@
 ![](images/containerdiagram.drawio.png)
 ### Deployment Diagram
 ![](images/deploymentdiagram.drawio.png)
+#### Future Architecture
+![](images/futurearchitecture.drawio.png)
