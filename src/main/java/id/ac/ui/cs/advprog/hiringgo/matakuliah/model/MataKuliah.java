@@ -1,82 +1,55 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.model;
 
-import lombok.Getter;
-import lombok.Setter;
-
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import jakarta.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.*;
+
+import java.util.*;
 
 @Getter
-@Setter
+@EqualsAndHashCode(of = "kode")
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "mata_kuliah")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MataKuliah {
     @Id
-    String kode;
+    @ToString.Include
+    private String kode;
 
-    String nama;
-    String deskripsi;
+    @Setter
+    private String nama;
 
-    @ElementCollection
-    @CollectionTable(
-            name = "mata_kuliah_dosen_pengampu",
-            joinColumns = @JoinColumn(name = "matkul_kode")
+    @Setter
+    private String deskripsi;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "mata_kuliah_dosen",
+            joinColumns = @JoinColumn(name = "matkul_kode"),
+            inverseJoinColumns = @JoinColumn(name = "dosen_id")
     )
-    @Column(name = "dosen_pengampu")
-    List<String> dosenPengampu;
+    private Set<Dosen> dosenPengampu = new HashSet<>();
 
-    // Constructor tanpa argumen
-    protected MataKuliah() {
+    public MataKuliah(String kode, String nama, String deskripsi) {
+        if (kode == null || kode.isBlank())
+            throw new IllegalArgumentException("Kode Mata Kuliah harus diisi");
+        if (nama == null || nama.isBlank())
+            throw new IllegalArgumentException("Harap sertakan nama mata kuliah");
+
+        this.kode = kode;
+        this.nama = nama;
+        this.deskripsi = deskripsi;
     }
 
-    private MataKuliah(Builder builder) {
-        this.kode = builder.kode;
-        this.nama = builder.nama;
-        this.deskripsi = builder.deskripsi;
-        this.dosenPengampu = new ArrayList<>(builder.dosenPengampu);
+    public MataKuliah addDosenPengampu(Dosen dosen) {
+        if (dosen == null || dosen.getNip().isBlank())
+            throw new IllegalArgumentException("Dosen tidak boleh null");
+        this.dosenPengampu.add(dosen);
+        return this;
     }
 
-    public static class Builder {
-        String kode;
-        String nama;
-        String deskripsi;
-        List<String> dosenPengampu = new ArrayList<>();
-
-        public Builder withKode(String kode) {
-            this.kode = kode;
-            return this;
-        }
-
-        public Builder withNama(String nama) {
-            this.nama = nama;
-            return this;
-        }
-
-        public Builder withDeskripsi(String deskripsi) {
-            this.deskripsi = deskripsi;
-            return this;
-        }
-
-        public Builder addDosenPengampu(String dosenPengampu) {
-            this.dosenPengampu.add(dosenPengampu);
-            return this;
-        }
-
-        public MataKuliah build() {
-            if (kode == null || kode.isBlank()) {
-                throw new IllegalArgumentException("Kode Mata Kuliah harus diisi");
-            }
-            if (nama == null || nama.isBlank()) {
-                throw new IllegalArgumentException("Harap sertakan nama mata kuliah");
-            }
-            if (dosenPengampu.isEmpty()) {
-                throw new IllegalArgumentException("Harus ada minimal 1 dosen pengampu!");
-            }
-
-            return new MataKuliah(this);
-        }
+    public Set<Dosen> getDosenPengampu() {
+        return Collections.unmodifiableSet(dosenPengampu);
     }
 }
-
-

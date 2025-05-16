@@ -1,11 +1,15 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,40 +17,35 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LowonganTest {
-
-    private List<String> idAsdosDiterima;
-
+    private List<Pendaftaran> daftarPendaftaran;
+    MataKuliah mataKuliah;
     @BeforeEach
     void setUp() {
-        idAsdosDiterima = new ArrayList<>();
-        idAsdosDiterima.add("mahasiswa-001");
-        idAsdosDiterima.add("mahasiswa-002");
+        mataKuliah = new MataKuliah("CS100", "Advprog", "mata kuliah sigma");
     }
 
     @Test
     void testCreateLowonganSuccess() {
+        MataKuliah mataKuliah = new MataKuliah("CS100", "Advprog", "mata kuliah sigma");
         Lowongan lowongan = new Lowongan(
                 "eb558e9f-1c39-460e-8860-71af6af63bd6",
-                "CSUI-MK1",
+                mataKuliah,
                 "2024/2025",
                 "DIBUKA",
                 "GANJIL",
                 3,
                 2,
-                5,
-                idAsdosDiterima
+                5
         );
 
         assertEquals(UUID.fromString("eb558e9f-1c39-460e-8860-71af6af63bd6"), lowongan.getLowonganId());
-        assertEquals("CSUI-MK1", lowongan.getIdMataKuliah());
+        assertEquals(mataKuliah, lowongan.getMataKuliah());
         assertEquals("2024/2025", lowongan.getTahunAjaran());
         assertEquals(StatusLowongan.DIBUKA, lowongan.getStatusLowongan());
         assertEquals(Semester.GANJIL, lowongan.getSemester());
         assertEquals(3, lowongan.getJumlahAsdosDibutuhkan());
         assertEquals(2, lowongan.getJumlahAsdosDiterima());
         assertEquals(5, lowongan.getJumlahAsdosPendaftar());
-        assertEquals(2, lowongan.getIdAsdosDiterima().size());
-        assertTrue(lowongan.getIdAsdosDiterima().contains("mahasiswa-001"));
     }
 
     @Test
@@ -54,14 +53,28 @@ public class LowonganTest {
         assertThrows(IllegalArgumentException.class, () -> {
             new Lowongan(
                     "a2c62328-4a37-4664-83c7-f32db8620155",
-                    "CSUI-MK2",
+                    mataKuliah,
                     "2024/2025",
                     "MEOW", // status tidak valid
                     "GENAP",
                     2,
                     0,
-                    1,
-                    new ArrayList<>()
+                    1
+            );
+        });
+    }
+    @Test
+    void testCreateLowonganInvalidSemester() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Lowongan(
+                    "a2c62328-4a37-4664-83c7-f32db8620155",
+                    mataKuliah,
+                    "2024/2025",
+                    "DIBUKA", // status tidak valid
+                    "semester 200",
+                    2,
+                    0,
+                    1
             );
         });
     }
@@ -89,21 +102,4 @@ public class LowonganTest {
         });
     }
 
-    @Test
-    void testDefaultConstructorAndSetters() {
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(UUID.fromString("13652556-012a-4c07-b546-54eb1396d79b"));
-        lowongan.setIdMataKuliah("CSUI-MK3");
-        lowongan.setTahunAjaran("2024/2025");
-        lowongan.setStatusLowongan("DITUTUP");
-        lowongan.setSemester("GENAP");
-        lowongan.setJumlahAsdosDibutuhkan(4);
-        lowongan.setJumlahAsdosDiterima(1);
-        lowongan.setJumlahAsdosPendaftar(7);
-        lowongan.setIdAsdosDiterima(List.of("mahasiswa-003"));
-
-        assertEquals(UUID.fromString("13652556-012a-4c07-b546-54eb1396d79b"), lowongan.getLowonganId());
-        assertEquals(StatusLowongan.DITUTUP, lowongan.getStatusLowongan());
-        assertEquals("mahasiswa-003", lowongan.getIdAsdosDiterima().get(0));
-    }
 }

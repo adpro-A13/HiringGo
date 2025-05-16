@@ -1,11 +1,14 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,7 +21,9 @@ public class Lowongan {
     @GeneratedValue
     private UUID lowonganId;
 
-    private String idMataKuliah;
+    @ManyToOne
+    @JoinColumn(name = "mata_kuliah_kode")
+    private MataKuliah mataKuliah;
     private String tahunAjaran;
 
     @Enumerated(EnumType.STRING)
@@ -31,20 +36,20 @@ public class Lowongan {
     private int jumlahAsdosDiterima;
     private int jumlahAsdosPendaftar;
 
-    @ElementCollection
-    private List<String> idAsdosDiterima;
+    @OneToMany(mappedBy = "lowongan", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Pendaftaran> daftarPendaftaran = new ArrayList<>();
+
 
     public Lowongan() {}
 
     public Lowongan(String lowonganId,
-                    String idMataKuliah,
+                    MataKuliah mataKuliah,
                     String tahunAjaran,
                     String statusLowongan,
                     String semester,
                     int jumlahAsdosDibutuhkan,
                     int jumlahAsdosDiterima,
-                    int jumlahAsdosPendaftar,
-                    List<String> idAsdosDiterima) {
+                    int jumlahAsdosPendaftar) {
 
         if (!StatusLowongan.contains(statusLowongan)) {
             throw new IllegalArgumentException("Status lowongan tidak valid: " + statusLowongan);
@@ -55,14 +60,13 @@ public class Lowongan {
         }
 
         this.lowonganId = UUID.fromString(lowonganId);
-        this.idMataKuliah = idMataKuliah;
+        this.mataKuliah = mataKuliah;
         this.tahunAjaran = tahunAjaran;
         this.statusLowongan = StatusLowongan.valueOf(statusLowongan.toUpperCase());
         this.semester = Semester.valueOf(semester.toUpperCase());
         this.jumlahAsdosDibutuhkan = jumlahAsdosDibutuhkan;
         this.jumlahAsdosDiterima = jumlahAsdosDiterima;
         this.jumlahAsdosPendaftar = jumlahAsdosPendaftar;
-        this.idAsdosDiterima = idAsdosDiterima;
     }
 
     public void setStatusLowongan(String statusLowongan) {

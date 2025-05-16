@@ -4,11 +4,8 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * Data Transfer Object for Asisten Dosen application form.
- * Simplified to match existing UI implementation.
- */
-@Getter @Setter
+@Getter
+@Setter
 public class DaftarForm {
 
     @NotNull(message = "IPK harus diisi")
@@ -19,14 +16,15 @@ public class DaftarForm {
 
     @NotNull(message = "Jumlah SKS harus diisi")
     @Min(value = 0, message = "SKS tidak boleh negatif")
+    @Max(value = 24, message = "SKS maksimal 24")
     private Integer sks;
 
     public DaftarForm() {
-        // Default constructor
     }
 
     public DaftarForm(Double ipk, Integer sks) {
         this.ipk = ipk;
         this.sks = sks;
     }
+
 }

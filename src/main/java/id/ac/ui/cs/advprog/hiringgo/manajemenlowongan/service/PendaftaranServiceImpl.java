@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -27,7 +28,7 @@ public class PendaftaranServiceImpl implements PendaftaranService {
 
     @Override
     public Pendaftaran daftar(UUID lowonganId,
-                              String kandidatId,
+                              Mahasiswa kandidat,
                               BigDecimal ipk,
                               int sks) {
         // 1) Cari lowongan, lempar NoSuchElementException dengan pesan yang di‐test
@@ -44,7 +45,7 @@ public class PendaftaranServiceImpl implements PendaftaranService {
         // 3) Buat dan simpan pendaftaran
         Pendaftaran pendaftaran = new Pendaftaran();
         pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidatId(kandidatId);
+        pendaftaran.setKandidat(kandidat);
         pendaftaran.setIpk(ipk);
         pendaftaran.setSks(sks);
         pendaftaran.setWaktuDaftar(LocalDateTime.now());
