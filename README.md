@@ -16,3 +16,11 @@
 5. Manajemen Lowongan 🧑‍🏫 (C, R, U, D) **Henry Aditya Kosasi**
 6. Manajemen Log 🧑‍🎓(C, R, U, D) **Nobel Julian Bintang**
 7. Periksa Log 🧑‍🏫 (R, U) & Dashboard Honor 🧑‍🎓 **Akmal Nabil Fikri**
+
+## Deliverable Individual
+
+### Component Diagram (Mata Kuliah)
+![image](https://github.com/user-attachments/assets/a7dd7570-0b81-401e-8d7b-714f4149f730)
+
+### Code Diagram (Mata Kuliah)
+![image](https://github.com/user-attachments/assets/ac616b6a-2617-4404-8a71-a46b4b1c6dbd)
