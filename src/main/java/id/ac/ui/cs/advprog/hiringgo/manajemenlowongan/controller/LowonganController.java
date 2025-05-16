@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
@@ -27,13 +28,11 @@ public class LowonganController {
 
     @PreAuthorize("hasRole('DOSEN')")
     @GetMapping
-    public ResponseEntity<List<LowonganDetailResponse>> getAllLowongan(
+    public ResponseEntity<List<LowonganResponse>> getAllLowongan(
             @RequestParam(required = false) Semester semester,
             @RequestParam(required = false) StatusLowongan status) {
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // Panggil method service untuk dapatkan lowongan sesuai dosen
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
         if (semester != null) {
@@ -44,8 +43,8 @@ public class LowonganController {
             lowonganList = new FilterByStatus(status).filter(lowonganList);
         }
 
-        List<LowonganDetailResponse> responses = lowonganList.stream()
-                .map(LowonganDetailResponse::new)
+        List<LowonganResponse> responses = lowonganList.stream()
+                .map(LowonganResponse::new)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(responses);
@@ -56,7 +55,7 @@ public class LowonganController {
     public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {
         try {
             Lowongan lowongan = lowonganService.findById(id);
-            LowonganDetailResponse response = new LowonganDetailResponse(lowongan);
+            LowonganResponse response = new LowonganResponse(lowongan);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -69,7 +68,7 @@ public class LowonganController {
     public ResponseEntity<?> createLowongan(@RequestBody Lowongan lowongan) {
         try {
             Lowongan created = lowonganService.createLowongan(lowongan);
-            LowonganDetailResponse response = new LowonganDetailResponse(created);
+            LowonganResponse response = new LowonganResponse(created);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -87,16 +86,6 @@ public class LowonganController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Lowongan dengan ID " + id + " tidak ditemukan");
         }
-    }
-
-    @GetMapping("/enums/semester")
-    public ResponseEntity<Semester[]> getAllSemesters() {
-        return ResponseEntity.ok(Semester.values());
-    }
-
-    @GetMapping("/enums/status")
-    public ResponseEntity<StatusLowongan[]> getAllStatuses() {
-        return ResponseEntity.ok(StatusLowongan.values());
     }
 
     @PreAuthorize("hasRole('DOSEN')")

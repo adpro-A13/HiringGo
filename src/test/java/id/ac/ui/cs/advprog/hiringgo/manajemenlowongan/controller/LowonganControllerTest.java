@@ -130,24 +130,6 @@ class LowonganControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/lowongan/enums/semester - Success")
-    void testGetAllSemesters() throws Exception {
-        mockMvc.perform(get("/api/lowongan/enums/semester"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(Semester.values().length)))
-                .andExpect(jsonPath("$[0]", is(Semester.values()[0].name())));
-    }
-
-    @Test
-    @DisplayName("GET /api/lowongan/enums/status - Success")
-    void testGetAllStatuses() throws Exception {
-        mockMvc.perform(get("/api/lowongan/enums/status"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(StatusLowongan.values().length)))
-                .andExpect(jsonPath("$[0]", is(StatusLowongan.values()[0].name())));
-    }
-
-    @Test
     @DisplayName("POST /api/lowongan - Success")
     void testCreateLowonganSuccess() throws Exception {
         UUID id = UUID.randomUUID();
