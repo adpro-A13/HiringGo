@@ -350,3 +350,16 @@ classDiagram
     SecurityConfiguration --> ApplicationConfig: uses
     JwtAuthenticationFilter --> JwtService: uses
 ```
+
+### Christian Yudistira Hermawan
+##### Components diagram dashboard
+![Image](https://github.com/user-attachments/assets/a70f0686-952f-4ecb-8a9d-cd9362dedc45)
+
+##### Code diagram Dashboard Response
+![Image](https://github.com/user-attachments/assets/81bff292-f1a1-439f-a0d5-6095200dfea8)
+
+##### Code diagram Dashboard Service
+![Image](https://github.com/user-attachments/assets/a89502fd-c208-47f4-ae34-be9d70834d38)
+
+##### Code diagram Pendaftaran (Lowongan)
+![Image](https://github.com/user-attachments/assets/2345c5ce-192d-4d1b-9da2-376e4a82a386)
