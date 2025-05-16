@@ -43,3 +43,310 @@ Sebagai langkah mitigasi terhadap risiko-risiko ini, kami menyadari perlunya per
 ![](images/componentdiagram-manajemenlowongan.drawio.png)
 #### Code Diagram (saya satukan semua komponen di satu image, kecuali auth)
 ![](images/cdmanajemenlowongan.drawio.png)
+
+### Christian Raphael Heryanto
+#### Component Diagram
+```mermaid
+graph TD
+    WebApp[Web Application] -->|HTTP Requests| AuthController[Authentication Controller]
+    WebApp -->|HTTP Requests| AccMgmtController[Account Management Controller]
+
+    AuthController -->|Uses| AuthService[Authentication Service]
+    AuthController -->|Uses| JwtService[JWT Service]
+    
+    AccMgmtController -->|Uses| AccMgmtService[Account Management Service]
+    
+    AuthService -->|Calls| JwtService
+    AuthService -->|Uses| UserFactory[User Factory]
+    AuthService -->|Reads/Writes| UserRepo[User Repository]
+    
+    AccMgmtService -->|Uses| UserFactory
+    AccMgmtService -->|Reads/Writes| UserRepo
+    AccMgmtService -->|Uses| PasswordEncoder[Password Encoder]
+    
+    UserRepo -->|Stores| DB[(Database)]
+    
+    subgraph "Spring Security"
+        JwtFilter[JWT Authentication Filter]
+        SecurityConfig[Security Configuration]
+        PasswordEncoder
+    end
+    
+    JwtFilter -->|Validates| JwtService
+    
+    classDef component fill:#85BBF0,stroke:#5d8eb5,color:black
+    classDef database fill:#48A646,stroke:#275E26,color:white
+    classDef security fill:#F08585,stroke:#b55d5d,color:black
+    class AuthController,AuthService,AccMgmtController,AccMgmtService,UserFactory,UserRepo,JwtService component
+    class DB database
+    class JwtFilter,SecurityConfig,PasswordEncoder security
+```
+#### Code Diagrams
+##### Authentication Controller Component
+```mermaid
+classDiagram
+    class AuthenticationController {
+        -authenticationService: AuthenticationService
+        -jwtService: JwtService
+        +register(RegisterUserDto): ResponseEntity
+        +authenticate(LoginUserDto): ResponseEntity
+    }
+    
+    class RegisterUserDto {
+        -email: String
+        -password: String
+        -userRole: UserRoleEnums
+        -nim: String
+        -name: String
+        +getters()
+        +setters()
+    }
+    
+    class LoginUserDto {
+        -email: String
+        -password: String
+        +getters()
+        +setters()
+    }
+    
+    class AuthResponseDto {
+        -token: String
+        -user: Map~String,Object~
+        +getters()
+        +setters()
+    }
+    
+    AuthenticationController ..> RegisterUserDto: uses
+    AuthenticationController ..> LoginUserDto: uses
+    AuthenticationController ..> AuthResponseDto: returns
+```
+
+##### Account Management Controller Component
+```mermaid
+classDiagram
+    class AccountManagementController {
+        -accountManagementService: AccountManagementService
+        +getAllUsers(): ResponseEntity
+        +getUserById(String): ResponseEntity
+        +createDosenAccount(DosenDto): ResponseEntity
+        +createAdminAccount(AdminDto): ResponseEntity
+        +changeUserRole(String, ChangeRoleDto): ResponseEntity
+        +deleteUser(String): ResponseEntity
+    }
+    
+    class DosenDto {
+        -email: String
+        -password: String
+        -nip: String
+        -fullName: String
+        +getters()
+        +setters()
+    }
+    
+    class AdminDto {
+        -email: String
+        -password: String
+        +getters()
+        +setters()
+    }
+    
+    class ChangeRoleDto {
+        -newRole: UserRoleEnums
+        +getters()
+        +setters()
+    }
+    
+    class UserResponseDto {
+        -id: String
+        -email: String
+        -role: String
+        -nim: String
+        -nip: String
+        -fullName: String
+        +getters()
+        +setters()
+    }
+    
+    AccountManagementController ..> DosenDto: uses
+    AccountManagementController ..> AdminDto: uses
+    AccountManagementController ..> ChangeRoleDto: uses
+    AccountManagementController ..> UserResponseDto: returns
+```
+
+##### Authentication Service Component
+```mermaid
+classDiagram
+    class AuthenticationService {
+        -userRepository: UserRepository
+        -jwtService: JwtService
+        -passwordEncoder: PasswordEncoder
+        +signup(RegisterUserDto): User
+        +authenticate(LoginUserDto): User
+        +verifyToken(String): User
+        -createUser(RegisterUserDto): User
+    }
+    
+    class UserFactory {
+        <<static>>
+        +createUser(UserRoleEnums, String, String, String, String): User
+    }
+    
+    class AuthenticationException {
+        +AuthenticationException(String)
+    }
+    
+    class UserAlreadyExistsException {
+        +UserAlreadyExistsException(String)
+    }
+    
+    AuthenticationService --> UserFactory: uses
+    AuthenticationService ..> AuthenticationException: throws
+    AuthenticationService ..> UserAlreadyExistsException: throws
+```
+##### Account Management Service Component
+```mermaid
+classDiagram
+    class AccountManagementService {
+        -userRepository: UserRepository
+        -passwordEncoder: PasswordEncoder
+        +getAllUsers(): List~UserResponseDto~
+        +getUserById(String): UserResponseDto
+        +createDosenAccount(DosenDto): UserResponseDto
+        +createAdminAccount(AdminDto): UserResponseDto
+        +changeUserRole(String, ChangeRoleDto): UserResponseDto
+        +deleteUser(String): void
+        -mapUserToDto(User): UserResponseDto
+    }
+    
+    class UserFactory {
+        <<static>>
+        +createUser(UserRoleEnums, String, String, String, String): User
+    }
+    
+    class UserNotFoundException {
+        +UserNotFoundException(String)
+    }
+    
+    class UserAlreadyExistsException {
+        +UserAlreadyExistsException(String)
+    }
+    
+    AccountManagementService --> UserFactory: uses
+    AccountManagementService ..> UserNotFoundException: throws
+    AccountManagementService ..> UserAlreadyExistsException: throws
+```
+##### JWT Service Component
+```mermaid
+classDiagram
+    class JwtService {
+        -secretKey: String
+        -jwtExpiration: long
+        +extractUsername(String): String
+        +extractClaim(String, Function): T
+        +generateToken(UserDetails): String
+        +generateToken(Map, UserDetails): String
+        +isTokenValid(String, UserDetails): boolean
+        +isTokenExpired(String): boolean
+        +extractExpiration(String): Date
+        +getExpirationTime(): long
+        -getSignInKey(): Key
+    }
+    
+    class Claims {
+        <<interface>>
+    }
+    
+    JwtService ..> Claims: manipulates
+```
+##### User Repository
+```mermaid
+classDiagram
+    class UserRepository {
+        <<interface>>
+        +findByEmail(String): Optional~User~
+        +findById(UUID): Optional~User~
+        +save(User): User
+        +findAll(): List~User~
+        +delete(User): void
+    }
+    
+    class User {
+        <<abstract>>
+        -id: UUID
+        -email: String
+        -password: String
+        +getId(): UUID
+        +getEmail(): String
+        +getPassword(): String
+        +getAuthorities(): Collection~GrantedAuthority~
+        +isAccountNonExpired(): boolean
+        +isAccountNonLocked(): boolean
+        +isCredentialsNonExpired(): boolean
+        +isEnabled(): boolean
+    }
+    
+    class Mahasiswa {
+        -nim: String
+        -fullName: String
+        +getNim(): String
+        +getFullName(): String
+        +getAuthorities(): Collection~GrantedAuthority~
+    }
+    
+    class Dosen {
+        -nip: String
+        -fullName: String
+        +getNip(): String
+        +getFullName(): String
+        +getAuthorities(): Collection~GrantedAuthority~
+    }
+    
+    class Admin {
+        +getAuthorities(): Collection~GrantedAuthority~
+    }
+    
+    class UserRoleEnums {
+        <<enumeration>>
+        ADMIN
+        DOSEN
+        MAHASISWA
+    }
+    
+    User <|-- Mahasiswa: extends
+    User <|-- Dosen: extends
+    User <|-- Admin: extends
+    User ..|> UserDetails: implements
+    UserRepository ..> User: manages
+    User ..> UserRoleEnums: uses
+```
+##### Security Configuration Component
+```mermaid
+classDiagram
+    class SecurityConfiguration {
+        -authenticationProvider: AuthenticationProvider
+        -jwtAuthenticationFilter: JwtAuthenticationFilter
+        +securityFilterChain(HttpSecurity): SecurityFilterChain
+        +authenticationProvider(): AuthenticationProvider
+        +passwordEncoder(): PasswordEncoder
+        +corsConfigurationSource(): CorsConfigurationSource
+    }
+    
+    class JwtAuthenticationFilter {
+        -jwtService: JwtService
+        -userDetailsService: UserDetailsService
+        +doFilterInternal(HttpServletRequest, HttpServletResponse, FilterChain): void
+        -isPublicEndpoint(String): boolean
+    }
+    
+    class ApplicationConfig {
+        -userRepository: UserRepository
+        +userDetailsService(): UserDetailsService
+        +authenticationProvider(): AuthenticationProvider
+        +authenticationManager(AuthenticationConfiguration): AuthenticationManager
+        +passwordEncoder(): PasswordEncoder
+    }
+    
+    SecurityConfiguration --> JwtAuthenticationFilter: configures
+    SecurityConfiguration --> ApplicationConfig: uses
+    JwtAuthenticationFilter --> JwtService: uses
+```
