@@ -2,19 +2,35 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class LowonganResponseTest {
+    private LowonganMapper lowonganMapper;
 
+    @Mock
+    private MataKuliahRepository mataKuliahRepository;
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+        lowonganMapper = new LowonganMapper(mataKuliahRepository);
+        MataKuliah mataKuliah = new MataKuliah("CSGE602022", "AdvProg", "Design Pattern");
+        when(mataKuliahRepository.findById("CSGE602022"))
+                .thenReturn(java.util.Optional.of(mataKuliah));
+    }
     @Test
     @DisplayName("Test LowonganResponse constructor with Lowongan")
     void testConstructorWithLowongan() {
@@ -26,6 +42,7 @@ class LowonganResponseTest {
         int jumlahAsdosDibutuhkan = 5;
         int jumlahAsdosDiterima = 2;
         int jumlahAsdosPendaftar = 10;
+
         MataKuliah mataKuliah = new MataKuliah("CSGE602022", "AdvProg", "Design Pattern");
         Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(lowonganId);
@@ -37,7 +54,7 @@ class LowonganResponseTest {
         lowongan.setJumlahAsdosDiterima(jumlahAsdosDiterima);
         lowongan.setJumlahAsdosPendaftar(jumlahAsdosPendaftar);
 
-        LowonganResponse response = new LowonganResponse(lowongan);
+        LowonganDTO response = lowonganMapper.toDto(lowongan);
 
         assertEquals(lowonganId, response.getLowonganId());
         assertEquals(idMataKuliah, response.getIdMataKuliah());
@@ -57,9 +74,8 @@ class LowonganResponseTest {
         Lowongan lowongan = new Lowongan();
         lowongan.setMataKuliah(mataKuliah);
         lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
-        // Tambahkan set data lainnya sesuai kebutuhan konstruktor LowonganResponse
 
-        LowonganResponse response = new LowonganResponse(lowongan);
+        LowonganDTO response = lowonganMapper.toDto(lowongan);
 
         UUID lowonganId = UUID.randomUUID();
         response.setLowonganId(lowonganId);

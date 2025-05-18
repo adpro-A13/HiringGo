@@ -79,6 +79,8 @@ public class LowonganServiceImpl implements LowonganService {
         }
 
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        System.out.println("Logged in username: " + username + "tes");
+
         if (isNotAuthorizedDosenPengampu(lowongan, username)) {
             throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
         }
@@ -125,6 +127,11 @@ public class LowonganServiceImpl implements LowonganService {
         Pendaftaran pendaftaran = result.getFirst();
         Lowongan lowongan = result.getSecond();
 
+        Lowongan cekPengampu = findById(lowonganId);
+        if (isNotAuthorizedDosenPengampu(cekPengampu, username)) {
+            throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
+        }
+
         if (lowongan.getJumlahAsdosDiterima() >= lowongan.getJumlahAsdosDibutuhkan()) {
             throw new IllegalStateException("Lowongan sudah penuh");
         }
@@ -144,6 +151,10 @@ public class LowonganServiceImpl implements LowonganService {
     public void tolakPendaftar(UUID lowonganId, UUID pendaftaranId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         var result = validasiPendaftaranDanLowongan(lowonganId, pendaftaranId, username);
+        Lowongan lowongan = findById(lowonganId);
+        if (isNotAuthorizedDosenPengampu(lowongan, username)) {
+            throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
+        }
 
         Pendaftaran pendaftaran = result.getFirst();
 
@@ -158,20 +169,24 @@ public class LowonganServiceImpl implements LowonganService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lowongan not found"));
 
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-
         if (isNotAuthorizedDosenPengampu(existing, currentUsername)) {
             throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
         }
 
-        existing.setMataKuliah(updatedLowongan.getMataKuliah());
+        Optional<Lowongan> kombinasiAda = lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                updatedLowongan.getMataKuliah(),
+                updatedLowongan.getSemester(),
+                updatedLowongan.getTahunAjaran()
+        );
+
+        if (kombinasiAda.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lowongan dengan kombinasi tersebut sudah ada!");
+        }
+
         existing.setTahunAjaran(updatedLowongan.getTahunAjaran());
         existing.setSemester(String.valueOf(updatedLowongan.getSemester()));
         existing.setStatusLowongan(String.valueOf(updatedLowongan.getStatusLowongan()));
         existing.setJumlahAsdosDibutuhkan(updatedLowongan.getJumlahAsdosDibutuhkan());
-        existing.setJumlahAsdosDiterima(updatedLowongan.getJumlahAsdosDiterima());
-        existing.setJumlahAsdosPendaftar(updatedLowongan.getJumlahAsdosPendaftar());
-        existing.setDaftarPendaftaran(updatedLowongan.getDaftarPendaftaran());
-
         return lowonganRepository.save(existing);
     }
 
@@ -199,5 +214,4 @@ public class LowonganServiceImpl implements LowonganService {
                 .stream()
                 .noneMatch(d -> d.getUsername().equals(username));
     }
-
 }

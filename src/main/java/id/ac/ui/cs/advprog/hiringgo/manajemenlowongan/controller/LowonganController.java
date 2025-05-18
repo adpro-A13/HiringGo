@@ -1,11 +1,12 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +21,22 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
+@PreAuthorize("hasAuthority('DOSEN')")
 @RequestMapping("/api/lowongan")
 public class LowonganController {
 
     @Autowired
     private LowonganService lowonganService;
 
-    @PreAuthorize("hasRole('DOSEN')")
+    private final LowonganMapper lowonganMapper;
+
+    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper) {
+        this.lowonganService = lowonganService;
+        this.lowonganMapper = lowonganMapper;
+    }
+
     @GetMapping
-    public ResponseEntity<List<LowonganResponse>> getAllLowongan(
+    public ResponseEntity<List<LowonganDTO>> getAllLowongan(
             @RequestParam(required = false) Semester semester,
             @RequestParam(required = false) StatusLowongan status) {
 
@@ -43,9 +51,7 @@ public class LowonganController {
             lowonganList = new FilterByStatus(status).filter(lowonganList);
         }
 
-        List<LowonganResponse> responses = lowonganList.stream()
-                .map(LowonganResponse::new)
-                .collect(Collectors.toList());
+        List<LowonganDTO> responses = lowonganMapper.toDtoList(lowonganList);
 
         return ResponseEntity.ok(responses);
     }
@@ -55,7 +61,7 @@ public class LowonganController {
     public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {
         try {
             Lowongan lowongan = lowonganService.findById(id);
-            LowonganResponse response = new LowonganResponse(lowongan);
+            LowonganDTO response = lowonganMapper.toDto(lowongan);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -64,20 +70,21 @@ public class LowonganController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('DOSEN')")
-    public ResponseEntity<?> createLowongan(@RequestBody Lowongan lowongan) {
+    public ResponseEntity<?> createLowongan(@RequestBody LowonganDTO lowonganDTO) {
         try {
-            Lowongan created = lowonganService.createLowongan(lowongan);
-            LowonganResponse response = new LowonganResponse(created);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            Lowongan lowonganEntity = lowonganMapper.toEntity(lowonganDTO);
+            Lowongan created = lowonganService.createLowongan(lowonganEntity);
+            LowonganDTO responseDTO = lowonganMapper.toDto(created);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Gagal membuat lowongan: " + e.getMessage());
         }
     }
 
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('DOSEN')")
     public ResponseEntity<?> deleteLowongan(@PathVariable UUID id) {
         try {
             lowonganService.deleteLowonganById(id);
@@ -88,7 +95,6 @@ public class LowonganController {
         }
     }
 
-    @PreAuthorize("hasRole('DOSEN')")
     @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
     public ResponseEntity<?> terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
@@ -100,7 +106,6 @@ public class LowonganController {
         }
     }
 
-    @PreAuthorize("hasRole('DOSEN')")
     @DeleteMapping("/{lowonganId}/tolak/{pendaftaranId}")
     public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
@@ -112,18 +117,21 @@ public class LowonganController {
         }
     }
 
-    @PreAuthorize("hasRole('DOSEN')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLowongan(@PathVariable UUID id, @RequestBody Lowongan updatedLowongan) {
-            if (!id.equals(updatedLowongan.getLowonganId())) {
-                return ResponseEntity.badRequest().body("ID di URL dan body tidak cocok");
-            }
-            try {
-                Lowongan updated = lowonganService.updateLowongan(id, updatedLowongan);
-                return ResponseEntity.ok(new LowonganDetailResponse(updated));
-            } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Gagal memperbarui lowongan: " + e.getMessage());
-            }
+    public ResponseEntity<?> updateLowongan(@PathVariable UUID id, @RequestBody LowonganDTO updatedLowonganDTO) {
+        if (updatedLowonganDTO.getLowonganId() == null || !id.equals(updatedLowonganDTO.getLowonganId())) {
+            return ResponseEntity.badRequest().body("ID di URL dan body tidak cocok atau ID kosong");
+        }
+        try {
+            Lowongan updatedLowongan = lowonganMapper.toEntity(updatedLowonganDTO);
+            Lowongan updated = lowonganService.updateLowongan(id, updatedLowongan);
+            LowonganDTO responseDto = lowonganMapper.toDto(updated);
+
+            return ResponseEntity.ok(responseDto);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Gagal memperbarui lowongan: " + e.getMessage());
+        }
     }
+
 }

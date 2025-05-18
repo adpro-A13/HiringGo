@@ -38,6 +38,8 @@ class LowonganServiceImplTest {
     @InjectMocks
     private LowonganServiceImpl lowonganService;
 
+    private UUID id1;
+    private UUID id2;
     private Dosen dosenPengampu;
     private MataKuliah mataKuliah;
     private SecurityContext securityContext;
@@ -60,6 +62,9 @@ class LowonganServiceImplTest {
         securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(securityContext);
+
+        id1 = UUID.randomUUID();
+        id2 = UUID.randomUUID();
     }
     @AfterEach
     void clearSecurityContext() {
@@ -68,25 +73,23 @@ class LowonganServiceImplTest {
 
     @Test
     void testFindByIdReturnsLowongan() {
-        UUID id = UUID.randomUUID();
         Lowongan dummy = new Lowongan();
-        dummy.setLowonganId(id);
-        when(lowonganRepository.findById(id)).thenReturn(java.util.Optional.of(dummy));
+        dummy.setLowonganId(id1);
+        when(lowonganRepository.findById(id1)).thenReturn(java.util.Optional.of(dummy));
 
-        Lowongan result = lowonganService.findById(id);
+        Lowongan result = lowonganService.findById(id1);
 
         assertEquals(dummy, result);
-        verify(lowonganRepository).findById(id);
+        verify(lowonganRepository).findById(id1);
     }
 
     @Test
     void testFindByIdNotFound() {
-        UUID id = UUID.randomUUID();
 
-        when(lowonganRepository.findById(id)).thenReturn(Optional.empty());
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            lowonganService.findById(id);
+            lowonganService.findById(id1);
         });
 
         assertEquals("Lowongan tidak ditemukan", ex.getMessage());
@@ -156,81 +159,55 @@ class LowonganServiceImplTest {
         assertEquals(dummyList, result);
     }
 
-
     @Test
     void testUpdateLowonganSuccess() {
-        UUID id = UUID.randomUUID();
+        MataKuliah mataKuliahAwal = createMataKuliah("CS100", "Advpro", "advanced programming", dosenPengampu);
+        Lowongan existingLowongan = createLowongan(id1, mataKuliahAwal, 5, 0);
 
-        Lowongan existingLowongan = new Lowongan();
-        existingLowongan.setLowonganId(id);
-        existingLowongan.setMataKuliah(mataKuliah);
-        existingLowongan.setTahunAjaran("2024");
-        existingLowongan.setSemester(String.valueOf(Semester.GANJIL));
-        existingLowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
-        existingLowongan.setJumlahAsdosDibutuhkan(5);
-        existingLowongan.setJumlahAsdosDiterima(0);
-        existingLowongan.setJumlahAsdosPendaftar(10);
-
-        MataKuliah mataKuliah2 = new MataKuliah("CS102", "Sister", "sistem interaksi");
-        mataKuliah2.addDosenPengampu(dosenPengampu);
-
-        Lowongan updatedLowongan = new Lowongan();
-        updatedLowongan.setMataKuliah(mataKuliah2);
+        MataKuliah mataKuliahBaru = createMataKuliah("CS100", "Sister", "sistem interaksi", dosenPengampu);
+        Lowongan updatedLowongan = createLowongan(null, mataKuliahBaru, 8, 0);
         updatedLowongan.setTahunAjaran("2025");
         updatedLowongan.setSemester(String.valueOf(Semester.GENAP));
         updatedLowongan.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
-        updatedLowongan.setJumlahAsdosDibutuhkan(8);
-        updatedLowongan.setJumlahAsdosDiterima(4);
-        updatedLowongan.setJumlahAsdosPendaftar(15);
 
-        when(lowonganRepository.findById(id)).thenReturn(Optional.of(existingLowongan));
-        when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(existingLowongan));
+        when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(i -> i.getArgument(0));
 
-        Lowongan result = lowonganService.updateLowongan(id, updatedLowongan);
+        Lowongan result = lowonganService.updateLowongan(id1, updatedLowongan);
 
-        assertEquals("CS102", result.getMataKuliah().getKode());
         assertEquals("2025", result.getTahunAjaran());
-        assertEquals(Semester.GENAP, result.getSemester());
+        assertEquals((Semester.GENAP), result.getSemester());
         assertEquals(StatusLowongan.DITUTUP, result.getStatusLowongan());
         assertEquals(8, result.getJumlahAsdosDibutuhkan());
-        assertEquals(4, result.getJumlahAsdosDiterima());
-        assertEquals(15, result.getJumlahAsdosPendaftar());
 
-        verify(lowonganRepository).findById(id);
+        verify(lowonganRepository).findById(id1);
         verify(lowonganRepository).save(existingLowongan);
     }
 
     @Test
     void testUpdateLowonganFail() {
-        UUID id = UUID.randomUUID();
-
-        MataKuliah mataKuliahBaru = new MataKuliah("CS100", "Advpro", "advanced programming");
         Dosen unauthorizedDosen = new Dosen();
-        unauthorizedDosen.setUsername("otherdosen@example.com");
-        unauthorizedDosen.setNip("1234567890");
-        mataKuliahBaru.addDosenPengampu(unauthorizedDosen);
+        unauthorizedDosen.setNip("123456789");
+        unauthorizedDosen.setUsername("unauthorized@example.com");
+        MataKuliah mataKuliahLama = createMataKuliah("CS100", "Advpro", "advanced programming", dosenPengampu);
+        Lowongan existingLowongan = createLowongan(id1, mataKuliahLama, 5, 2);
+        MataKuliah mataKuliahBaru = createMataKuliah("CS102", "Sister", "sistem terdistribusi", unauthorizedDosen);
 
-        Lowongan updatedLowongan = new Lowongan();
-        updatedLowongan.setMataKuliah(mataKuliahBaru);
+        Lowongan updatedLowongan = createLowongan(null, mataKuliahBaru, 8, 4);
         updatedLowongan.setTahunAjaran("2025/2026");
         updatedLowongan.setSemester(String.valueOf(Semester.GENAP));
         updatedLowongan.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
-        updatedLowongan.setJumlahAsdosDibutuhkan(8);
-        updatedLowongan.setJumlahAsdosDiterima(4);
-        updatedLowongan.setJumlahAsdosPendaftar(15);
 
         when(auth.getName()).thenReturn("unauthorized@example.com");
-        when(lowonganRepository.findById(id)).thenReturn(Optional.of(updatedLowongan));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(existingLowongan));
 
         assertThrows(AccessDeniedException.class, () -> {
-            lowonganService.updateLowongan(id, updatedLowongan);
+            lowonganService.updateLowongan(id1, updatedLowongan);
         });
 
-        verify(lowonganRepository).findById(id);
+        verify(lowonganRepository).findById(id1);
         verify(lowonganRepository, never()).save(any());
     }
-
-
 
     @Test
     void testFilterByStatusLowongan() {
@@ -268,327 +245,255 @@ class LowonganServiceImplTest {
 
     @Test
     void testDeleteLowonganByIdSuccess() {
-        UUID id = UUID.randomUUID();
-
         Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(id);
+        lowongan.setLowonganId(id1);
         lowongan.setMataKuliah(mataKuliah);
 
-        when(lowonganRepository.findById(id)).thenReturn(Optional.of(lowongan));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
 
-        lowonganService.deleteLowonganById(id);
+        lowonganService.deleteLowonganById(id1);
 
-        verify(lowonganRepository).findById(id);
-        verify(lowonganRepository).deleteById(id);
+        verify(lowonganRepository).findById(id1);
+        verify(lowonganRepository).deleteById(id1);
     }
-
-
-
-
 
     @Test
     void testDeleteLowonganByIdThrowsWhenNotFound() {
-        UUID id = UUID.randomUUID();
-
-        when(lowonganRepository.findById(id)).thenReturn(Optional.empty());
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            lowonganService.deleteLowonganById(id);
+            lowonganService.deleteLowonganById(id1);
         });
 
         assertEquals("Lowongan tidak ditemukan", exception.getMessage());
 
-        verify(lowonganRepository).findById(id);
+        verify(lowonganRepository).findById(id1);
         verify(lowonganRepository, never()).deleteById(any());
     }
 
 
     @Test
     void testTerimaPendaftarThrowsIfPendaftaranNotFound() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
+        when(pendaftaranRepository.findById(id1)).thenReturn(Optional.empty());
 
-        // Mocking pendaftaranRepository.findById untuk return empty Optional supaya exception dilempar
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.empty());
-
-        // Karena di service kamu lempar IllegalArgumentException jika pendaftaran tidak ditemukan
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+            lowonganService.terimaPendaftar(id2, id1);
         });
 
         assertEquals("Pendaftaran tidak ditemukan", exception.getMessage());
-
-        // Verifikasi findById dipanggil
-        verify(pendaftaranRepository).findById(pendaftaranId);
+        verify(pendaftaranRepository).findById(id1);
     }
 
     @Test
     void testTolakPendaftarThrowsIfNotFound() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.empty());
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id1);
+        lowongan.setMataKuliah(mataKuliah);
 
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.empty());
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+            lowonganService.tolakPendaftar(id1, id2);
         });
 
         assertEquals("Pendaftaran tidak ditemukan", exception.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
+        verify(pendaftaranRepository).findById(id2);
     }
-
 
     @Test
     void testTerimaPendaftarSuccess() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
-
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
-        lowongan.setJumlahAsdosDibutuhkan(2);
-        lowongan.setJumlahAsdosDiterima(1);
+        MataKuliah mataKuliah = createMataKuliah("CS123", "Algoritma", "Dasar pemrograman", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mataKuliah, 2, 1);
         lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
 
-        mataKuliah.addDosenPengampu(dosenPengampu);
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        lowongan.setMataKuliah(mataKuliah);
-
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(pendaftaranId);
-        pendaftaran.setLowongan(lowongan);
-        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
         when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+        lowonganService.terimaPendaftar(id1, id2);
 
         assertEquals(StatusPendaftaran.DITERIMA, pendaftaran.getStatus());
         assertEquals(2, lowongan.getJumlahAsdosDiterima());
         assertEquals(StatusLowongan.DITUTUP, lowongan.getStatusLowongan());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
-        verify(pendaftaranRepository).save(pendaftaran);
+        verify(pendaftaranRepository).findById(id2);
         verify(lowonganRepository).save(lowongan);
     }
 
 
     @Test
     void testTolakPendaftarSuccess() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
+        MataKuliah mataKuliah = createMataKuliah("CS123", "Algoritma", "Dasar pemrograman", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mataKuliah, 2, 1);
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
-        mataKuliah.addDosenPengampu(dosenPengampu);
-
-        lowongan.setMataKuliah(mataKuliah);
-
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(pendaftaranId);
-        pendaftaran.setLowongan(lowongan);
-        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
         when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+        lowonganService.tolakPendaftar(id1, id2);
 
         assertEquals(StatusPendaftaran.DITOLAK, pendaftaran.getStatus());
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
+        verify(pendaftaranRepository).findById(id2);
+        verify(lowonganRepository, times(2)).findById(id1);
         verify(pendaftaranRepository).save(pendaftaran);
     }
 
 
+
     @Test
     void testTerimaPendaftarPendaftaranNotFound() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.empty());
+        when(pendaftaranRepository.findById(id1)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+            lowonganService.terimaPendaftar(id2, id1);
         });
 
         assertEquals("Pendaftaran tidak ditemukan", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
+        verify(pendaftaranRepository).findById(id1);
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
 
 
     @Test
     void testTerimaPendaftarLowonganNotFound() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
+        MataKuliah mataKuliah = createMataKuliah("CS321", "Pemrograman Lanjut", "Advanced Java", dosenPengampu);
+        Lowongan fakeLowongan = createLowongan(id1, mataKuliah, 2, 0);
+        Pendaftaran pendaftaran = createPendaftaran(id2, fakeLowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        Lowongan fakeLowongan = new Lowongan();
-        fakeLowongan.setLowonganId(lowonganId);
-        fakeLowongan.setMataKuliah(mataKuliah);
-
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(pendaftaranId);
-        pendaftaran.setLowongan(fakeLowongan);
-        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.empty());
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+            lowonganService.terimaPendaftar(id1, id2);
         });
 
         assertEquals("Lowongan tidak ditemukan", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
+        verify(pendaftaranRepository).findById(id2);
+        verify(lowonganRepository).findById(id1);
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
 
+
     @Test
     void testTerimaPendaftarIdMismatch() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
-
-        // Lowongan dalam pendaftaran berbeda ID dengan parameter
         Lowongan lowonganInPendaftaran = new Lowongan();
-        lowonganInPendaftaran.setLowonganId(UUID.randomUUID()); // ID beda dari lowonganId
+        lowonganInPendaftaran.setLowonganId(UUID.randomUUID());
 
         Pendaftaran pendaftaran = new Pendaftaran();
         pendaftaran.setLowongan(lowonganInPendaftaran);
 
         Lowongan actualLowongan = new Lowongan();
-        actualLowongan.setLowonganId(lowonganId);
+        actualLowongan.setLowonganId(id1);
 
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(actualLowongan));
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(actualLowongan));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+            lowonganService.terimaPendaftar(id1, id2);
         });
 
         assertEquals("Pendaftaran tidak sesuai dengan lowongan", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
+        verify(pendaftaranRepository).findById(id2);
+        verify(lowonganRepository).findById(id1);
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
 
-
     @Test
     void testTerimaPendaftarLowonganFull() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
         MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
         mataKuliah.addDosenPengampu(dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mataKuliah, 1, 1);
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
-        lowongan.setJumlahAsdosDibutuhkan(1);
-        lowongan.setJumlahAsdosDiterima(1);
-        lowongan.setMataKuliah(mataKuliah);
-
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(pendaftaranId);
-        pendaftaran.setLowongan(lowongan);
-        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
-            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+            lowonganService.terimaPendaftar(id1, id2);
         });
 
         assertEquals("Lowongan sudah penuh", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
+        verify(pendaftaranRepository).findById(id2);
+        verify(lowonganRepository, times(2)).findById(id1);
     }
+
 
 
     @Test
     void testTolakPendaftarPendaftaranNotFound() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id1);
+        lowongan.setMataKuliah(mataKuliah);
 
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.empty());
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+            lowonganService.tolakPendaftar(id1, id2);
         });
 
         assertEquals("Pendaftaran tidak ditemukan", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
+        verify(pendaftaranRepository).findById(id2);
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
+
 
 
     @Test
     void testTolakPendaftarLowonganNotFound() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
+        MataKuliah mk = createMataKuliah("CS999", "Dummy", "dummy", dosenPengampu);
+        Lowongan dummyLowongan = createLowongan(id1, mk, 0, 0);
+        Pendaftaran pendaftaran = createPendaftaran(id2, dummyLowongan, null);
 
-        Lowongan dummyLowongan = new Lowongan();
-        dummyLowongan.setLowonganId(lowonganId);
-        MataKuliah mk = new MataKuliah("CS999", "Dummy", "dummy");
-        dummyLowongan.setMataKuliah(mk);
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setLowongan(dummyLowongan);
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.empty());
 
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.empty());
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            lowonganService.tolakPendaftar(id1, id2);
         });
 
         assertEquals("Lowongan tidak ditemukan", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
+        verify(pendaftaranRepository).findById(id2);
+        verify(lowonganRepository).findById(id1);
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
 
+
     @Test
     void testTolakPendaftarIdMismatch() {
-        UUID lowonganId = UUID.randomUUID();
-        UUID pendaftaranId = UUID.randomUUID();
-
         UUID differentLowonganId = UUID.randomUUID();
-        Lowongan lowonganInPendaftaran = new Lowongan();
-        lowonganInPendaftaran.setLowonganId(differentLowonganId);
-        MataKuliah mk = new MataKuliah("CS999", "Dummy", "dummy");
-        mk.addDosenPengampu(dosenPengampu);
-        lowonganInPendaftaran.setMataKuliah(mk);
 
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setLowongan(lowonganInPendaftaran);
+        MataKuliah mk = createMataKuliah("CS999", "Dummy", "dummy", dosenPengampu);
+        Lowongan lowonganInPendaftaran = createLowongan(differentLowonganId, mk, 0, 0);
+        Pendaftaran pendaftaran = createPendaftaran(id1, lowonganInPendaftaran, null);
+        Lowongan targetLowongan = createLowongan(id2, mk, 0, 0);
 
-        Lowongan targetLowongan = new Lowongan();
-        targetLowongan.setLowonganId(lowonganId);
-        targetLowongan.setMataKuliah(mk);
-
-        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(targetLowongan));
+        when(pendaftaranRepository.findById(id1)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id2)).thenReturn(Optional.of(targetLowongan));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+            lowonganService.tolakPendaftar(id2, id1);
         });
 
         assertEquals("Pendaftaran tidak sesuai dengan lowongan", ex.getMessage());
 
-        verify(pendaftaranRepository).findById(pendaftaranId);
-        verify(lowonganRepository).findById(lowonganId);
+        verify(pendaftaranRepository).findById(id1);
+        verify(lowonganRepository, times(1)).findById(id2);
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
+
 
 
     @Test
@@ -611,13 +516,10 @@ class LowonganServiceImplTest {
     @Test
     void testRegisterLowonganQuotaFull() {
         UUID lowonganId = UUID.randomUUID();
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
+        Lowongan lowongan = createLowongan(lowonganId, null, 3, 3);
         lowongan.setJumlahAsdosPendaftar(3);
-        lowongan.setJumlahAsdosDibutuhkan(3);
 
         when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
-
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
             lowonganService.registerLowongan(lowonganId, "candidate1");
         });
@@ -648,5 +550,28 @@ class LowonganServiceImplTest {
         assertFalse(hasil.contains(lowonganLain));
 
         verify(lowonganRepository).findAll();
+    }
+
+    private Lowongan createLowongan(UUID lowonganId, MataKuliah mataKuliah, int dibutuhkan, int diterima) {
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(lowonganId);
+        lowongan.setMataKuliah(mataKuliah);
+        lowongan.setJumlahAsdosDibutuhkan(dibutuhkan);
+        lowongan.setJumlahAsdosDiterima(diterima);
+        return lowongan;
+    }
+
+    private Pendaftaran createPendaftaran(UUID pendaftaranId, Lowongan lowongan, StatusPendaftaran status) {
+        Pendaftaran pendaftaran = new Pendaftaran();
+        pendaftaran.setPendaftaranId(pendaftaranId);
+        pendaftaran.setLowongan(lowongan);
+        pendaftaran.setStatus(status);
+        return pendaftaran;
+    }
+
+    private MataKuliah createMataKuliah(String kode, String namaSingkat, String deskripsi, Dosen dosenPengampu) {
+        MataKuliah mataKuliah = new MataKuliah(kode, namaSingkat, deskripsi);
+        mataKuliah.addDosenPengampu(dosenPengampu);
+        return mataKuliah;
     }
 }
