@@ -10,6 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface PendaftaranRepository extends JpaRepository<Pendaftaran, UUID> {
-    // Mengambil semua pendaftaran untuk lowongan tertentu (berdasarkan ID lowongan)
     List<Pendaftaran> findByLowonganLowonganId(UUID lowonganId);
+    List<Pendaftaran> findByKandidatId(UUID kandidatId);
 }
