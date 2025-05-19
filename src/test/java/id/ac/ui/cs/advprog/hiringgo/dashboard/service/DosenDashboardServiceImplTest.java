@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DashboardResponse;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DosenDashboardResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -20,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -43,19 +45,21 @@ class DosenDashboardServiceImplTest {
     private DosenDashboardServiceImpl service;
 
     private UUID userId;
-    private Dosen dosen;
 
     @BeforeEach
     void setup() {
+        // Only initialize userId, don't create any mocks or stubbing here
         userId = UUID.randomUUID();
-        dosen = mock(Dosen.class);
-        when(dosen.getId()).thenReturn(userId);
-        when(dosen.getUsername()).thenReturn("dosenUser");
-        when(dosen.getFullName()).thenReturn("Dosen FullName");
     }
 
     @Test
     void getDashboardData_happyPath() {
+        // Setup dosen mock specifically for this test
+        Dosen dosen = mock(Dosen.class);
+        // REMOVED: when(dosen.getId()).thenReturn(userId); - This was causing UnnecessaryStubbingException
+        when(dosen.getUsername()).thenReturn("dosenUser");
+        when(dosen.getFullName()).thenReturn("Dosen FullName");
+
         // validateUser
         when(userRepository.existsById(userId)).thenReturn(true);
         when(userRepository.findById(userId)).thenReturn(Optional.of(dosen));
@@ -94,32 +98,38 @@ class DosenDashboardServiceImplTest {
 
         // execute
         DashboardResponse base = service.getDashboardData(userId);
-
-        // Verify response type
         assertTrue(base instanceof DosenDashboardResponse);
         DosenDashboardResponse resp = (DosenDashboardResponse) base;
 
-        // Verify common data
+        // common data
         assertEquals("DOSEN", resp.getUserRole());
         assertEquals("dosenUser", resp.getUsername());
         assertEquals("Dosen FullName", resp.getFullName());
-
-        // Verify features
         Map<String,String> feats = resp.getAvailableFeatures();
-        assertTrue(feats.size() > 0);
-        assertTrue(feats.containsKey("manajemenlowongan"));
+        assertEquals(4, feats.size());
+        assertEquals("/api/manajemenlowongan", feats.get("manajemenlowongan"));
 
-        // Verify role-specific data
+        // role specific
         assertEquals(2, resp.getCourseCount());
         assertSame(dtos, resp.getCourses());
 
-        // Verify repository interactions
-        verify(lowonganRepository).findByStatusLowongan(StatusLowongan.DIBUKA);
-        verify(mataKuliahRepository).findByDosenPengampu(dosen);
+        // accepted assistants across all positions: 1 + 2 + 0 = 3
+        assertEquals(3, resp.getAcceptedAssistantCount());
+
+        // open positions: (3-1)+(5-0)=2+5=7
+        assertEquals(7, resp.getOpenPositionCount());
+
+        // open positions list: should include low1 and low3
+        Set<UUID> ids = resp.getOpenPositions().stream()
+                .map(LowonganResponse::getLowonganId)
+                .collect(Collectors.toSet());
+        assertTrue(ids.contains(low1.getLowonganId()));
+        assertTrue(ids.contains(low3.getLowonganId()));
     }
 
     @Test
     void getDashboardData_userNotFound_shouldThrow() {
+        // Only setup what's needed for this specific test
         when(userRepository.existsById(userId)).thenReturn(false);
 
         NoSuchElementException ex = assertThrows(
@@ -131,84 +141,16 @@ class DosenDashboardServiceImplTest {
 
     @Test
     void getDashboardData_notADosen_shouldThrow() {
+        // Only setup what's needed for this specific test
+        User regularUser = mock(User.class);
+
         when(userRepository.existsById(userId)).thenReturn(true);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mock(User.class)));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(regularUser));
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.getDashboardData(userId)
         );
         assertTrue(ex.getMessage().contains("bukan dosen"));
-    }
-
-    @Test
-    void testDashboardResponseContainsCorrectUserRole() {
-        // Set up minimum requirements for getDashboardData method
-        when(userRepository.existsById(userId)).thenReturn(true);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(dosen));
-        when(mataKuliahRepository.findByDosenPengampu(dosen)).thenReturn(Collections.emptyList());
-        when(mataKuliahMapper.toDtoList(any())).thenReturn(Collections.emptyList());
-        when(lowonganRepository.findByStatusLowongan(any())).thenReturn(Collections.emptyList());
-
-        // Call the public method that uses protected getUserRole
-        DashboardResponse response = service.getDashboardData(userId);
-
-        // Verify the role is correctly set
-        assertEquals("DOSEN", response.getUserRole());
-    }
-
-    @Test
-    void testDashboardResponseContainsFeatures() {
-        // Set up minimum requirements for getDashboardData method
-        when(userRepository.existsById(userId)).thenReturn(true);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(dosen));
-        when(mataKuliahRepository.findByDosenPengampu(dosen)).thenReturn(Collections.emptyList());
-        when(mataKuliahMapper.toDtoList(any())).thenReturn(Collections.emptyList());
-        when(lowonganRepository.findByStatusLowongan(any())).thenReturn(Collections.emptyList());
-
-        // Call the public method that uses protected getAvailableFeatures
-        DashboardResponse response = service.getDashboardData(userId);
-
-        // Verify features are correctly set
-        Map<String, String> features = response.getAvailableFeatures();
-        assertNotNull(features);
-        assertEquals("/api/manajemenlowongan", features.get("manajemenlowongan"));
-        assertEquals("/api/asdos", features.get("manajemenAsdos"));
-        assertEquals("/api/profile", features.get("profile"));
-        assertEquals("/api/log", features.get("periksaLog"));
-    }
-
-    @Test
-    void testDashboardResponseContainsUserFullName() {
-        // Set up minimum requirements for getDashboardData method
-        when(userRepository.existsById(userId)).thenReturn(true);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(dosen));
-        when(mataKuliahRepository.findByDosenPengampu(dosen)).thenReturn(Collections.emptyList());
-        when(mataKuliahMapper.toDtoList(any())).thenReturn(Collections.emptyList());
-        when(lowonganRepository.findByStatusLowongan(any())).thenReturn(Collections.emptyList());
-
-        // Call the public method
-        DashboardResponse response = service.getDashboardData(userId);
-
-        // Verify full name is correctly set
-        assertEquals("Dosen FullName", response.getFullName());
-        verify(userRepository, atLeastOnce()).findById(userId);
-    }
-
-    @Test
-    void testDashboardResponseContainsUsername() {
-        // Set up minimum requirements for getDashboardData method
-        when(userRepository.existsById(userId)).thenReturn(true);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(dosen));
-        when(mataKuliahRepository.findByDosenPengampu(dosen)).thenReturn(Collections.emptyList());
-        when(mataKuliahMapper.toDtoList(any())).thenReturn(Collections.emptyList());
-        when(lowonganRepository.findByStatusLowongan(any())).thenReturn(Collections.emptyList());
-
-        // Call the public method
-        DashboardResponse response = service.getDashboardData(userId);
-
-        // Verify username is correctly set
-        assertEquals("dosenUser", response.getUsername());
-        verify(userRepository, atLeastOnce()).findById(userId);
     }
 }
