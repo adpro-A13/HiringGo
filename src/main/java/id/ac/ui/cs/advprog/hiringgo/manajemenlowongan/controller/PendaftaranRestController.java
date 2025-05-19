@@ -68,7 +68,6 @@ public class PendaftaranRestController {
 
         try {
             Mahasiswa kandidat = new Mahasiswa();
-            // sebelumnya pake id ini
             String kandidatId = principal.getName();
             Pendaftaran pendaftaran = pendaftaranService.daftar(
                     id,
