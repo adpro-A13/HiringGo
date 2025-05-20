@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface PendaftaranRepository extends JpaRepository<Pendaftaran, UUID> {
     List<Pendaftaran> findByLowonganLowonganId(UUID lowonganId);
     List<Pendaftaran> findByKandidatId(UUID kandidatId);
+    List<Pendaftaran> findByKandidatIdAndLowonganLowonganId(UUID kandidatId, UUID lowonganId);
 }
