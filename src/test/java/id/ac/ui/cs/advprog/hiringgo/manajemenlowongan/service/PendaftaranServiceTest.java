@@ -96,16 +96,32 @@ class PendaftaranServiceTest {
 
     @Test
     void testDaftarLowonganFull() {
-        // Kondisi lowongan sudah penuh (pendaftar >= dibutuhkan)
-        lowongan.setJumlahAsdosPendaftar(5);
-        lowongan.setJumlahAsdosDibutuhkan(5);
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
+        Mahasiswa mockMahasiswa = mock(Mahasiswa.class);
+        UUID lowonganId = UUID.randomUUID();
+        Lowongan fullLowongan = new Lowongan();
+        fullLowongan.setJumlahAsdosDibutuhkan(3);
+        fullLowongan.setJumlahAsdosDiterima(3); // Equal to needed, so it's full
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
-        });
+        // Mock repository behavior
+        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(fullLowongan));
+
+        // Test that the correct exception is thrown
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> pendaftaranService.daftar(
+                        lowonganId,
+                        mockMahasiswa,
+                        BigDecimal.valueOf(3.5),
+                        20
+                )
+        );
+
+        // Verify the exception message
         assertEquals("Kuota lowongan sudah penuh!", exception.getMessage());
-        // Pastikan pendaftaran tidak disimpan
+
+        // Verify repository interactions
+        verify(lowonganRepository).findById(lowonganId);
+        // These should never be called since an exception is thrown
         verify(pendaftaranRepository, never()).save(any(Pendaftaran.class));
         verify(lowonganRepository, never()).save(any(Lowongan.class));
     }
