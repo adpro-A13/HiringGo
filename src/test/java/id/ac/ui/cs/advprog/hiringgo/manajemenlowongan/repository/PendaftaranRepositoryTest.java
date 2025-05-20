@@ -18,7 +18,7 @@ class PendaftaranRepositoryTest {
     private PendaftaranRepository pendaftaranRepository;
 
     @Test
-    @DisplayName("findByLowonganLowonganId returns empty list when no data")
+    @DisplayName("findByLowonganId returns empty list when no data")
     void testFindByLowonganLowonganId_NoData() {
         UUID randomLowonganId = UUID.randomUUID();
         List<Pendaftaran> result = pendaftaranRepository.findByLowonganLowonganId(randomLowonganId);

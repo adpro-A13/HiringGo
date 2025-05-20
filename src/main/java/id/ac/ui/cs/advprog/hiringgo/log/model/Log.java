@@ -1,7 +1,9 @@
 package id.ac.ui.cs.advprog.hiringgo.log.model;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +11,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -19,6 +22,14 @@ public class Log {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "kode_mata_kuliah")
+    private MataKuliah mataKuliah;
+
+    @ManyToOne
+    @JoinColumn(name = "users_id")
+    private User user;
 
     private String judul;
     private String keterangan;
@@ -36,6 +47,8 @@ public class Log {
 
     private Log(Builder builder) {
         this.id = builder.id;
+        this.mataKuliah = builder.mataKuliah;
+        this.user = builder.user;
         this.judul = builder.judul;
         this.keterangan = builder.keterangan;
         this.kategori = builder.kategori;
@@ -48,6 +61,8 @@ public class Log {
 
     public static class Builder {
         private Long id;
+        private MataKuliah mataKuliah;
+        private User user;
         private String judul;
         private String keterangan;
         private LogKategori kategori;
@@ -59,6 +74,16 @@ public class Log {
 
         public Builder id(Long id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder mataKuliah(MataKuliah mataKuliah) {
+            this.mataKuliah = mataKuliah;
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
             return this;
         }
 

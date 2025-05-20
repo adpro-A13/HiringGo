@@ -1,24 +1,48 @@
 package id.ac.ui.cs.advprog.hiringgo.log.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
+import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class LogServiceImpl implements LogService {
 
     private final LogRepository logRepository;
+    private final MataKuliahRepository mataKuliahRepository;
+    private final UserRepository userRepository;
 
-    public LogServiceImpl(LogRepository logRepository) {
+    public LogServiceImpl(LogRepository logRepository, MataKuliahRepository mataKuliahRepository, UserRepository userRepository) {
         this.logRepository = logRepository;
+        this.mataKuliahRepository = mataKuliahRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
-    public Log createLog(Log log) {
+    public Log createLog(CreateLogRequest request) {
+        MataKuliah mataKuliah = mataKuliahRepository.findById(request.getMataKuliah()).orElseThrow(()->new RuntimeException("Mata Kuliah Not Found"));
+        User user = userRepository.findById(request.getUser()).orElseThrow(()->new RuntimeException("User Not Found"));
+
+        Log log = new Log.Builder()
+                .mataKuliah(mataKuliah)
+                .user(user)
+                .judul(request.getJudul())
+                .kategori(request.getKategori())
+                .waktuMulai(request.getWaktuMulai())
+                .waktuSelesai(request.getWaktuSelesai())
+                .tanggalLog(request.getTanggalLog())
+                .keterangan(request.getKeterangan())
+                .pesanUntukDosen(request.getPesanUntukDosen())
+                .build();
         validateLogTime(log);
         log.setStatus(LogStatus.MENUNGGU);
         return logRepository.save(log);
@@ -35,6 +59,17 @@ public class LogServiceImpl implements LogService {
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
         return logRepository.findByTanggalLogBetween(from, to);
     }
+
+    @Override
+    public List<Log> getLogsByMataKuliah(String kode) {
+        return logRepository.findByMataKuliah_Kode(kode);
+    }
+
+    @Override
+    public List<Log> getLogsByUser(UUID idUser) {
+        return logRepository.findByUserId(idUser);
+    }
+
 
     @Override
     public Log updateStatus(Long id, LogStatus status) {

@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.log.controller;
 import id.ac.ui.cs.advprog.hiringgo.log.command.LogCommand;
 import id.ac.ui.cs.advprog.hiringgo.log.command.LogCommandInvoker;
 import id.ac.ui.cs.advprog.hiringgo.log.command.UpdateStatusCommand;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RequestMapping("/logs")
 @RestController
@@ -24,9 +26,9 @@ public class LogController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createLog(@RequestBody Log log) {
+    public ResponseEntity<?> createLog(@RequestBody CreateLogRequest createLogRequest) {
         try {
-            Log createdLog = logService.createLog(log);
+            Log createdLog = logService.createLog(createLogRequest);
             return ResponseEntity.ok(createdLog);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -38,6 +40,18 @@ public class LogController {
     @GetMapping
     public ResponseEntity<List<Log>> getAllLogs() {
         List<Log> logs = logService.getAllLogs();
+        return ResponseEntity.ok(logs);
+    }
+
+    @GetMapping("/mata-kuliah/{kode}")
+    public ResponseEntity<List<Log>> getLogsByMataKuliah(@PathVariable String kode) {
+        List<Log> logs = logService.getLogsByMataKuliah(kode);
+        return ResponseEntity.ok(logs);
+    }
+
+    @GetMapping("/user/{id}")
+    public ResponseEntity<List<Log>> getLogsByUser(@PathVariable UUID id) {
+        List<Log> logs = logService.getLogsByUser(id);
         return ResponseEntity.ok(logs);
     }
 
