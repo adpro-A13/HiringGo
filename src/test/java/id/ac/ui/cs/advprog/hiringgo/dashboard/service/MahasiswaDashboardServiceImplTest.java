@@ -5,7 +5,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DashboardResponse;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.MahasiswaDashboardResponse;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
@@ -25,6 +25,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 
 @ExtendWith(MockitoExtension.class)
 class MahasiswaDashboardServiceImplTest {
@@ -37,6 +38,8 @@ class MahasiswaDashboardServiceImplTest {
 
     @Mock
     private PendaftaranRepository pendaftaranRepository;
+
+    @Mock private LowonganMapper lowonganMapper;
 
     @InjectMocks
     private MahasiswaDashboardServiceImpl service;
@@ -135,7 +138,7 @@ class MahasiswaDashboardServiceImplTest {
         assertEquals(0, resp.getTotalLoggedHours());
         assertEquals(BigDecimal.ZERO, resp.getTotalIncentive());
 
-        // Check lists of LowonganResponse
+        // Check lists of LowonganDTO
         assertEquals(1, resp.getAcceptedLowongan().size());
         assertEquals(3, resp.getRecentLowongan().size());
     }
@@ -170,10 +173,9 @@ class MahasiswaDashboardServiceImplTest {
     void populateCommonData_mahasiswaNotFound_shouldThrow() {
         // Create a test subclass that skips validation
         MahasiswaDashboardServiceImpl testService = new MahasiswaDashboardServiceImpl(
-                userRepository, lowonganRepository, pendaftaranRepository) {
+                userRepository, lowonganRepository, pendaftaranRepository, lowonganMapper) {
             @Override
             protected void validateUser(UUID userId) {
-                // Skip validation to test populateCommonData directly
             }
         };
 
@@ -242,7 +244,7 @@ class MahasiswaDashboardServiceImplTest {
     }
 
     @Test
-    void convertToLowonganResponse_shouldCreateCorrectDTO() {
+    void convertToLowonganDTO_shouldCreateCorrectDTO() {
         // Setup with necessary fields
         Mahasiswa mahasiswa = mock(Mahasiswa.class);
         when(mahasiswa.getUsername()).thenReturn("mahasiswaUser");
@@ -270,13 +272,18 @@ class MahasiswaDashboardServiceImplTest {
         when(lowonganRepository.findAll()).thenReturn(List.of(testLowongan));
         when(pendaftaranRepository.findByKandidatId(userId)).thenReturn(Collections.emptyList());
 
-        // Execute
+        LowonganDTO mockDto = mock(LowonganDTO.class);
+        when(mockDto.getLowonganId()).thenReturn(lowonganId);
+        when(lowonganMapper.toDto(testLowongan))
+                .thenReturn(mockDto);
+
+        // execute
         DashboardResponse base = service.getDashboardData(userId);
         MahasiswaDashboardResponse resp = (MahasiswaDashboardResponse) base;
 
-        // Verify conversion
+        // now this won't NPE:
         assertEquals(1, resp.getRecentLowongan().size());
-        LowonganResponse lowonganDTO = resp.getRecentLowongan().get(0);
-        assertEquals(lowonganId, lowonganDTO.getLowonganId());
+        assertEquals(lowonganId,
+                resp.getRecentLowongan().get(0).getLowonganId());
     }
 }
