@@ -38,7 +38,7 @@ public class PendaftaranServiceImpl implements PendaftaranService {
                 );
 
         // 2) Validasi kuota
-        if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
+        if (lowongan.getJumlahAsdosDiterima() >= lowongan.getJumlahAsdosDibutuhkan()) {
             throw new IllegalStateException(ERR_KUOTA_PENUH);
         }
 

@@ -125,7 +125,6 @@ public class PendaftaranRestController {
             Mahasiswa mahasiswa = (Mahasiswa) userRepository.findByEmail(email)
                     .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
 
-            // Find if user has applied to this lowongan
             List<Pendaftaran> pendaftaranList = pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
                     mahasiswa.getId(), id);
 
@@ -136,7 +135,6 @@ public class PendaftaranRestController {
                 ));
             }
 
-            // Return the status of their application
             Pendaftaran pendaftaran = pendaftaranList.get(0);
             return ResponseEntity.ok(Map.of(
                     "hasApplied", true,
