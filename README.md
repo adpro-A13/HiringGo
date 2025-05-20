@@ -1,5 +1,5 @@
 # AdvProg A13 HiringGo
-
+## Deployment Link (aws dimatikan dulu karena sudah hampir kepakai semua dollarnya): https://hiringgo-a13.koyeb.app/
 ## Nama Anggota Kelompok A13
 - Christian Raphael Heryanto (2306152323)
 - Muhammad Radhiya Arshq (2306275885)

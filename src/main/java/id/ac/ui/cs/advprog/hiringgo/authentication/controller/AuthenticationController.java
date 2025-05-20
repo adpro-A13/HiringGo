@@ -22,7 +22,7 @@ import java.util.Map;
 @RestController
 public class AuthenticationController {
     private final JwtService jwtService;
-    
+
     private final AuthenticationService authenticationService;
 
     public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
@@ -88,17 +88,17 @@ public class AuthenticationController {
             return ResponseEntity.status(403).body("Authorization failed");
         }
     }
-    
+
     private Map<String, Object> sanitizeUser(User user) {
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("id", user.getId());
         userMap.put("email", user.getUsername());
-        
+
         userMap.put("role", user.getAuthorities().stream()
-            .findFirst()
-            .map(GrantedAuthority::getAuthority)
-            .orElse("UNKNOWN"));
-        
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse("UNKNOWN"));
+
         if (user instanceof Mahasiswa) {
             Mahasiswa mahasiswa = (Mahasiswa) user;
             userMap.put("fullName", mahasiswa.getFullName());

@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
-
+import org.springframework.security.core.Authentication;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
@@ -46,11 +47,11 @@ public class PendaftaranController {
     public String showDaftarForm(
             @PathVariable UUID id,
             Model model,
-            Principal principal,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
         // Authentication check
-        if (principal == null) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
             redirectAttributes.addFlashAttribute("error", "Anda harus login terlebih dahulu");
             return "redirect:/auth/login";
         }
@@ -60,11 +61,11 @@ public class PendaftaranController {
             Lowongan lowongan = lowonganService.findById(id);
 
             // Get user information
-            String kandidatId = principal.getName();
+            Mahasiswa kandidat = (Mahasiswa) authentication.getPrincipal();
 
             // Add attributes to model
             model.addAttribute("lowongan", lowongan);
-            model.addAttribute("kandidatId", kandidatId);
+            model.addAttribute("kandidat", kandidat);
             model.addAttribute("daftarForm", new DaftarForm());
 
             // Sample prerequisites list
@@ -88,23 +89,24 @@ public class PendaftaranController {
             @Valid @ModelAttribute("daftarForm") DaftarForm form,
             BindingResult bindingResult,
             Model model,
-            Principal principal,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
         // Authentication check
-        if (principal == null) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
             redirectAttributes.addFlashAttribute("error", "Anda harus login terlebih dahulu");
             return "redirect:/auth/login";
         }
+
 
         // Handle validation errors
         if (bindingResult.hasErrors()) {
             try {
                 Lowongan lowongan = lowonganService.findById(id);
-                String kandidatId = principal.getName();
+                Mahasiswa kandidat = (Mahasiswa) authentication.getPrincipal();
 
                 model.addAttribute("lowongan", lowongan);
-                model.addAttribute("kandidatId", kandidatId);
+                model.addAttribute("kandidat", kandidat);
                 model.addAttribute("prasyaratList", Arrays.asList(
                         "IF1010 - Dummy Course 1: A",
                         "IF1020 - Dummy Course 2: B"
@@ -119,8 +121,8 @@ public class PendaftaranController {
 
         // Process application
         try {
-            String kandidatId = principal.getName();
-            Pendaftaran pendaftaran = pendaftaranService.daftar(id, kandidatId, BigDecimal.valueOf(form.getIpk()), form.getSks());
+            Mahasiswa kandidat = (Mahasiswa) authentication.getPrincipal();
+            Pendaftaran pendaftaran = pendaftaranService.daftar(id, kandidat, BigDecimal.valueOf(form.getIpk()), form.getSks());
             redirectAttributes.addFlashAttribute("success", "Berhasil mendaftar asisten dosen");
             return "redirect:/lowongan/" + id;
         } catch (NoSuchElementException e) {
@@ -139,17 +141,16 @@ public class PendaftaranController {
     public String showLowonganDetail(
             @PathVariable UUID id,
             Model model,
-            Principal principal,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
         try {
             Lowongan lowongan = lowonganService.findById(id);
             model.addAttribute("lowongan", lowongan);
-
-            // Add user info if authenticated
-            if (principal != null) {
-                String userId = principal.getName();
-                model.addAttribute("userId", userId);
+            Mahasiswa kandidat = (Mahasiswa) authentication.getPrincipal();
+            // Add   user info if authenticated
+            if (kandidat != null) {
+                model.addAttribute("kandidat", kandidat);
             }
 
             return "lowonganDetail";
