@@ -1,10 +1,11 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.service;
 
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DashboardResponse;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.MahasiswaDashboardResponse;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
@@ -30,15 +31,19 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
     private final UserRepository userRepository;
     private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
+    private final LowonganMapper lowonganMapper;
+
 
     @Autowired
     public MahasiswaDashboardServiceImpl(
             UserRepository userRepository,
             LowonganRepository lowonganRepository,
-            PendaftaranRepository pendaftaranRepository) {
+            PendaftaranRepository pendaftaranRepository,
+            LowonganMapper lowonganMapper) {
         this.userRepository = userRepository;
         this.lowonganRepository = lowonganRepository;
         this.pendaftaranRepository = pendaftaranRepository;
+        this.lowonganMapper = lowonganMapper;
     }
 
     @Override
@@ -114,16 +119,16 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
 
         response.setTotalIncentive(calculateTotalIncentive(userId));
 
-        List<LowonganResponse> acceptedLowongan = allApplications.stream()
+        List<LowonganDTO> acceptedLowongan = allApplications.stream()
                 .filter(app -> app.getStatus() == StatusPendaftaran.DITERIMA)
                 .map(Pendaftaran::getLowongan)
                 .filter(Objects::nonNull)
-                .map(this::convertToLowonganResponse)
+                .map(this::convertToLowonganDTO)
                 .collect(Collectors.toList());
         response.setAcceptedLowongan(acceptedLowongan);
 
-        List<LowonganResponse> recentLowongan = allLowonganWithOpenStatus.stream()
-                .map(this::convertToLowonganResponse)
+        List<LowonganDTO> recentLowongan = allLowonganWithOpenStatus.stream()
+                .map(this::convertToLowonganDTO)
                 .collect(Collectors.toList());
         response.setRecentLowongan(recentLowongan);
     }
@@ -149,9 +154,8 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
         return BigDecimal.ZERO;
     }
 
-    private LowonganResponse convertToLowonganResponse(Lowongan lowongan) {
-        // langsung memetakan semua field yang ada di constructor DTO
-        return new LowonganResponse(lowongan);
+    private LowonganDTO convertToLowonganDTO(Lowongan lowongan) {
+        return lowonganMapper.toDto(lowongan);
     }
 
 }
