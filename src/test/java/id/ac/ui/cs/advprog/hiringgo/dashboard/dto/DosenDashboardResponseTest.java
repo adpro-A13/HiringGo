@@ -1,7 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.dto;
 
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.dto.MataKuliahDTO;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -48,9 +48,9 @@ class DosenDashboardResponseTest {
         assertSame(courses, dto.getCourses());
 
         // OpenPositions list
-        LowonganResponse p1 = mock(LowonganResponse.class);
-        LowonganResponse p2 = mock(LowonganResponse.class);
-        List<LowonganResponse> positions = Arrays.asList(p1, p2);
+        LowonganDTO p1 = mock(LowonganDTO.class);
+        LowonganDTO p2 = mock(LowonganDTO.class);
+        List<LowonganDTO> positions = Arrays.asList(p1, p2);
         dto.setOpenPositions(positions);
         assertSame(positions, dto.getOpenPositions());
     }
