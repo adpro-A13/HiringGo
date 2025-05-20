@@ -16,4 +16,6 @@ public interface LowonganService {
     void registerLowongan(UUID lowonganId, String candidateId);
     void terimaPendaftar(UUID lowonganId, UUID pendaftaranId);
     void tolakPendaftar(UUID lowonganId, UUID pendaftaranId);
+    List<Lowongan> findAllByDosenUsername(String username);
+
 }

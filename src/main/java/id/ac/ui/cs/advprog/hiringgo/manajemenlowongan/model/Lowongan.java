@@ -44,19 +44,8 @@ public class Lowongan {
 
     public Lowongan() {}
 
-    public Lowongan(String lowonganId,
-                    MataKuliah mataKuliah,
-                    String tahunAjaran,
-                    String statusLowongan,
-                    String semester,
-                    int jumlahAsdosDibutuhkan,
-                    int jumlahAsdosDiterima,
-                    int jumlahAsdosPendaftar) {
-
-        if (!StatusLowongan.contains(statusLowongan)) {
-            throw new IllegalArgumentException("Status lowongan tidak valid: " + statusLowongan);
-        }
-
+    public Lowongan(String lowonganId, MataKuliah mataKuliah, String tahunAjaran, String semester,
+                    int jumlahAsdosDibutuhkan) {
         if (!Semester.contains(semester)) {
             throw new IllegalArgumentException("Semester tidak valid: " + semester);
         }
@@ -64,11 +53,11 @@ public class Lowongan {
         this.lowonganId = UUID.fromString(lowonganId);
         this.mataKuliah = mataKuliah;
         this.tahunAjaran = tahunAjaran;
-        this.statusLowongan = StatusLowongan.valueOf(statusLowongan.toUpperCase());
         this.semester = Semester.valueOf(semester.toUpperCase());
+        this.statusLowongan = StatusLowongan.DIBUKA;
         this.jumlahAsdosDibutuhkan = jumlahAsdosDibutuhkan;
-        this.jumlahAsdosDiterima = jumlahAsdosDiterima;
-        this.jumlahAsdosPendaftar = jumlahAsdosPendaftar;
+        this.jumlahAsdosDiterima = 0;
+        this.jumlahAsdosPendaftar = 0;
     }
 
     public void setStatusLowongan(String statusLowongan) {

@@ -8,6 +8,7 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Data
 public class LowonganDetailResponse {
@@ -23,7 +24,7 @@ public class LowonganDetailResponse {
     private int jumlahAsdosDibutuhkan;
     private int jumlahAsdosDiterima;
     private int jumlahAsdosPendaftar;
-    private List<Pendaftaran> daftarPendaftaran = new ArrayList<>();
+    private List<UUID> idDaftarPendaftaran;
 
     public LowonganDetailResponse(Lowongan lowongan) {
         this.lowonganId = lowongan.getLowonganId();
@@ -38,7 +39,10 @@ public class LowonganDetailResponse {
         this.jumlahAsdosDibutuhkan = lowongan.getJumlahAsdosDibutuhkan();
         this.jumlahAsdosDiterima = lowongan.getJumlahAsdosDiterima();
         this.jumlahAsdosPendaftar = lowongan.getJumlahAsdosPendaftar();
-        this.daftarPendaftaran = lowongan.getDaftarPendaftaran();
+        this.idDaftarPendaftaran = lowongan.getDaftarPendaftaran()
+                .stream()
+                .map(Pendaftaran::getPendaftaranId)
+                .collect(Collectors.toList());
     }
 
 }
