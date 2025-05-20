@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
@@ -37,6 +38,7 @@ public class Lowongan {
     private int jumlahAsdosPendaftar;
 
     @OneToMany(mappedBy = "lowongan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Pendaftaran> daftarPendaftaran = new ArrayList<>();
 
 
