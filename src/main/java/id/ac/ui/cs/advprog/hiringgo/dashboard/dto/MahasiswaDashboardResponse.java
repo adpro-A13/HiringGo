@@ -1,6 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.dto;
 
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO; // Changed import
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,6 +18,6 @@ public class MahasiswaDashboardResponse extends DashboardResponse {
     private int rejectedApplicationsCount;
     private int totalLoggedHours;
     private BigDecimal totalIncentive;
-    private List<LowonganResponse> acceptedLowongan;
-    private List<LowonganResponse> recentLowongan;
+    private List<LowonganDTO> acceptedLowongan; // Changed type
+    private List<LowonganDTO> recentLowongan; // Changed type
 }
