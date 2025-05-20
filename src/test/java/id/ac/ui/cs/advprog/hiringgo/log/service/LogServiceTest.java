@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.List;
 
@@ -135,5 +136,117 @@ public class LogServiceTest {
 
         assertDoesNotThrow(() -> logService.deleteLog(1L));
         verify(logRepository).deleteById(1L);
+    }
+
+    @Test
+    void testGetLogsByStatus() {
+        // Arrange
+        LogStatus status = LogStatus.DITERIMA;
+        Log log1 = new Log.Builder()
+                .id(1L)
+                .judul("Log 1")
+                .status(status)
+                .build();
+        Log log2 = new Log.Builder()
+                .id(2L)
+                .judul("Log 2")
+                .status(status)
+                .build();
+
+        List<Log> expectedLogs = Arrays.asList(log1, log2);
+
+        when(logRepository.findByStatus(status)).thenReturn(expectedLogs);
+
+        // Act
+        List<Log> actualLogs = logService.getLogsByStatus(status);
+
+        // Assert
+        assertEquals(2, actualLogs.size());
+        assertEquals("Log 1", actualLogs.get(0).getJudul());
+        assertEquals("Log 2", actualLogs.get(1).getJudul());
+        verify(logRepository).findByStatus(status);
+    }
+
+    @Test
+    void testGetLogsByMonth() {
+        // Arrange
+        int month = 5;
+        int year = 2023;
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        Log log1 = new Log.Builder()
+                .id(1L)
+                .judul("Monthly Log 1")
+                .tanggalLog(LocalDate.of(year, month, 15))
+                .build();
+        Log log2 = new Log.Builder()
+                .id(2L)
+                .judul("Monthly Log 2")
+                .tanggalLog(LocalDate.of(year, month, 20))
+                .build();
+
+        List<Log> expectedLogs = Arrays.asList(log1, log2);
+
+        when(logRepository.findByTanggalLogBetween(startDate, endDate))
+                .thenReturn(expectedLogs);
+
+        // Act
+        List<Log> actualLogs = logService.getLogsByMonth(month, year);
+
+        // Assert
+        assertEquals(2, actualLogs.size());
+        assertEquals("Monthly Log 1", actualLogs.get(0).getJudul());
+        assertEquals("Monthly Log 2", actualLogs.get(1).getJudul());
+        verify(logRepository).findByTanggalLogBetween(startDate, endDate);
+    }
+
+    @Test
+    void testUpdateLogNotFound() {
+        // Arrange
+        Long id = 999L;
+        Log updatedLog = new Log.Builder()
+                .judul("Updated Log")
+                .waktuMulai(LocalTime.of(10, 0))
+                .waktuSelesai(LocalTime.of(12, 0))
+                .build();
+
+        when(logRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class,
+                () -> logService.updateLog(id, updatedLog));
+
+        assertEquals("Log tidak ditemukan", exception.getMessage());
+        verify(logRepository).findById(id);
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdateStatusNotFound() {
+        // Arrange
+        Long id = 999L;
+        LogStatus newStatus = LogStatus.DITERIMA;
+
+        when(logRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class,
+                () -> logService.updateStatus(id, newStatus));
+
+        assertEquals("Log tidak ditemukan", exception.getMessage());
+        verify(logRepository).findById(id);
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testDeleteLogWithNonExistentId() {
+        // Arrange
+        Long id = 999L;
+        doThrow(new RuntimeException("Log not found")).when(logRepository).deleteById(id);
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> logService.deleteLog(id));
+        verify(logRepository).deleteById(id);
     }
 }

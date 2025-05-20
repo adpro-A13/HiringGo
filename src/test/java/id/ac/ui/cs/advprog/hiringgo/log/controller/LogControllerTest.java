@@ -38,10 +38,15 @@ class LogControllerTest {
 
     private Log sampleLog;
 
+    private ObjectMapper objectMapper;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         mockMvc = MockMvcBuilders.standaloneSetup(logController).build();
+
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
         // Sample Log for testing using Builder pattern
         sampleLog = new Log.Builder()
@@ -174,4 +179,78 @@ class LogControllerTest {
         mockMvc.perform(delete("/logs/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    void createLog_shouldHandleValidationError() throws Exception {
+        Log invalidLog = new Log.Builder()
+                .judul("Invalid Log")
+                .build();
+
+        when(logService.createLog(any(Log.class)))
+                .thenThrow(new IllegalArgumentException("Waktu mulai dan selesai tidak boleh kosong"));
+
+        mockMvc.perform(post("/logs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidLog)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Waktu mulai dan selesai tidak boleh kosong"));
+    }
+
+    @Test
+    void createLog_shouldHandleServerError() throws Exception {
+        Log log = new Log.Builder()
+                .judul("Test Log")
+                .build();
+
+        when(logService.createLog(any(Log.class)))
+                .thenThrow(new RuntimeException("Internal server error"));
+
+        mockMvc.perform(post("/logs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(log)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Error creating log"));
+    }
+
+    @Test
+    void updateLogStatus_shouldHandleNotFound() throws Exception {
+        when(logService.updateStatus(eq(999L), any(LogStatus.class)))
+                .thenThrow(new RuntimeException("Log tidak ditemukan"));
+
+        mockMvc.perform(patch("/logs/{id}/status", 999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("\"DITERIMA\""))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Log tidak ditemukan"));
+    }
+
+    @Test
+    void updateLog_shouldHandleNotFound() throws Exception {
+        Log updatedLog = new Log.Builder()
+                .id(999L)
+                .judul("Updated Test Log")
+                .waktuMulai(LocalTime.of(10, 0))
+                .waktuSelesai(LocalTime.of(12, 0))
+                .build();
+
+        when(logService.updateLog(eq(999L), any(Log.class)))
+                .thenThrow(new RuntimeException("Log tidak ditemukan"));
+
+        mockMvc.perform(put("/logs/{id}", 999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatedLog)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Log tidak ditemukan"));
+    }
+
+    @Test
+    void deleteLog_shouldHandleNotFound() throws Exception {
+        doThrow(new RuntimeException("Log tidak ditemukan"))
+                .when(logService).deleteLog(999L);
+
+        mockMvc.perform(delete("/logs/{id}", 999L))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Log tidak ditemukan"));
+    }
+
 }
