@@ -1,5 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.service;
 
+import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
+import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,7 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
     private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
     private final LowonganMapper lowonganMapper;
+    private final LogService logService;
 
 
     @Autowired
@@ -39,11 +43,12 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
             UserRepository userRepository,
             LowonganRepository lowonganRepository,
             PendaftaranRepository pendaftaranRepository,
-            LowonganMapper lowonganMapper) {
+            LowonganMapper lowonganMapper, LogService logService) {
         this.userRepository = userRepository;
         this.lowonganRepository = lowonganRepository;
         this.pendaftaranRepository = pendaftaranRepository;
         this.lowonganMapper = lowonganMapper;
+        this.logService = logService;
     }
 
     @Override
@@ -143,15 +148,22 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
     }
 
     private int calculateTotalLoggedHours(UUID userId) {
-        // TODO: Implementasikan perhitungan jam yang sesungguhnya
-        // dari repository log aktivitas (jika ada)
-        return 0;
+        List<Log> logs = logService.getLogsByUser(userId);
+        long totalLoggedHours = logs.stream()
+                .map(log -> Duration.between(log.getWaktuMulai(), log.getWaktuSelesai()))
+                .mapToLong(Duration::toMinutes)
+                .sum();
+        return (int) totalLoggedHours;
     }
 
     private BigDecimal calculateTotalIncentive(UUID userId) {
-        // TODO: Implementasikan perhitungan insentif yang sesungguhnya
-        // dari repository honor/pembayaran (jika ada)
-        return BigDecimal.ZERO;
+        List<Log> logs = logService.getLogsByUser(userId);
+        long totalLoggedHours = logs.stream()
+                .map(log -> Duration.between(log.getWaktuMulai(), log.getWaktuSelesai()))
+                .mapToLong(Duration::toMinutes)
+                .sum();
+
+        return new BigDecimal(totalLoggedHours * 27.500);
     }
 
     private LowonganDTO convertToLowonganDTO(Lowongan lowongan) {
