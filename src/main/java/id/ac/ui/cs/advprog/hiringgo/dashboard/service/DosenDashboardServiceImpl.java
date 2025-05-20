@@ -1,10 +1,11 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.service;
 
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DashboardResponse;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DosenDashboardResponse;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -29,17 +30,20 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
     private final MataKuliahRepository mataKuliahRepository;
     private final LowonganRepository lowonganRepository;
     private final MataKuliahMapper mataKuliahMapper;
+    private final LowonganMapper lowonganMapper;
 
     @Autowired
     public DosenDashboardServiceImpl(
             UserRepository userRepository,
             MataKuliahRepository mataKuliahRepository,
             LowonganRepository lowonganRepository,
-            MataKuliahMapper mataKuliahMapper) {
+            MataKuliahMapper mataKuliahMapper,
+            LowonganMapper lowonganMapper) {
         this.userRepository = userRepository;
         this.mataKuliahRepository = mataKuliahRepository;
         this.lowonganRepository = lowonganRepository;
         this.mataKuliahMapper = mataKuliahMapper;
+        this.lowonganMapper = lowonganMapper;
     }
 
     @Override
@@ -124,15 +128,15 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
         response.setAcceptedAssistantCount(totalAcceptedAssistants);
         response.setOpenPositionCount(totalOpenPositions);
 
-        List<LowonganResponse> openLowonganResponses = dosenLowongan.stream()
+        List<LowonganDTO> openLowonganDTOs = dosenLowongan.stream()
                 .filter(l -> l.getJumlahAsdosDiterima() < l.getJumlahAsdosDibutuhkan())
-                .map(this::convertToLowonganResponse)
+                .map(this::convertToLowonganDTO)
                 .collect(Collectors.toList());
 
-        response.setOpenPositions(openLowonganResponses);
+        response.setOpenPositions(openLowonganDTOs);
     }
 
-    private LowonganResponse convertToLowonganResponse(Lowongan lowongan) {
-        return new LowonganResponse(lowongan);
+    private LowonganDTO convertToLowonganDTO(Lowongan lowongan) {
+        return lowonganMapper.toDto(lowongan);
     }
 }
