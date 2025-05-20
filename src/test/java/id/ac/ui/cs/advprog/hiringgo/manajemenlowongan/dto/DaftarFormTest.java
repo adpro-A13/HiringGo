@@ -73,4 +73,22 @@ class DaftarFormTest {
         Set<ConstraintViolation<DaftarForm>> violations = validator.validate(form);
         assertFalse(violations.isEmpty(), "Negative SKS should trigger validation error");
     }
+
+    // ────────────────────────────────────────────────────────────────────────────────
+    // New test to cover the all-args constructor
+    // ────────────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Test DaftarForm all-args constructor sets fields correctly")
+    void testAllArgsConstructor() {
+        DaftarForm form = new DaftarForm(3.85, 22);
+
+        // Directly assert the fields set by the constructor
+        assertEquals(3.85, form.getIpk(), "Constructor should set IPK");
+        assertEquals(22,   form.getSks(), "Constructor should set SKS");
+
+        // And it should still pass validation for valid values
+        Set<ConstraintViolation<DaftarForm>> violations = validator.validate(form);
+        assertTrue(violations.isEmpty(), "All-args constructed form should be valid");
+    }
 }
