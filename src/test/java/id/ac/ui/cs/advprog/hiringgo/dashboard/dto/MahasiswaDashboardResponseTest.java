@@ -1,6 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.dto;
 
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -57,15 +57,15 @@ class MahasiswaDashboardResponseTest {
         assertEquals(incentive, dto.getTotalIncentive());
 
         // List fields
-        LowonganResponse acc1 = mock(LowonganResponse.class);
-        LowonganResponse acc2 = mock(LowonganResponse.class);
-        List<LowonganResponse> accepted = Arrays.asList(acc1, acc2);
+        LowonganDTO acc1 = mock(LowonganDTO.class);
+        LowonganDTO acc2 = mock(LowonganDTO.class);
+        List<LowonganDTO> accepted = Arrays.asList(acc1, acc2);
         dto.setAcceptedLowongan(accepted);
         assertSame(accepted, dto.getAcceptedLowongan());
 
-        LowonganResponse rec1 = mock(LowonganResponse.class);
-        LowonganResponse rec2 = mock(LowonganResponse.class);
-        List<LowonganResponse> recent = Arrays.asList(rec1, rec2);
+        LowonganDTO rec1 = mock(LowonganDTO.class);
+        LowonganDTO rec2 = mock(LowonganDTO.class);
+        List<LowonganDTO> recent = Arrays.asList(rec1, rec2);
         dto.setRecentLowongan(recent);
         assertSame(recent, dto.getRecentLowongan());
     }
