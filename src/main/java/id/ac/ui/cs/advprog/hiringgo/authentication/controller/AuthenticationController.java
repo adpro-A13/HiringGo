@@ -10,7 +10,6 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.service.AuthenticationService
 import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,10 +49,15 @@ public class AuthenticationController {
         }
         if (registerUserDto.getNim() == null || registerUserDto.getNim().isEmpty()) {
             return ResponseEntity.badRequest().body("NIM is required");
-        }
-        try {
+        }        try {
             User registeredUser = authenticationService.signup(registerUserDto);
-            return ResponseEntity.ok(sanitizeUser(registeredUser));
+            Map<String, Object> userInfo = sanitizeUser(registeredUser);
+            String jwtToken = jwtService.generateToken(userInfo, registeredUser);
+            LoginResponse loginResponse = new LoginResponse()
+                .setToken(jwtToken)
+                .setExpiresIn(jwtService.getExpirationTime())
+                .setUser(userInfo);
+            return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
@@ -68,35 +72,20 @@ public class AuthenticationController {
         }
         if (loginUserDto.getPassword() == null || loginUserDto.getPassword().isEmpty()) {
             return ResponseEntity.badRequest().body("Password is required");
-        }
-
-        try {
+        }        try {
             User authenticatedUser = authenticationService.authenticate(loginUserDto);
-            String jwtToken = jwtService.generateToken(authenticatedUser);
+            Map<String, Object> userInfo = sanitizeUser(authenticatedUser);
+            String jwtToken = jwtService.generateToken(userInfo, authenticatedUser);
             LoginResponse loginResponse = new LoginResponse()
-                    .setToken(jwtToken)
-                    .setExpiresIn(jwtService.getExpirationTime());
+                .setToken(jwtToken)
+                .setExpiresIn(jwtService.getExpirationTime())
+                .setUser(userInfo);
             return ResponseEntity.ok(loginResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(403).body("Authorization failed");
-        }
-    }
-
-    @GetMapping("/verify")
-    public ResponseEntity<?> verify(
-            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(400).body("Missing or invalid Authorization header");
-        }
-        String token = authorizationHeader.substring(7);
-        User user = authenticationService.verifyToken(token);
-        if (user != null) {
-            return ResponseEntity.ok(sanitizeUser(user));
-        } else {
-            return ResponseEntity.status(401).body("Invalid token");
         }
     }
 
