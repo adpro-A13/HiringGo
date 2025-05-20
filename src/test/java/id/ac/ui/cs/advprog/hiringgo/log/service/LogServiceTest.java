@@ -1,9 +1,15 @@
 package id.ac.ui.cs.advprog.hiringgo.log.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
+import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +18,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -19,96 +26,195 @@ import static org.mockito.Mockito.*;
 public class LogServiceTest {
 
     private LogRepository logRepository;
+    private MataKuliahRepository mataKuliahRepository;
+    private UserRepository userRepository;
     private LogService logService;
 
     @BeforeEach
     void setUp() {
         logRepository = mock(LogRepository.class);
-        logService = new LogServiceImpl(logRepository);
+        mataKuliahRepository = mock(MataKuliahRepository.class);
+        userRepository = mock(UserRepository.class);
+        logService = new LogServiceImpl(logRepository, mataKuliahRepository, userRepository);
     }
 
     @Test
     void testCreateLogValid() {
-        Log log = new Log.Builder()
-                .judul("Asistensi")
-                .kategori(LogKategori.ASISTENSI)
-                .tanggalLog(LocalDate.now())
-                .waktuMulai(LocalTime.of(9, 0))
-                .waktuSelesai(LocalTime.of(10, 0))
-                .build();
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        String mataKuliahId = "CS101";
 
-        when(logRepository.save(any())).thenReturn(log);
+        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
 
-        Log result = logService.createLog(log);
+        User user = new Mahasiswa();
+        user.setId(userId);
 
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setKategori(LogKategori.ASISTENSI);
+        request.setTanggalLog(LocalDate.now());
+        request.setWaktuMulai(LocalTime.of(9, 0));
+        request.setWaktuSelesai(LocalTime.of(10, 0));
+        request.setMataKuliah(mataKuliahId);
+        request.setUser(userId);
+
+        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(logRepository.save(any(Log.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Log result = logService.createLog(request);
+
+        // Assert
         assertEquals(LogStatus.MENUNGGU, result.getStatus());
-        verify(logRepository).save(log);
+        assertEquals("Asistensi", result.getJudul());
+        assertEquals(user, result.getUser());
+        assertEquals(mataKuliah, result.getMataKuliah());
+        verify(logRepository).save(any(Log.class));
+    }
+
+    @Test
+    void testCreateLogMataKuliahNotFound() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        String mataKuliahId = "CS101";
+
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setMataKuliah(mataKuliahId);
+        request.setUser(userId);
+        request.setWaktuMulai(LocalTime.of(9, 0));
+        request.setWaktuSelesai(LocalTime.of(10, 0));
+
+        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.empty());
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class, () -> logService.createLog(request));
+        assertEquals("Mata Kuliah Not Found", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateLogUserNotFound() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        String mataKuliahId = "CS101";
+
+        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setMataKuliah(mataKuliahId);
+        request.setUser(userId);
+        request.setWaktuMulai(LocalTime.of(9, 0));
+        request.setWaktuSelesai(LocalTime.of(10, 0));
+
+        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class, () -> logService.createLog(request));
+        assertEquals("User Not Found", exception.getMessage());
+        verify(logRepository, never()).save(any());
     }
 
     @Test
     void testCreateLogInvalidTime() {
-        Log log = new Log.Builder()
-                .waktuMulai(LocalTime.of(14, 0))
-                .waktuSelesai(LocalTime.of(12, 0))
-                .build();
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        String mataKuliahId = "CS101";
 
-        Exception e = assertThrows(IllegalArgumentException.class, () -> logService.createLog(log));
+        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
 
-        assertTrue(e.getMessage().contains("Waktu mulai harus sebelum"));
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setKategori(LogKategori.ASISTENSI);
+        request.setTanggalLog(LocalDate.now());
+        request.setWaktuMulai(LocalTime.of(14, 0));
+        request.setWaktuSelesai(LocalTime.of(12, 0));
+        request.setMataKuliah(mataKuliahId);
+        request.setUser(userId);
+
+        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> logService.createLog(request));
+        assertTrue(exception.getMessage().contains("Waktu mulai harus sebelum waktu selesai"));
+        verify(logRepository, never()).save(any());
     }
 
     @Test
     void testUpdateStatus() {
+        // Arrange
         Log log = new Log.Builder()
                 .status(LogStatus.MENUNGGU)
                 .build();
 
         when(logRepository.findById(1L)).thenReturn(Optional.of(log));
-        when(logRepository.save(any())).thenReturn(log);
+        when(logRepository.save(any(Log.class))).thenReturn(log);
 
+        // Act
         Log updated = logService.updateStatus(1L, LogStatus.DITERIMA);
 
+        // Assert
         assertEquals(LogStatus.DITERIMA, updated.getStatus());
+        verify(logRepository).save(log);
     }
 
     @Test
     void testGetLogById() {
+        // Arrange
         Log log = new Log.Builder()
                 .judul("Review")
                 .build();
 
         when(logRepository.findById(1L)).thenReturn(Optional.of(log));
 
+        // Act
         Optional<Log> found = logService.getLogById(1L);
 
+        // Assert
         assertTrue(found.isPresent());
         assertEquals("Review", found.get().getJudul());
     }
 
     @Test
     void testGetLogByIdNotFound() {
+        // Arrange
         when(logRepository.findById(99L)).thenReturn(Optional.empty());
 
+        // Act
         Optional<Log> found = logService.getLogById(99L);
 
+        // Assert
         assertFalse(found.isPresent());
     }
 
     @Test
     void testGetAllLogs() {
+        // Arrange
         Log log1 = new Log.Builder().judul("Asistensi").build();
         Log log2 = new Log.Builder().judul("Sidang").build();
 
         when(logRepository.findAll()).thenReturn(List.of(log1, log2));
 
+        // Act
         List<Log> logs = logService.getAllLogs();
 
+        // Assert
         assertEquals(2, logs.size());
         verify(logRepository).findAll();
     }
 
     @Test
     void testUpdateLog() {
+        // Arrange
         Log existing = new Log.Builder()
                 .judul("Asistensi")
                 .waktuMulai(LocalTime.of(8, 0))
@@ -122,18 +228,22 @@ public class LogServiceTest {
                 .build();
 
         when(logRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(logRepository.save(any())).thenReturn(updated);
+        when(logRepository.save(any(Log.class))).thenReturn(updated);
 
+        // Act
         Log result = logService.updateLog(1L, updated);
 
+        // Assert
         assertEquals("Sidang", result.getJudul());
         assertEquals(LocalTime.of(10, 0), result.getWaktuMulai());
     }
 
     @Test
     void testDeleteLog() {
+        // Arrange
         doNothing().when(logRepository).deleteById(1L);
 
+        // Act & Assert
         assertDoesNotThrow(() -> logService.deleteLog(1L));
         verify(logRepository).deleteById(1L);
     }
@@ -199,6 +309,60 @@ public class LogServiceTest {
         assertEquals("Monthly Log 1", actualLogs.get(0).getJudul());
         assertEquals("Monthly Log 2", actualLogs.get(1).getJudul());
         verify(logRepository).findByTanggalLogBetween(startDate, endDate);
+    }
+
+    @Test
+    void testGetLogsByMataKuliah() {
+        // Arrange
+        String kode = "CS101";
+        Log log1 = new Log.Builder()
+                .id(1L)
+                .judul("MK Log 1")
+                .build();
+        Log log2 = new Log.Builder()
+                .id(2L)
+                .judul("MK Log 2")
+                .build();
+
+        List<Log> expectedLogs = Arrays.asList(log1, log2);
+
+        when(logRepository.findByMataKuliah_Kode(kode)).thenReturn(expectedLogs);
+
+        // Act
+        List<Log> actualLogs = logService.getLogsByMataKuliah(kode);
+
+        // Assert
+        assertEquals(2, actualLogs.size());
+        assertEquals("MK Log 1", actualLogs.get(0).getJudul());
+        assertEquals("MK Log 2", actualLogs.get(1).getJudul());
+        verify(logRepository).findByMataKuliah_Kode(kode);
+    }
+
+    @Test
+    void testGetLogsByUser() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        Log log1 = new Log.Builder()
+                .id(1L)
+                .judul("User Log 1")
+                .build();
+        Log log2 = new Log.Builder()
+                .id(2L)
+                .judul("User Log 2")
+                .build();
+
+        List<Log> expectedLogs = Arrays.asList(log1, log2);
+
+        when(logRepository.findByUserId(userId)).thenReturn(expectedLogs);
+
+        // Act
+        List<Log> actualLogs = logService.getLogsByUser(userId);
+
+        // Assert
+        assertEquals(2, actualLogs.size());
+        assertEquals("User Log 1", actualLogs.get(0).getJudul());
+        assertEquals("User Log 2", actualLogs.get(1).getJudul());
+        verify(logRepository).findByUserId(userId);
     }
 
     @Test

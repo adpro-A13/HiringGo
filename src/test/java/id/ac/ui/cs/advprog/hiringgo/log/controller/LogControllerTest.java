@@ -2,13 +2,13 @@ package id.ac.ui.cs.advprog.hiringgo.log.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Trim;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -21,6 +21,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -37,7 +38,7 @@ class LogControllerTest {
     private LogController logController;
 
     private Log sampleLog;
-
+    private CreateLogRequest createLogRequest;
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -48,30 +49,32 @@ class LogControllerTest {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
 
-        // Sample Log for testing using Builder pattern
         sampleLog = new Log.Builder()
                 .id(1L)
                 .judul("Test Log")
                 .keterangan("This is a test log")
-                .kategori(LogKategori.LAIN_LAIN)  // Assuming you have categories defined
+                .kategori(LogKategori.LAIN_LAIN)
                 .waktuMulai(LocalTime.of(10, 0))
                 .waktuSelesai(LocalTime.of(12, 0))
                 .tanggalLog(LocalDate.now())
                 .pesanUntukDosen("Test message for the teacher")
                 .status(LogStatus.MENUNGGU)
                 .build();
+
+        // Create a sample CreateLogRequest
+        createLogRequest = new CreateLogRequest();
+        // Set properties of createLogRequest
+        // (Assuming CreateLogRequest has setters for these properties)
+        // Set properties based on your actual CreateLogRequest class
     }
 
     @Test
     void createLog_shouldReturnCreatedLog() throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-
-        when(logService.createLog(any(Log.class))).thenReturn(sampleLog);
+        when(logService.createLog(any(CreateLogRequest.class))).thenReturn(sampleLog);
 
         mockMvc.perform(post("/logs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(sampleLog)))
+                        .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.judul").value("Test Log"));
@@ -82,6 +85,26 @@ class LogControllerTest {
         when(logService.getAllLogs()).thenReturn(Collections.singletonList(sampleLog));
 
         mockMvc.perform(get("/logs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].judul").value("Test Log"));
+    }
+
+    @Test
+    void getLogsByMataKuliah_shouldReturnLogsList() throws Exception {
+        String kodeMataKuliah = "CS-001";
+        when(logService.getLogsByMataKuliah(kodeMataKuliah)).thenReturn(Collections.singletonList(sampleLog));
+
+        mockMvc.perform(get("/logs/mata-kuliah/{kode}", kodeMataKuliah))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].judul").value("Test Log"));
+    }
+
+    @Test
+    void getLogsByUser_shouldReturnLogsList() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(logService.getLogsByUser(userId)).thenReturn(Collections.singletonList(sampleLog));
+
+        mockMvc.perform(get("/logs/user/{id}", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
@@ -133,7 +156,8 @@ class LogControllerTest {
                 .status(LogStatus.DITERIMA)
                 .build();
 
-        when(logService.updateStatus(1L, LogStatus.DITERIMA)).thenReturn(updatedLog);
+        // Mock the command pattern behavior
+        when(logService.updateStatus(eq(1L), eq(LogStatus.DITERIMA))).thenReturn(updatedLog);
 
         mockMvc.perform(patch("/logs/{id}/status", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -144,9 +168,8 @@ class LogControllerTest {
 
     @Test
     void updateLog_shouldReturnUpdatedLog() throws Exception {
-        // Updated log that you want to test
         Log updatedLog = new Log.Builder()
-                .id(1L)  // Ensure id here is 1L to match the request
+                .id(1L)
                 .judul("Updated Test Log")
                 .keterangan("Updated description")
                 .kategori(LogKategori.LAIN_LAIN)
@@ -157,18 +180,13 @@ class LogControllerTest {
                 .status(LogStatus.MENUNGGU)
                 .build();
 
-        // Simulate the behavior of the log service and ensure the log with id 1L exists
         when(logService.updateLog(eq(1L), any(Log.class))).thenReturn(updatedLog);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-
-        // Perform the update operation
         mockMvc.perform(put("/logs/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedLog)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L)) // id should match 1L
+                .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.judul").value("Updated Test Log"));
     }
 
@@ -182,32 +200,24 @@ class LogControllerTest {
 
     @Test
     void createLog_shouldHandleValidationError() throws Exception {
-        Log invalidLog = new Log.Builder()
-                .judul("Invalid Log")
-                .build();
-
-        when(logService.createLog(any(Log.class)))
+        when(logService.createLog(any(CreateLogRequest.class)))
                 .thenThrow(new IllegalArgumentException("Waktu mulai dan selesai tidak boleh kosong"));
 
         mockMvc.perform(post("/logs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidLog)))
+                        .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Waktu mulai dan selesai tidak boleh kosong"));
     }
 
     @Test
     void createLog_shouldHandleServerError() throws Exception {
-        Log log = new Log.Builder()
-                .judul("Test Log")
-                .build();
-
-        when(logService.createLog(any(Log.class)))
+        when(logService.createLog(any(CreateLogRequest.class)))
                 .thenThrow(new RuntimeException("Internal server error"));
 
         mockMvc.perform(post("/logs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(log)))
+                        .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().string("Error creating log"));
     }
@@ -252,5 +262,4 @@ class LogControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Log tidak ditemukan"));
     }
-
 }
