@@ -13,6 +13,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepo
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,15 +39,25 @@ public class PendaftaranRestController {
     private final LowonganService lowonganService;
     private final PendaftaranService pendaftaranService;
     private final JwtService jwtService;
+    private final UserRepository userRepository;
+    private final PendaftaranRepository pendaftaranRepository;
+    private final LowonganMapper lowonganMapper;
 
     @Autowired
     public PendaftaranRestController(
             LowonganService lowonganService,
             PendaftaranService pendaftaranService,
-            JwtService jwtService) {
+            JwtService jwtService,
+            UserRepository userRepository,
+            PendaftaranRepository pendaftaranRepository,
+            LowonganMapper lowonganMapper
+    ) {
         this.lowonganService = lowonganService;
         this.pendaftaranService = pendaftaranService;
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
+        this.pendaftaranRepository = pendaftaranRepository;
+        this.lowonganMapper = lowonganMapper;
     }
 
     @GetMapping("/{id}")
@@ -59,12 +72,7 @@ public class PendaftaranRestController {
         }
     }
 
-    @Autowired
-    private UserRepository userRepository; 
-    
-    @Autowired
-    private PendaftaranRepository pendaftaranRepository;
-
+    @PostMapping("/{id}/daftar")
     public ResponseEntity<?> daftar(
             @PathVariable UUID id,
             @Valid @RequestBody DaftarForm form,
@@ -146,5 +154,11 @@ public class PendaftaranRestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Terjadi kesalahan: " + e.getMessage());
         }
+    }
+    @GetMapping("/list") // New endpoint to get all lowongan for Mahasiswa
+    public ResponseEntity<List<LowonganDTO>> getAllLowonganForMahasiswa() {
+        List<Lowongan> lowonganList = lowonganService.findAll();
+        List<LowonganDTO> lowonganDTOList = lowonganMapper.toDtoList(lowonganList);
+        return ResponseEntity.ok(lowonganDTOList);
     }
 }
