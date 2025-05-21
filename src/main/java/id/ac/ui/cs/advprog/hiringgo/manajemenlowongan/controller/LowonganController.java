@@ -8,7 +8,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,27 +37,32 @@ public class LowonganController {
         this.lowonganMapper = lowonganMapper;
     }
 
+    @Autowired
+    private LowonganSortService lowonganSortService;
+
+    @Autowired
+    private LowonganFilterService lowonganFilterService;
+
     @GetMapping
     public ResponseEntity<List<LowonganDTO>> getAllLowongan(
-            @RequestParam(required = false) Semester semester,
-            @RequestParam(required = false) StatusLowongan status) {
-
+            @RequestParam(required = false) String filterStrategy,
+            @RequestParam(required = false) String filterValue,
+            @RequestParam(required = false) String sortStrategy
+    ) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
-        if (semester != null) {
-            lowonganList = lowonganService.filterLowongan("FilterBySemester", semester.name(), lowonganList);
+        if (filterStrategy != null && filterValue != null) {
+            lowonganList = lowonganFilterService.filter(lowonganList, filterStrategy, filterValue);
         }
 
-        if (status != null) {
-            lowonganList = lowonganService.filterLowongan("FilterByStatus", status.name(), lowonganList);
+        if (sortStrategy != null && !sortStrategy.isEmpty()) {
+            lowonganList = lowonganSortService.sort(lowonganList, sortStrategy);
         }
 
         List<LowonganDTO> responses = lowonganMapper.toDtoList(lowonganList);
         return ResponseEntity.ok(responses);
     }
-
-
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {

@@ -27,12 +27,14 @@ public class LowonganServiceImpl implements LowonganService {
     private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
     private final LowonganFilterService filterService;
+    private final LowonganSortService sortService;
     @Autowired
     public LowonganServiceImpl(LowonganRepository lowonganRepository, PendaftaranRepository pendaftaranRepository,
-                               LowonganFilterService filterService) {
+                               LowonganFilterService filterService, LowonganSortService sortService) {
         this.lowonganRepository = lowonganRepository;
         this.pendaftaranRepository = pendaftaranRepository;
         this.filterService = filterService;
+        this.sortService = sortService;
     }
 
     @Override
@@ -60,6 +62,12 @@ public class LowonganServiceImpl implements LowonganService {
     @Override
     public List<Lowongan> filterLowongan(String strategyName, String filterValue, List<Lowongan> lowonganList) {
         return filterService.filter(lowonganList, strategyName, filterValue);
+    }
+
+
+    public List<Lowongan> getSortedLowongan(String sortKey) {
+        List<Lowongan> list = lowonganRepository.findAll();
+        return sortService.sort(list, sortKey);
     }
 
 
