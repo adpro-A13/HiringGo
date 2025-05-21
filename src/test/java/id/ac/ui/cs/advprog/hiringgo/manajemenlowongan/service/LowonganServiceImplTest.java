@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,7 +33,8 @@ class LowonganServiceImplTest {
 
     @Mock
     private LowonganRepository lowonganRepository;
-
+    @Mock
+    private LowonganFilterService filterService;
     @Mock
     private PendaftaranRepository pendaftaranRepository;
     @InjectMocks
@@ -208,19 +210,30 @@ class LowonganServiceImplTest {
         verify(lowonganRepository).findById(id1);
         verify(lowonganRepository, never()).save(any());
     }
-
     @Test
     void testFilterByStatusLowongan() {
         Lowongan aktif = new Lowongan();
-        aktif.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
+        aktif.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
 
         Lowongan tidakAktif = new Lowongan();
-        tidakAktif.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
+        tidakAktif.setStatusLowongan(String.valueOf(StatusLowongan.DITUTUP));
 
         when(lowonganRepository.findAll()).thenReturn(List.of(aktif, tidakAktif));
 
-        var strategy = new FilterByStatus(StatusLowongan.DIBUKA);
-        List<Lowongan> result = lowonganService.filterLowongan(strategy, lowonganRepository.findAll());
+        when(filterService.filter(anyList(), eq("FilterByStatus"), eq(StatusLowongan.DIBUKA.name())))
+                .thenAnswer(invocation -> {
+                    List<Lowongan> inputList = invocation.getArgument(0);
+                    String filterValue = invocation.getArgument(2);
+                    return inputList.stream()
+                            .filter(low -> low.getStatusLowongan() == StatusLowongan.valueOf(filterValue))
+                            .collect(Collectors.toList());
+                });
+
+        List<Lowongan> result = lowonganService.filterLowongan(
+                "FilterByStatus",
+                StatusLowongan.DIBUKA.name(),
+                lowonganRepository.findAll()
+        );
 
         assertEquals(1, result.size());
         assertEquals(StatusLowongan.DIBUKA, result.get(0).getStatusLowongan());
@@ -229,19 +242,33 @@ class LowonganServiceImplTest {
     @Test
     void testFilterBySemester() {
         Lowongan genap = new Lowongan();
-        genap.setSemester(Semester.GENAP.getValue());
+        genap.setSemester(String.valueOf(Semester.GENAP));
 
         Lowongan ganjil = new Lowongan();
-        ganjil.setSemester(Semester.GANJIL.getValue());
+        ganjil.setSemester(String.valueOf(Semester.GANJIL));
 
         when(lowonganRepository.findAll()).thenReturn(List.of(genap, ganjil));
 
-        var strategy = new FilterBySemester(Semester.GANJIL);
-        List<Lowongan> result = lowonganService.filterLowongan(strategy, lowonganRepository.findAll());
+        when(filterService.filter(anyList(), eq("FilterBySemester"), eq(Semester.GANJIL.name())))
+                .thenAnswer(invocation -> {
+                    List<Lowongan> inputList = invocation.getArgument(0);
+                    String filterValue = invocation.getArgument(2);
+                    Semester semester = Semester.valueOf(filterValue);
+                    return inputList.stream()
+                            .filter(lowongan -> lowongan.getSemester() == semester)
+                            .collect(Collectors.toList());
+                });
+
+        List<Lowongan> result = lowonganService.filterLowongan(
+                "FilterBySemester",
+                Semester.GANJIL.name(),
+                lowonganRepository.findAll()
+        );
 
         assertEquals(1, result.size());
         assertEquals(Semester.GANJIL, result.get(0).getSemester());
     }
+
 
     @Test
     void testDeleteLowonganByIdSuccess() {

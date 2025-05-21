@@ -87,7 +87,7 @@ class LowonganControllerTest {
     @DisplayName("GET /api/lowongan dengan filter semester dan status - Success")
     void testGetAllLowonganWithFilters() throws Exception {
         when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(List.of(lowongan));
-        when(lowonganMapper.toDtoList(List.of(lowongan))).thenReturn(List.of(dto));
+        when(lowonganMapper.toDtoList(anyList())).thenReturn(List.of(dto));
 
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("dosen@example.com");
