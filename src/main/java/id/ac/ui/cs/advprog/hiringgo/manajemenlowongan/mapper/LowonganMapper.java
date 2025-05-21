@@ -27,7 +27,6 @@ public class LowonganMapper {
             lowongan.setLowonganId(dto.getLowonganId());
         }
 
-        // Convert idMataKuliah (kode) ke MataKuliah entity
         if (dto.getIdMataKuliah() != null) {
             MataKuliah mataKuliah = mataKuliahRepository.findById(dto.getIdMataKuliah())
                     .orElseThrow(() -> new IllegalArgumentException("MataKuliah dengan kode " + dto.getIdMataKuliah() + " tidak ditemukan"));
