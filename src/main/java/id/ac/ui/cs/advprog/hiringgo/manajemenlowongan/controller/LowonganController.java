@@ -44,17 +44,17 @@ public class LowonganController {
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
         if (semester != null) {
-            lowonganList = new FilterBySemester(semester).filter(lowonganList);
+            lowonganList = lowonganService.filterLowongan("FilterBySemester", semester.name(), lowonganList);
         }
 
         if (status != null) {
-            lowonganList = new FilterByStatus(status).filter(lowonganList);
+            lowonganList = lowonganService.filterLowongan("FilterByStatus", status.name(), lowonganList);
         }
 
         List<LowonganDTO> responses = lowonganMapper.toDtoList(lowonganList);
-
         return ResponseEntity.ok(responses);
     }
+
 
 
     @GetMapping("/{id}")

@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.LowonganFilterStrategy;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -28,12 +27,12 @@ public class LowonganServiceImpl implements LowonganService {
     private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
     private final LowonganFilterService filterService;
-
     @Autowired
-    public LowonganServiceImpl(LowonganRepository lowonganRepository, PendaftaranRepository pendaftaranRepository) {
+    public LowonganServiceImpl(LowonganRepository lowonganRepository, PendaftaranRepository pendaftaranRepository,
+                               LowonganFilterService filterService) {
         this.lowonganRepository = lowonganRepository;
         this.pendaftaranRepository = pendaftaranRepository;
-        this.filterService = new LowonganFilterService(); // atau juga inject kalau bisa
+        this.filterService = filterService;
     }
 
     @Override
@@ -58,10 +57,9 @@ public class LowonganServiceImpl implements LowonganService {
                 .collect(Collectors.toList());
     }
 
-    // Overloaded method
-    public List<Lowongan> filterLowongan(LowonganFilterStrategy strategy, List<Lowongan> lowonganList) {
-        filterService.setStrategy(strategy);
-        return filterService.filter(lowonganList);
+    @Override
+    public List<Lowongan> filterLowongan(String strategyName, String filterValue, List<Lowongan> lowonganList) {
+        return filterService.filter(lowonganList, strategyName, filterValue);
     }
 
 
