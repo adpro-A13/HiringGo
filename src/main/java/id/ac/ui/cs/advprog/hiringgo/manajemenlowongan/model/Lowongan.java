@@ -37,10 +37,6 @@ public class Lowongan {
     private int jumlahAsdosDiterima;
     private int jumlahAsdosPendaftar;
 
-    @OneToMany(mappedBy = "lowongan", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<Pendaftaran> daftarPendaftaran = new ArrayList<>();
-
 
     public Lowongan() {}
 

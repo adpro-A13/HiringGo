@@ -283,12 +283,12 @@ class PendaftaranRestControllerTest {
         LowonganDTO dto1 = new LowonganDTO();
         dto1.setLowonganId(lowongan1.getLowonganId());
         dto1.setIdMataKuliah(mk1.getKode());  // Using idMataKuliah instead of namaMatakuliah
-        dto1.setStatusLowongan(StatusLowongan.DIBUKA);
+        dto1.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
 
         LowonganDTO dto2 = new LowonganDTO();
         dto2.setLowonganId(lowongan2.getLowonganId());
         dto2.setIdMataKuliah(mk2.getKode());  // Using idMataKuliah instead of namaMatakuliah
-        dto2.setStatusLowongan(StatusLowongan.DIBUKA);
+        dto2.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
 
         List<LowonganDTO> lowonganDTOList = Arrays.asList(dto1, dto2);
 

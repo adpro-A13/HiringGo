@@ -58,11 +58,10 @@ public class LowonganServiceImpl implements LowonganService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<Lowongan> filterLowongan(LowonganFilterStrategy strategy) {
+    // Overloaded method
+    public List<Lowongan> filterLowongan(LowonganFilterStrategy strategy, List<Lowongan> lowonganList) {
         filterService.setStrategy(strategy);
-        List<Lowongan> allLowongan = findAll(); // atau bisa langsung dari repository
-        return filterService.filter(allLowongan);
+        return filterService.filter(lowonganList);
     }
 
 

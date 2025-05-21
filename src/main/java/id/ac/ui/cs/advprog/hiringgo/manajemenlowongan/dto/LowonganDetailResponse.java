@@ -39,10 +39,6 @@ public class LowonganDetailResponse {
         this.jumlahAsdosDibutuhkan = lowongan.getJumlahAsdosDibutuhkan();
         this.jumlahAsdosDiterima = lowongan.getJumlahAsdosDiterima();
         this.jumlahAsdosPendaftar = lowongan.getJumlahAsdosPendaftar();
-        this.idDaftarPendaftaran = lowongan.getDaftarPendaftaran()
-                .stream()
-                .map(Pendaftaran::getPendaftaranId)
-                .collect(Collectors.toList());
     }
 
 }

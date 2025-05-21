@@ -18,8 +18,8 @@ public class LowonganDTO {
     private UUID lowonganId;
     private String idMataKuliah;
     private String tahunAjaran;
-    private Semester semester;
-    private StatusLowongan statusLowongan;
+    private String semester;
+    private String statusLowongan;
     private int jumlahAsdosDibutuhkan;
     private int jumlahAsdosDiterima;
     private int jumlahAsdosPendaftar;

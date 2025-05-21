@@ -50,17 +50,12 @@ public class LowonganMapper {
         dto.setLowonganId(entity.getLowonganId());
         dto.setIdMataKuliah(entity.getMataKuliah() != null ? entity.getMataKuliah().getKode() : null);
         dto.setTahunAjaran(entity.getTahunAjaran());
-        dto.setSemester(entity.getSemester());
-        dto.setStatusLowongan(entity.getStatusLowongan());
+        dto.setSemester(String.valueOf(entity.getSemester()));
+        dto.setStatusLowongan(String.valueOf(entity.getStatusLowongan()));
         dto.setJumlahAsdosDibutuhkan(entity.getJumlahAsdosDibutuhkan());
         dto.setJumlahAsdosDiterima(entity.getJumlahAsdosDiterima());
         dto.setJumlahAsdosPendaftar(entity.getJumlahAsdosPendaftar());
 
-        List<UUID> daftarPendaftaranIds = entity.getDaftarPendaftaran()
-                .stream()
-                .map(Pendaftaran::getPendaftaranId)
-                .collect(Collectors.toList());
-        dto.setIdDaftarPendaftaran(daftarPendaftaranIds);
 
         return dto;
     }

@@ -224,7 +224,7 @@ class LowonganControllerTest {
         LowonganDTO updatedLowonganDto = new LowonganDTO();
         updatedLowonganDto.setLowonganId(id);
         updatedLowonganDto.setTahunAjaran("2024/2025");
-        updatedLowonganDto.setSemester(updatedLowongan.getSemester());
+        updatedLowonganDto.setSemester(String.valueOf(updatedLowongan.getSemester()));
         updatedLowonganDto.setJumlahAsdosDibutuhkan(5);
 
         when(lowonganService.updateLowongan(eq(id), ArgumentMatchers.<Lowongan>any()))
@@ -283,12 +283,12 @@ class LowonganControllerTest {
     @Test
     void testUpdateLowonganException() throws Exception {
         dto.setLowonganId(id);
-        dto.setSemester(Semester.GANJIL);
+        dto.setSemester(String.valueOf(Semester.GANJIL));
         dto.setTahunAjaran("2023");
         dto.setJumlahAsdosDibutuhkan(3);
         dto.setJumlahAsdosPendaftar(1);
         dto.setJumlahAsdosDiterima(0);
-        dto.setStatusLowongan(StatusLowongan.DIBUKA);
+        dto.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
         MataKuliah mk = new MataKuliah("CS100", "Advpro", "Advanced Programming");
         dto.setIdMataKuliah(mk.getKode());
 

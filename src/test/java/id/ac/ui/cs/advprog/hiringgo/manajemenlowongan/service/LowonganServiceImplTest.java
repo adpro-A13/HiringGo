@@ -220,7 +220,7 @@ class LowonganServiceImplTest {
         when(lowonganRepository.findAll()).thenReturn(List.of(aktif, tidakAktif));
 
         var strategy = new FilterByStatus(StatusLowongan.DIBUKA);
-        List<Lowongan> result = lowonganService.filterLowongan(strategy);
+        List<Lowongan> result = lowonganService.filterLowongan(strategy, lowonganRepository.findAll());
 
         assertEquals(1, result.size());
         assertEquals(StatusLowongan.DIBUKA, result.get(0).getStatusLowongan());
@@ -237,7 +237,7 @@ class LowonganServiceImplTest {
         when(lowonganRepository.findAll()).thenReturn(List.of(genap, ganjil));
 
         var strategy = new FilterBySemester(Semester.GANJIL);
-        List<Lowongan> result = lowonganService.filterLowongan(strategy);
+        List<Lowongan> result = lowonganService.filterLowongan(strategy, lowonganRepository.findAll());
 
         assertEquals(1, result.size());
         assertEquals(Semester.GANJIL, result.get(0).getSemester());
