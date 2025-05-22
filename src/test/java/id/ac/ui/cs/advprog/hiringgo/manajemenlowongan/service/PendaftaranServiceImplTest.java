@@ -252,4 +252,77 @@ class PendaftaranServiceImplTest {
         assertEquals("IPK cannot be null", exception.getMessage());
         verify(standardPendaftaranStrategy, never()).execute(any(), any(), any(), anyInt());
     }
+
+    @Test
+    void testGetPendaftaranIdsByLowongan() {
+        // Create test data
+        List<Pendaftaran> pendaftaranList = new ArrayList<>();
+        Pendaftaran pendaftaran1 = new Pendaftaran();
+        UUID pendaftaranId1 = UUID.randomUUID();
+        pendaftaran1.setPendaftaranId(pendaftaranId1);
+
+        Pendaftaran pendaftaran2 = new Pendaftaran();
+        UUID pendaftaranId2 = UUID.randomUUID();
+        pendaftaran2.setPendaftaranId(pendaftaranId2);
+
+        pendaftaranList.add(pendaftaran1);
+        pendaftaranList.add(pendaftaran2);
+
+        // Configure repository mock
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(pendaftaranList);
+
+        // Call the service method
+        List<UUID> result = pendaftaranService.getPendaftaranIdsByLowongan(lowonganId);
+
+        // Verify repository interaction
+        verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
+
+        // Verify the result
+        assertEquals(2, result.size());
+        assertTrue(result.contains(pendaftaranId1));
+        assertTrue(result.contains(pendaftaranId2));
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowonganWithEmptyResult() {
+        // Configure repository mock to return empty list
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(new ArrayList<>());
+
+        // Call the service method
+        List<UUID> result = pendaftaranService.getPendaftaranIdsByLowongan(lowonganId);
+
+        // Verify repository interaction
+        verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
+
+        // Verify the result
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowonganExceptionHandling() {
+        // Test that exceptions from the repository are properly wrapped
+        RuntimeException repoException = new RuntimeException("Database error");
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId))
+                .thenThrow(repoException);
+
+        // The service should wrap the exception in an IllegalStateException
+        IllegalStateException actualException = assertThrows(IllegalStateException.class, () -> {
+            pendaftaranService.getPendaftaranIdsByLowongan(lowonganId);
+        });
+
+        // Verify the exception message and cause
+        assertTrue(actualException.getMessage().contains("Failed to retrieve pendaftaran IDs"));
+        assertEquals(repoException, actualException.getCause());
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowonganWithNullParameter() {
+        // Test with null lowonganId
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.getPendaftaranIdsByLowongan(null);
+        });
+
+        assertEquals("Lowongan ID cannot be null", exception.getMessage());
+        verify(pendaftaranRepository, never()).findByLowonganLowonganId(null);
+    }
 }
