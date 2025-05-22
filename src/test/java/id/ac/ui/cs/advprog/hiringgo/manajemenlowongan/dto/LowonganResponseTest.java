@@ -23,9 +23,12 @@ import static org.mockito.Mockito.when;
 class LowonganResponseTest {
     private LowonganMapper lowonganMapper;
 
+    @Mock
     private PendaftaranServiceImpl pendaftaranService;
     @Mock
     private MataKuliahRepository mataKuliahRepository;
+
+
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
