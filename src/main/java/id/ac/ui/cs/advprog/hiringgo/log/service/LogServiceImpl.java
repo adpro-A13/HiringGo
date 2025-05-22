@@ -1,0 +1,122 @@
+package id.ac.ui.cs.advprog.hiringgo.log.service;
+
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
+import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
+import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
+import org.springframework.stereotype.Service;
+import java.time.LocalDate;
+import java.util.List;
+import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
+import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+public class LogServiceImpl implements LogService {
+
+    private final LogRepository logRepository;
+    private final MataKuliahRepository mataKuliahRepository;
+    private final UserRepository userRepository;
+
+    public LogServiceImpl(LogRepository logRepository, MataKuliahRepository mataKuliahRepository, UserRepository userRepository) {
+        this.logRepository = logRepository;
+        this.mataKuliahRepository = mataKuliahRepository;
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public Log createLog(CreateLogRequest request) {
+        MataKuliah mataKuliah = mataKuliahRepository.findById(request.getMataKuliah()).orElseThrow(()->new RuntimeException("Mata Kuliah Not Found"));
+        User user = userRepository.findById(request.getUser()).orElseThrow(()->new RuntimeException("User Not Found"));
+
+        Log log = new Log.Builder()
+                .mataKuliah(mataKuliah)
+                .user(user)
+                .judul(request.getJudul())
+                .kategori(request.getKategori())
+                .waktuMulai(request.getWaktuMulai())
+                .waktuSelesai(request.getWaktuSelesai())
+                .tanggalLog(request.getTanggalLog())
+                .keterangan(request.getKeterangan())
+                .pesanUntukDosen(request.getPesanUntukDosen())
+                .build();
+        validateLogTime(log);
+        log.setStatus(LogStatus.MENUNGGU);
+        return logRepository.save(log);
+    }
+
+    @Override
+    public List<Log> getLogsByStatus(LogStatus status) {
+        return logRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<Log> getLogsByMonth(int bulan, int tahun) {
+        LocalDate from = LocalDate.of(tahun, bulan, 1);
+        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        return logRepository.findByTanggalLogBetween(from, to);
+    }
+
+    @Override
+    public List<Log> getLogsByMataKuliah(String kode) {
+        return logRepository.findByMataKuliah_Kode(kode);
+    }
+
+    @Override
+    public List<Log> getLogsByUser(UUID idUser) {
+        return logRepository.findByUserId(idUser);
+    }
+
+
+    @Override
+    public Log updateStatus(Long id, LogStatus status) {
+        Log log = logRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Log tidak ditemukan"));
+        log.setStatus(status);
+        return logRepository.save(log);
+    }
+
+    private void validateLogTime(Log log) {
+        if (log.getWaktuMulai() == null || log.getWaktuSelesai() == null) {
+            throw new IllegalArgumentException("Waktu mulai dan selesai tidak boleh kosong");
+        }
+        if (!log.getWaktuMulai().isBefore(log.getWaktuSelesai())) {
+            throw new IllegalArgumentException("Waktu mulai harus sebelum waktu selesai");
+        }
+    }
+
+    @Override
+    public Optional<Log> getLogById(Long id) {
+        return logRepository.findById(id);
+    }
+
+    @Override
+    public List<Log> getAllLogs() {
+        return logRepository.findAll();
+    }
+
+    @Override
+    public Log updateLog(Long id, Log updatedLog) {
+        validateLogTime(updatedLog);
+
+        Log existing = logRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Log tidak ditemukan"));
+
+        existing.setJudul(updatedLog.getJudul());
+        existing.setKategori(updatedLog.getKategori());
+        existing.setTanggalLog(updatedLog.getTanggalLog());
+        existing.setWaktuMulai(updatedLog.getWaktuMulai());
+        existing.setWaktuSelesai(updatedLog.getWaktuSelesai());
+        // status tidak diubah di sini
+
+        return logRepository.save(existing);
+    }
+
+    @Override
+    public void deleteLog(Long id) {
+        logRepository.deleteById(id);
+    }
+}

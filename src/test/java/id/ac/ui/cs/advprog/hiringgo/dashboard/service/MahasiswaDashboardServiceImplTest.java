@@ -5,6 +5,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DashboardResponse;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.MahasiswaDashboardResponse;
+import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
@@ -40,6 +41,8 @@ class MahasiswaDashboardServiceImplTest {
     private PendaftaranRepository pendaftaranRepository;
 
     @Mock private LowonganMapper lowonganMapper;
+
+    @Mock private LogService logService;
 
     @InjectMocks
     private MahasiswaDashboardServiceImpl service;
@@ -173,7 +176,7 @@ class MahasiswaDashboardServiceImplTest {
     void populateCommonData_mahasiswaNotFound_shouldThrow() {
         // Create a test subclass that skips validation
         MahasiswaDashboardServiceImpl testService = new MahasiswaDashboardServiceImpl(
-                userRepository, lowonganRepository, pendaftaranRepository, lowonganMapper) {
+                userRepository, lowonganRepository, pendaftaranRepository, lowonganMapper, logService) {
             @Override
             protected void validateUser(UUID userId) {
             }
