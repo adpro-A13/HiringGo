@@ -491,6 +491,26 @@ class LowonganServiceImplTest {
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
 
+    @Test
+    void testTolakPendaftarSuccess() {
+        MataKuliah mk = createMataKuliah("CS101", "Algoritma", "algoritma", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mk, 2, 1);
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("dosen@example.com");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+
+        lowonganService.tolakPendaftar(id1, id2);
+
+        assertEquals(StatusPendaftaran.DITOLAK, pendaftaran.getStatus());
+        verify(pendaftaranRepository).save(pendaftaran);
+    }
 
 
     @Test

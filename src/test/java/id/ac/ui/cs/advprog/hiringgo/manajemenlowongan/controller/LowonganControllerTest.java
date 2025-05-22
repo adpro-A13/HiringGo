@@ -234,7 +234,7 @@ class LowonganControllerTest {
         UUID pendaftaranId = UUID.randomUUID();
         doNothing().when(lowonganService).tolakPendaftar(lowonganId, pendaftaranId);
 
-        mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}",lowonganId, pendaftaranId))
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}",lowonganId, pendaftaranId))
                 .andExpect(status().isOk());
     }
 
@@ -296,10 +296,11 @@ class LowonganControllerTest {
         doThrow(new IllegalArgumentException("Pendaftaran tidak valid"))
                 .when(lowonganService).tolakPendaftar(lowonganId, pendaftaranId);
 
-        mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}", lowonganId, pendaftaranId))
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}", lowonganId, pendaftaranId))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Gagal menolak pendaftar: Pendaftaran tidak valid"));
     }
+
 
     @Test
     void testUpdateLowonganException() throws Exception {
