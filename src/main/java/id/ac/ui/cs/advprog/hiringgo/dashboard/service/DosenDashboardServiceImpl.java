@@ -86,10 +86,8 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
     protected void populateRoleSpecificData(UUID userId, DashboardResponse dashboardResponse) {
         DosenDashboardResponse response = (DosenDashboardResponse) dashboardResponse;
 
-        // Get dosen data
         Dosen dosen = getDosenById(userId);
 
-        // Get and process courses taught
         List<MataKuliah> coursesTaught = getCoursesTaughtByDosen(dosen);
 
         if (coursesTaught.isEmpty()) {
@@ -97,15 +95,12 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
             return;
         }
 
-        // Convert and set course data
         List<MataKuliahDTO> coursesDTO = convertCoursesToDTO(coursesTaught);
         response.setCoursesTaught(coursesDTO);
 
-        // Process lowongan data per course
         Map<String, List<LowonganDTO>> lowonganPerCourse = mapLowonganToCourses(coursesTaught);
         response.setLowonganPerCourse(lowonganPerCourse);
 
-        // Add accepted assistants count per course
         Map<String, Integer> acceptedAssistantsPerCourse = countAcceptedAssistantsPerCourse(coursesTaught);
         response.setAcceptedAssistantsPerCourse(acceptedAssistantsPerCourse);
     }
@@ -121,7 +116,6 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
         try {
             return mataKuliahRepository.findByDosenPengampu(dosen);
         } catch (Exception e) {
-            // Log the error here if you have a logger
             return Collections.emptyList();
         }
     }
@@ -145,7 +139,6 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
                     result.put(course.getKode(), openingsDTO);
                 }
             } catch (Exception e) {
-                // Log the error here if you have a logger
             }
         }
 
@@ -169,7 +162,6 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
 
                 acceptedPerCourse.put(courseCode, acceptedForCourse);
             } catch (Exception e) {
-                // Log the error here if you have a logger
                 acceptedPerCourse.put(course.getKode(), 0);
             }
         }
