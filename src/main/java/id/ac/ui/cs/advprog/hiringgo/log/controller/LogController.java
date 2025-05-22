@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@RequestMapping("/logs")
+@RequestMapping("/api/logs")
 @RestController
 public class LogController {
 
