@@ -37,6 +37,7 @@ class LowonganResponseTest {
         when(mataKuliahRepository.findById("CSGE602022"))
                 .thenReturn(java.util.Optional.of(mataKuliah));
     }
+
     @Test
     @DisplayName("Test LowonganResponse constructor with Lowongan")
     void testConstructorWithLowongan() {
@@ -54,8 +55,8 @@ class LowonganResponseTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setMataKuliah(mataKuliah);
         lowongan.setTahunAjaran(tahunAjaran);
-        lowongan.setSemester(semester.toString());  // Convert enum to String
-        lowongan.setStatusLowongan(statusLowongan.toString());  // Convert enum to String
+        lowongan.setSemester(semester.getValue());
+        lowongan.setStatusLowongan(statusLowongan.getValue());
         lowongan.setJumlahAsdosDibutuhkan(jumlahAsdosDibutuhkan);
         lowongan.setJumlahAsdosDiterima(jumlahAsdosDiterima);
         lowongan.setJumlahAsdosPendaftar(jumlahAsdosPendaftar);
