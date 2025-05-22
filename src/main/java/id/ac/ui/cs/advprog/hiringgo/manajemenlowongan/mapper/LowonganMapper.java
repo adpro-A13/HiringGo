@@ -27,7 +27,6 @@ public class LowonganMapper {
             lowongan.setLowonganId(dto.getLowonganId());
         }
 
-        // Convert idMataKuliah (kode) ke MataKuliah entity
         if (dto.getIdMataKuliah() != null) {
             MataKuliah mataKuliah = mataKuliahRepository.findById(dto.getIdMataKuliah())
                     .orElseThrow(() -> new IllegalArgumentException("MataKuliah dengan kode " + dto.getIdMataKuliah() + " tidak ditemukan"));
@@ -35,8 +34,8 @@ public class LowonganMapper {
         }
 
         lowongan.setTahunAjaran(dto.getTahunAjaran());
-        lowongan.setSemester(String.valueOf(dto.getSemester()));
-        lowongan.setStatusLowongan(String.valueOf(dto.getStatusLowongan()));
+        lowongan.setSemester((dto.getSemester()));
+        lowongan.setStatusLowongan((dto.getStatusLowongan()));
         lowongan.setJumlahAsdosDibutuhkan(dto.getJumlahAsdosDibutuhkan());
         lowongan.setJumlahAsdosDiterima(dto.getJumlahAsdosDiterima());
         lowongan.setJumlahAsdosPendaftar(dto.getJumlahAsdosPendaftar());

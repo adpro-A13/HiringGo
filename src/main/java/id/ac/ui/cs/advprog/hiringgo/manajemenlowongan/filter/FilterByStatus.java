@@ -13,9 +13,9 @@ public class FilterByStatus implements LowonganFilterStrategy {
     public List<Lowongan> filter(List<Lowongan> lowonganList, String filterValue) {
         StatusLowongan status;
         try {
-            status = StatusLowongan.valueOf(filterValue.toUpperCase()); // enum parsing
+            status = StatusLowongan.valueOf(filterValue.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return lowonganList; // fallback jika input tidak valid
+            return lowonganList;
         }
 
         return lowonganList.stream()
@@ -25,6 +25,6 @@ public class FilterByStatus implements LowonganFilterStrategy {
 
     @Override
     public String getStrategyName() {
-        return "FilterByStatus"; // bisa pakai nama lain jika ingin
+        return "FilterByStatus";
     }
 }

@@ -2,6 +2,9 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.sort.SortByJumlahAsdosDibutuhkan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.sort.SortByJumlahAsdosDiterima;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.sort.SortByJumlahAsdosPendaftar;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,83 +33,61 @@ class LowonganSortServiceTest {
     }
 
     @Test
-    void testGetSortedLowonganReturnsSortedList() {
-        // Dummy data sebelum disort
+    void testSortByJumlahAsdosDibutuhkan() {
         MataKuliah mataKuliah = new MataKuliah("CS1234", "advprog", "advanced programming");
-        Lowongan lowongan1 = createLowongan(UUID.randomUUID(), mataKuliah, 5, 0);
-        lowongan1.setJumlahAsdosPendaftar(0);
-        Lowongan lowongan2 = createLowongan(UUID.randomUUID(), mataKuliah, 7, 0);
-        lowongan1.setJumlahAsdosPendaftar(0);
+
+        Lowongan lowongan1 = createLowongan(UUID.randomUUID(), mataKuliah, 5, 0); // jumlah dibutuhkan = 5
+        Lowongan lowongan2 = createLowongan(UUID.randomUUID(), mataKuliah, 7, 0); // jumlah dibutuhkan = 7
 
         List<Lowongan> unsortedList = List.of(lowongan1, lowongan2);
-        List<Lowongan> sortedList = List.of(lowongan2, lowongan1);
+        List<Lowongan> expectedSorted = List.of(lowongan1, lowongan2); // ascending default
 
-        String sortKey = "SortByJumlahAsdosDibutuhkan";
+        SortByJumlahAsdosDibutuhkan sorter = new SortByJumlahAsdosDibutuhkan();
+        List<Lowongan> result = sorter.sort(unsortedList);
 
-        when(lowonganRepository.findAll()).thenReturn(unsortedList);
-        when(sortService.sort(unsortedList, sortKey)).thenReturn(sortedList);
-
-        List<Lowongan> result = lowonganService.getSortedLowongan(sortKey);
-
-        assertNotNull(result);
-        assertEquals(sortedList.size(), result.size());
-        assertEquals(sortedList, result);
-
-        verify(lowonganRepository).findAll();
-        verify(sortService).sort(unsortedList, sortKey);
+        assertEquals(expectedSorted, result);
     }
 
+
     @Test
-    void testGetSortedLowonganSortByJumlahAsdosDiterima() {
+    void testSortByJumlahAsdosDiterima() {
         MataKuliah mataKuliah = new MataKuliah("CS1234", "advprog", "advanced programming");
+
         Lowongan lowongan1 = createLowongan(UUID.randomUUID(), mataKuliah, 5, 0);
         lowongan1.setJumlahAsdosDiterima(2);
+
         Lowongan lowongan2 = createLowongan(UUID.randomUUID(), mataKuliah, 7, 0);
         lowongan2.setJumlahAsdosDiterima(5);
 
         List<Lowongan> unsortedList = List.of(lowongan1, lowongan2);
-        List<Lowongan> sortedList = List.of(lowongan2, lowongan1);
+        List<Lowongan> expectedSorted = List.of(lowongan1, lowongan2); // ascending default
 
-        String sortKey = "SortByJumlahAsdosDiterima";
+        SortByJumlahAsdosDiterima sorter = new SortByJumlahAsdosDiterima();
+        List<Lowongan> result = sorter.sort(unsortedList);
 
-        when(lowonganRepository.findAll()).thenReturn(unsortedList);
-        when(sortService.sort(unsortedList, sortKey)).thenReturn(sortedList);
-
-        List<Lowongan> result = lowonganService.getSortedLowongan(sortKey);
-
-        assertNotNull(result);
-        assertEquals(sortedList.size(), result.size());
-        assertEquals(sortedList, result);
-
-        verify(lowonganRepository).findAll();
-        verify(sortService).sort(unsortedList, sortKey);
+        assertEquals(expectedSorted, result);
     }
+
 
     @Test
-    void testGetSortedLowonganSortByJumlahAsdosPendaftar() {
+    void testSortByJumlahAsdosPendaftar() {
         MataKuliah mataKuliah = new MataKuliah("CS1234", "advprog", "advanced programming");
+
         Lowongan lowongan1 = createLowongan(UUID.randomUUID(), mataKuliah, 5, 0);
-        lowongan1.setJumlahAsdosPendaftar(3);
+        lowongan1.setJumlahAsdosPendaftar(10);
+
         Lowongan lowongan2 = createLowongan(UUID.randomUUID(), mataKuliah, 7, 0);
-        lowongan2.setJumlahAsdosPendaftar(10);
+        lowongan2.setJumlahAsdosPendaftar(3);
 
-        List<Lowongan> unsortedList = List.of(lowongan1, lowongan2);
-        List<Lowongan> sortedList = List.of(lowongan2, lowongan1);
+        List<Lowongan> unsorted = List.of(lowongan1, lowongan2);
+        List<Lowongan> expectedSorted = List.of(lowongan2, lowongan1);
 
-        String sortKey = "SortByJumlahAsdosPendaftar";
+        SortByJumlahAsdosPendaftar sorter = new SortByJumlahAsdosPendaftar();
+        List<Lowongan> result = sorter.sort(unsorted);
 
-        when(lowonganRepository.findAll()).thenReturn(unsortedList);
-        when(sortService.sort(unsortedList, sortKey)).thenReturn(sortedList);
-
-        List<Lowongan> result = lowonganService.getSortedLowongan(sortKey);
-
-        assertNotNull(result);
-        assertEquals(sortedList.size(), result.size());
-        assertEquals(sortedList, result);
-
-        verify(lowonganRepository).findAll();
-        verify(sortService).sort(unsortedList, sortKey);
+        assertEquals(expectedSorted, result);
     }
+
 
 
     @Test

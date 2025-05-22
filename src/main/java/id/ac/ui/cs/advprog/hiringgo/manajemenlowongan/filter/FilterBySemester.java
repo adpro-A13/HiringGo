@@ -16,7 +16,6 @@ public class FilterBySemester implements LowonganFilterStrategy {
         try {
             semester = Semester.valueOf(filterValue.toUpperCase());
         } catch (IllegalArgumentException e) {
-            // Kalau input filterValue invalid, kembalikan list apa adanya
             return lowonganList;
         }
 

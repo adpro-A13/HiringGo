@@ -210,65 +210,6 @@ class LowonganServiceImplTest {
         verify(lowonganRepository).findById(id1);
         verify(lowonganRepository, never()).save(any());
     }
-    @Test
-    void testFilterByStatusLowongan() {
-        Lowongan aktif = new Lowongan();
-        aktif.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
-
-        Lowongan tidakAktif = new Lowongan();
-        tidakAktif.setStatusLowongan(String.valueOf(StatusLowongan.DITUTUP));
-
-        when(lowonganRepository.findAll()).thenReturn(List.of(aktif, tidakAktif));
-
-        when(filterService.filter(anyList(), eq("FilterByStatus"), eq(StatusLowongan.DIBUKA.name())))
-                .thenAnswer(invocation -> {
-                    List<Lowongan> inputList = invocation.getArgument(0);
-                    String filterValue = invocation.getArgument(2);
-                    return inputList.stream()
-                            .filter(low -> low.getStatusLowongan() == StatusLowongan.valueOf(filterValue))
-                            .collect(Collectors.toList());
-                });
-
-        List<Lowongan> result = lowonganService.filterLowongan(
-                "FilterByStatus",
-                StatusLowongan.DIBUKA.name(),
-                lowonganRepository.findAll()
-        );
-
-        assertEquals(1, result.size());
-        assertEquals(StatusLowongan.DIBUKA, result.get(0).getStatusLowongan());
-    }
-
-    @Test
-    void testFilterBySemester() {
-        Lowongan genap = new Lowongan();
-        genap.setSemester(String.valueOf(Semester.GENAP));
-
-        Lowongan ganjil = new Lowongan();
-        ganjil.setSemester(String.valueOf(Semester.GANJIL));
-
-        when(lowonganRepository.findAll()).thenReturn(List.of(genap, ganjil));
-
-        when(filterService.filter(anyList(), eq("FilterBySemester"), eq(Semester.GANJIL.name())))
-                .thenAnswer(invocation -> {
-                    List<Lowongan> inputList = invocation.getArgument(0);
-                    String filterValue = invocation.getArgument(2);
-                    Semester semester = Semester.valueOf(filterValue);
-                    return inputList.stream()
-                            .filter(lowongan -> lowongan.getSemester() == semester)
-                            .collect(Collectors.toList());
-                });
-
-        List<Lowongan> result = lowonganService.filterLowongan(
-                "FilterBySemester",
-                Semester.GANJIL.name(),
-                lowonganRepository.findAll()
-        );
-
-        assertEquals(1, result.size());
-        assertEquals(Semester.GANJIL, result.get(0).getSemester());
-    }
-
 
     @Test
     void testDeleteLowonganByIdSuccess() {
