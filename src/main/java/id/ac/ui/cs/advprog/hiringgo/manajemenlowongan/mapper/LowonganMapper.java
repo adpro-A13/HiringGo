@@ -37,8 +37,8 @@ public class LowonganMapper {
         }
 
         lowongan.setTahunAjaran(dto.getTahunAjaran());
-        lowongan.setSemester((dto.getSemester()));
-        lowongan.setStatusLowongan((dto.getStatusLowongan()));
+        lowongan.setSemester(String.valueOf(dto.getSemester()));
+        lowongan.setStatusLowongan(String.valueOf(dto.getStatusLowongan()));
         lowongan.setJumlahAsdosDibutuhkan(dto.getJumlahAsdosDibutuhkan());
         lowongan.setJumlahAsdosDiterima(dto.getJumlahAsdosDiterima());
         lowongan.setJumlahAsdosPendaftar(dto.getJumlahAsdosPendaftar());
@@ -58,11 +58,13 @@ public class LowonganMapper {
         }
 
         dto.setTahunAjaran(lowongan.getTahunAjaran());
-        dto.setSemester(String.valueOf(lowongan.getSemester()));
-        dto.setStatusLowongan(String.valueOf(lowongan.getStatusLowongan()));
+        dto.setSemester(String.valueOf(dto.getSemester()));
+        dto.setStatusLowongan(String.valueOf(dto.getStatusLowongan()));
         dto.setJumlahAsdosDibutuhkan(lowongan.getJumlahAsdosDibutuhkan());
         dto.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima());
         dto.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar());
+
+        dto.setIdDaftarPendaftaran(pendaftaranService.getPendaftaranIdsByLowongan(lowongan.getLowonganId()));
 
         return dto;
     }
