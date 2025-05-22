@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface PendaftaranService {
     Pendaftaran daftar(UUID lowonganId, Mahasiswa kandidat, BigDecimal ipk, int sks);
     List<Pendaftaran> getByLowongan(UUID lowonganId);
+    List<UUID> getPendaftaranIdsByLowongan(UUID lowonganId);
 }
