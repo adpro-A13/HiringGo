@@ -84,7 +84,6 @@ public class LowonganController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Lowongan dengan ID " + id + " tidak ditemukan");
         }
