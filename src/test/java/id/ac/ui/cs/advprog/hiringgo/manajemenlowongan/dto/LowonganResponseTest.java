@@ -4,6 +4,8 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranServiceImpl;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,12 +23,13 @@ import static org.mockito.Mockito.when;
 class LowonganResponseTest {
     private LowonganMapper lowonganMapper;
 
+    private PendaftaranServiceImpl pendaftaranService;
     @Mock
     private MataKuliahRepository mataKuliahRepository;
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        lowonganMapper = new LowonganMapper(mataKuliahRepository);
+        lowonganMapper = new LowonganMapper(pendaftaranService, mataKuliahRepository);
         MataKuliah mataKuliah = new MataKuliah("CSGE602022", "AdvProg", "Design Pattern");
         when(mataKuliahRepository.findById("CSGE602022"))
                 .thenReturn(java.util.Optional.of(mataKuliah));

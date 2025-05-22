@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranServiceImpl;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,11 @@ import java.util.stream.Collectors;
 @Component
 public class LowonganMapper {
 
+    private final PendaftaranServiceImpl pendaftaranService;
     private final MataKuliahRepository mataKuliahRepository;
 
-    public LowonganMapper(MataKuliahRepository mataKuliahRepository) {
+    public LowonganMapper(PendaftaranServiceImpl pendaftaranService, MataKuliahRepository mataKuliahRepository) {
+        this.pendaftaranService = pendaftaranService;
         this.mataKuliahRepository = mataKuliahRepository;
     }
 
@@ -55,17 +58,11 @@ public class LowonganMapper {
         }
 
         dto.setTahunAjaran(lowongan.getTahunAjaran());
-        dto.setSemester(lowongan.getSemester());
-        dto.setStatusLowongan(lowongan.getStatusLowongan());
+        dto.setSemester(String.valueOf(lowongan.getSemester()));
+        dto.setStatusLowongan(String.valueOf(lowongan.getStatusLowongan()));
         dto.setJumlahAsdosDibutuhkan(lowongan.getJumlahAsdosDibutuhkan());
         dto.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima());
         dto.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar());
-
-        if (lowongan.getDaftarPendaftaran() != null) {
-            dto.setIdDaftarPendaftaran(lowongan.getDaftarPendaftaran().stream()
-                    .map(Pendaftaran::getPendaftaranId)
-                    .collect(Collectors.toList()));
-        }
 
         return dto;
     }
