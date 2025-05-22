@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -14,5 +15,8 @@ public class DosenDashboardResponse extends DashboardResponse {
     private int acceptedAssistantCount;
     private int openPositionCount;
     private List<MataKuliahDTO> courses;
-    private List<LowonganDTO> openPositions; // Changed type
+    private List<LowonganDTO> openPositions;
+    private List<MataKuliahDTO> coursesTaught;
+    private Map<String, List<LowonganDTO>> lowonganPerCourse;
+    private Map<String, Integer> acceptedAssistantsPerCourse;
 }
