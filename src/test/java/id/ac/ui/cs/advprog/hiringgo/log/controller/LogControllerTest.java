@@ -72,7 +72,7 @@ class LogControllerTest {
     void createLog_shouldReturnCreatedLog() throws Exception {
         when(logService.createLog(any(CreateLogRequest.class))).thenReturn(sampleLog);
 
-        mockMvc.perform(post("/logs")
+        mockMvc.perform(post("/api/logs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isOk())
@@ -84,7 +84,7 @@ class LogControllerTest {
     void getAllLogs_shouldReturnLogsList() throws Exception {
         when(logService.getAllLogs()).thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/logs"))
+        mockMvc.perform(get("/api/logs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
@@ -94,7 +94,7 @@ class LogControllerTest {
         String kodeMataKuliah = "CS-001";
         when(logService.getLogsByMataKuliah(kodeMataKuliah)).thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/logs/mata-kuliah/{kode}", kodeMataKuliah))
+        mockMvc.perform(get("/api/logs/mata-kuliah/{kode}", kodeMataKuliah))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
@@ -104,7 +104,7 @@ class LogControllerTest {
         UUID userId = UUID.randomUUID();
         when(logService.getLogsByUser(userId)).thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/logs/user/{id}", userId))
+        mockMvc.perform(get("/api/logs/user/{id}", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
@@ -113,7 +113,7 @@ class LogControllerTest {
     void getLogById_shouldReturnLog() throws Exception {
         when(logService.getLogById(1L)).thenReturn(Optional.of(sampleLog));
 
-        mockMvc.perform(get("/logs/{id}", 1L))
+        mockMvc.perform(get("/api/logs/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.judul").value("Test Log"));
     }
@@ -122,7 +122,7 @@ class LogControllerTest {
     void getLogById_shouldReturnNotFound() throws Exception {
         when(logService.getLogById(1L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/logs/{id}", 1L))
+        mockMvc.perform(get("/api/logs/{id}", 1L))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Log not found"));
     }
@@ -131,7 +131,7 @@ class LogControllerTest {
     void getLogsByStatus_shouldReturnLogs() throws Exception {
         when(logService.getLogsByStatus(LogStatus.MENUNGGU)).thenReturn(Arrays.asList(sampleLog));
 
-        mockMvc.perform(get("/logs/status/{status}", LogStatus.MENUNGGU))
+        mockMvc.perform(get("/api/logs/status/{status}", LogStatus.MENUNGGU))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
@@ -141,7 +141,7 @@ class LogControllerTest {
         when(logService.getLogsByMonth(any(Integer.class), any(Integer.class)))
                 .thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/logs/month")
+        mockMvc.perform(get("/api/logs/month")
                         .param("bulan", String.valueOf(LocalDate.now().getMonthValue()))
                         .param("tahun", String.valueOf(LocalDate.now().getYear())))
                 .andExpect(status().isOk())
@@ -159,7 +159,7 @@ class LogControllerTest {
         // Mock the command pattern behavior
         when(logService.updateStatus(eq(1L), eq(LogStatus.DITERIMA))).thenReturn(updatedLog);
 
-        mockMvc.perform(patch("/logs/{id}/status", 1L)
+        mockMvc.perform(patch("/api/logs/{id}/status", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"DITERIMA\""))
                 .andExpect(status().isOk())
@@ -182,7 +182,7 @@ class LogControllerTest {
 
         when(logService.updateLog(eq(1L), any(Log.class))).thenReturn(updatedLog);
 
-        mockMvc.perform(put("/logs/{id}", 1L)
+        mockMvc.perform(put("/api/logs/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedLog)))
                 .andExpect(status().isOk())
@@ -194,7 +194,7 @@ class LogControllerTest {
     void deleteLog_shouldReturnNoContent() throws Exception {
         doNothing().when(logService).deleteLog(1L);
 
-        mockMvc.perform(delete("/logs/{id}", 1L))
+        mockMvc.perform(delete("/api/logs/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
 
@@ -203,7 +203,7 @@ class LogControllerTest {
         when(logService.createLog(any(CreateLogRequest.class)))
                 .thenThrow(new IllegalArgumentException("Waktu mulai dan selesai tidak boleh kosong"));
 
-        mockMvc.perform(post("/logs")
+        mockMvc.perform(post("/api/logs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isBadRequest())
@@ -215,7 +215,7 @@ class LogControllerTest {
         when(logService.createLog(any(CreateLogRequest.class)))
                 .thenThrow(new RuntimeException("Internal server error"));
 
-        mockMvc.perform(post("/logs")
+        mockMvc.perform(post("/api/logs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isInternalServerError())
@@ -227,7 +227,7 @@ class LogControllerTest {
         when(logService.updateStatus(eq(999L), any(LogStatus.class)))
                 .thenThrow(new RuntimeException("Log tidak ditemukan"));
 
-        mockMvc.perform(patch("/logs/{id}/status", 999L)
+        mockMvc.perform(patch("/api/logs/{id}/status", 999L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"DITERIMA\""))
                 .andExpect(status().isNotFound())
@@ -246,7 +246,7 @@ class LogControllerTest {
         when(logService.updateLog(eq(999L), any(Log.class)))
                 .thenThrow(new RuntimeException("Log tidak ditemukan"));
 
-        mockMvc.perform(put("/logs/{id}", 999L)
+        mockMvc.perform(put("/api/logs/{id}", 999L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedLog)))
                 .andExpect(status().isNotFound())
@@ -258,7 +258,7 @@ class LogControllerTest {
         doThrow(new RuntimeException("Log tidak ditemukan"))
                 .when(logService).deleteLog(999L);
 
-        mockMvc.perform(delete("/logs/{id}", 999L))
+        mockMvc.perform(delete("/api/logs/{id}", 999L))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Log tidak ditemukan"));
     }
