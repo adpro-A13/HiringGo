@@ -24,10 +24,10 @@ class LowonganResponseTest {
     private LowonganMapper lowonganMapper;
 
     @Mock
-    private PendaftaranServiceImpl pendaftaranService; // Add @Mock annotation here
-
+    private PendaftaranServiceImpl pendaftaranService;
     @Mock
     private MataKuliahRepository mataKuliahRepository;
+
 
     @BeforeEach
     void setup() {
@@ -61,13 +61,13 @@ class LowonganResponseTest {
         lowongan.setJumlahAsdosDiterima(jumlahAsdosDiterima);
         lowongan.setJumlahAsdosPendaftar(jumlahAsdosPendaftar);
 
-        var response = lowonganMapper.toDto(lowongan);
+        LowonganDTO response = lowonganMapper.toDto(lowongan);
 
         assertEquals(lowonganId, response.getLowonganId());
         assertEquals(idMataKuliah, response.getIdMataKuliah());
         assertEquals(tahunAjaran, response.getTahunAjaran());
-        assertEquals(semester.name(), response.getSemester());
-        assertEquals(statusLowongan.name(), response.getStatusLowongan());
+        assertEquals(semester.getValue(), response.getSemester());  // Compare with enum directly
+        assertEquals(statusLowongan.getValue(), response.getStatusLowongan());  // Compare with enum directly
         assertEquals(jumlahAsdosDibutuhkan, response.getJumlahAsdosDibutuhkan());
         assertEquals(jumlahAsdosDiterima, response.getJumlahAsdosDiterima());
         assertEquals(jumlahAsdosPendaftar, response.getJumlahAsdosPendaftar());
@@ -80,7 +80,7 @@ class LowonganResponseTest {
 
         Lowongan lowongan = new Lowongan();
         lowongan.setMataKuliah(mataKuliah);
-        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.toString());
+        lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
 
         LowonganDTO response = lowonganMapper.toDto(lowongan);
 
@@ -88,8 +88,8 @@ class LowonganResponseTest {
         response.setLowonganId(lowonganId);
         response.setIdMataKuliah("CSGE602022");
         response.setTahunAjaran("2023/2024");
-        response.setSemester(Semester.GENAP.toString());  // Use string value
-        response.setStatusLowongan(StatusLowongan.DIBUKA.toString());  // Use string value
+        response.setSemester(String.valueOf(Semester.GENAP));  // Use enum directly
+        response.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));  // Use enum directly
         response.setJumlahAsdosDibutuhkan(3);
         response.setJumlahAsdosDiterima(1);
         response.setJumlahAsdosPendaftar(5);
@@ -97,8 +97,8 @@ class LowonganResponseTest {
         assertEquals(lowonganId, response.getLowonganId());
         assertEquals("CSGE602022", response.getIdMataKuliah());
         assertEquals("2023/2024", response.getTahunAjaran());
-        assertEquals(Semester.GENAP.toString(), response.getSemester());  // Compare with string representation
-        assertEquals(StatusLowongan.DIBUKA.toString(), response.getStatusLowongan());  // Compare with string representation
+        assertEquals(Semester.GENAP.getValue(), response.getSemester());  // Compare with enum directly
+        assertEquals(StatusLowongan.DIBUKA.getValue(), response.getStatusLowongan());  // Compare with enum directly
         assertEquals(3, response.getJumlahAsdosDibutuhkan());
         assertEquals(1, response.getJumlahAsdosDiterima());
         assertEquals(5, response.getJumlahAsdosPendaftar());

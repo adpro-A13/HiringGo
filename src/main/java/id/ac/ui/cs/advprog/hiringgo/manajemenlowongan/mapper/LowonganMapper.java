@@ -37,8 +37,8 @@ public class LowonganMapper {
         }
 
         lowongan.setTahunAjaran(dto.getTahunAjaran());
-        lowongan.setSemester(String.valueOf(dto.getSemester()));
-        lowongan.setStatusLowongan(String.valueOf(dto.getStatusLowongan()));
+        lowongan.setSemester((dto.getSemester()));
+        lowongan.setStatusLowongan((dto.getStatusLowongan()));
         lowongan.setJumlahAsdosDibutuhkan(dto.getJumlahAsdosDibutuhkan());
         lowongan.setJumlahAsdosDiterima(dto.getJumlahAsdosDiterima());
         lowongan.setJumlahAsdosPendaftar(dto.getJumlahAsdosPendaftar());

@@ -8,9 +8,11 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +33,13 @@ public class LowonganController {
     private LowonganService lowonganService;
 
     private final LowonganMapper lowonganMapper;
+    @Autowired
+    private PendaftaranService pendaftaranService;
 
-    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper) {
+    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper, PendaftaranService pendaftaranService) {
         this.lowonganService = lowonganService;
         this.lowonganMapper = lowonganMapper;
+        this.pendaftaranService = pendaftaranService;
     }
 
     @Autowired
@@ -69,6 +74,14 @@ public class LowonganController {
         try {
             Lowongan lowongan = lowonganService.findById(id);
             LowonganDTO response = lowonganMapper.toDto(lowongan);
+
+            List<UUID> idDaftarPendaftaran = pendaftaranService.getByLowongan(lowongan.getLowonganId())
+                    .stream()
+                    .map(Pendaftaran::getPendaftaranId)
+                    .collect(Collectors.toList());
+
+            response.setIdDaftarPendaftaran(idDaftarPendaftaran);
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -113,7 +126,7 @@ public class LowonganController {
         }
     }
 
-    @DeleteMapping("/{lowonganId}/tolak/{pendaftaranId}")
+    @PostMapping("/{lowonganId}/tolak/{pendaftaranId}")
     public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
             lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
