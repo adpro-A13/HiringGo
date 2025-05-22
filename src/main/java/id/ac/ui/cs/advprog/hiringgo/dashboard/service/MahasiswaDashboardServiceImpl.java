@@ -68,7 +68,6 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
 
     @Override
     protected void populateCommonData(UUID userId, DashboardResponse response) {
-        // Ambil dan cast ke Mahasiswa
         Mahasiswa mahasiswa = userRepository.findById(userId)
                 .filter(Mahasiswa.class::isInstance)
                 .map(Mahasiswa.class::cast)
@@ -79,7 +78,6 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
         response.setFullName(mahasiswa.getFullName());
 
         Map<String, String> features = new HashMap<>();
-//      taro api disini sisanya
         features.put("pendaftaran", "/api/pendaftaran");
         features.put("lowongan", "/api/lowongan");
         features.put("profile", "/api/profile");
@@ -91,22 +89,17 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
     protected void populateRoleSpecificData(UUID userId, DashboardResponse baseResponse) {
         MahasiswaDashboardResponse response = (MahasiswaDashboardResponse) baseResponse;
 
-        // Hitung lowongan yang masih terbuka
         List<Lowongan> allLowonganWithOpenStatus = lowonganRepository.findByStatusLowongan(StatusLowongan.DIBUKA);
         int openLowonganCount = (int) allLowonganWithOpenStatus.stream()
                 .filter(lowongan -> lowongan.getJumlahAsdosPendaftar() < lowongan.getJumlahAsdosDibutuhkan())
                 .count();
         response.setOpenLowonganCount(openLowonganCount);
 
-        // Ambil semua lowongan (untuk total)
         List<Lowongan> allLowongan = lowonganRepository.findAll();
         response.setTotalLowonganCount(allLowongan.size());
 
-        // Ambil semua pendaftaran untuk mahasiswa ini
         List<Pendaftaran> allApplications = pendaftaranRepository.findByKandidatId(userId);
         response.setTotalApplicationsCount(allApplications.size());
-
-        // Hitung pendaftaran berdasarkan status
         int pendingCount = countApplicationsByStatus(allApplications, StatusPendaftaran.BELUM_DIPROSES);
         int acceptedCount = countApplicationsByStatus(allApplications, StatusPendaftaran.DITERIMA);
         int rejectedCount = countApplicationsByStatus(allApplications, StatusPendaftaran.DITOLAK);
