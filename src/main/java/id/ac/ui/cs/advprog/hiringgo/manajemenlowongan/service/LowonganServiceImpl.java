@@ -133,26 +133,42 @@ public class LowonganServiceImpl implements LowonganService {
     @Transactional
     public void terimaPendaftar(UUID lowonganId, UUID pendaftaranId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        var result = validasiPendaftaranDanLowongan(lowonganId, pendaftaranId, username);
 
+        var result = validasiPendaftaranDanLowongan(lowonganId, pendaftaranId, username);
         Pendaftaran pendaftaran = result.getFirst();
         Lowongan lowongan = result.getSecond();
 
         getAuthorizedLowongan(lowonganId);
+        validasiStatusDanKapasitas(pendaftaran, lowongan);
+
+        prosesPenerimaan(pendaftaran, lowongan);
+        kirimNotifikasi(pendaftaran, lowongan);
+    }
+
+    private void validasiStatusDanKapasitas(Pendaftaran pendaftaran, Lowongan lowongan) {
+        if (pendaftaran.getStatus() == StatusPendaftaran.DITERIMA ||
+                pendaftaran.getStatus() == StatusPendaftaran.DITOLAK) {
+            throw new IllegalStateException("Pendaftar ini sudah " +
+                    pendaftaran.getStatus().name().toLowerCase().replace("_", " "));
+        }
 
         if (lowongan.getJumlahAsdosDiterima() >= lowongan.getJumlahAsdosDibutuhkan()) {
             throw new IllegalStateException("Lowongan sudah penuh");
         }
+    }
 
+    private void prosesPenerimaan(Pendaftaran pendaftaran, Lowongan lowongan) {
         pendaftaran.setStatus(StatusPendaftaran.DITERIMA);
         pendaftaranRepository.save(pendaftaran);
 
         lowongan.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima() + 1);
         if (lowongan.getJumlahAsdosDiterima() >= lowongan.getJumlahAsdosDibutuhkan()) {
-            lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DITUTUP));
+            lowongan.setStatusLowongan(StatusLowongan.DITUTUP.toString());
         }
         lowonganRepository.save(lowongan);
+    }
 
+    void kirimNotifikasi(Pendaftaran pendaftaran, Lowongan lowongan) {
         NotifikasiEvent event = new NotifikasiEvent(
                 pendaftaran.getKandidat(),
                 lowongan.getMataKuliah(),
@@ -163,28 +179,23 @@ public class LowonganServiceImpl implements LowonganService {
         eventPublisher.publishEvent(event);
     }
 
-
-
     @Override
+    @Transactional
     public void tolakPendaftar(UUID lowonganId, UUID pendaftaranId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         var result = validasiPendaftaranDanLowongan(lowonganId, pendaftaranId, username);
-
         getAuthorizedLowongan(lowonganId);
 
         Pendaftaran pendaftaran = result.getFirst();
+        Lowongan lowongan = result.getSecond();
+
+        validasiStatusDanKapasitas(pendaftaran, lowongan);
+
         pendaftaran.setStatus(StatusPendaftaran.DITOLAK);
         pendaftaranRepository.save(pendaftaran);
-
-        NotifikasiEvent event = new NotifikasiEvent(
-                pendaftaran.getKandidat(),
-                result.getSecond().getMataKuliah(),
-                result.getSecond().getTahunAjaran(),
-                result.getSecond().getSemester(),
-                "DITOLAK"
-        );
-        eventPublisher.publishEvent(event);
+        kirimNotifikasi(pendaftaran, lowongan);
     }
+
 
     @Override
     public Lowongan updateLowongan(UUID id, Lowongan updatedLowongan) {

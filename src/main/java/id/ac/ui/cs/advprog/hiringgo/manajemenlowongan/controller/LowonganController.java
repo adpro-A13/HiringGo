@@ -126,7 +126,7 @@ public class LowonganController {
         }
     }
 
-    @DeleteMapping("/{lowonganId}/tolak/{pendaftaranId}")
+    @PostMapping("/{lowonganId}/tolak/{pendaftaranId}")
     public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
             lowonganService.tolakPendaftar(lowonganId, pendaftaranId);

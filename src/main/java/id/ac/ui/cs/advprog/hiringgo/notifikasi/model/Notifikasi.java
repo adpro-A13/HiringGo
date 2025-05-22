@@ -58,11 +58,4 @@ public class Notifikasi {
         this.read = false;
         this.createdAt = LocalDateTime.now();
     }
-
-    public Notifikasi(Mahasiswa mahasiswa, String status, boolean isRead) {
-        this.mahasiswa = mahasiswa;
-        this.status = status;
-        this.read = isRead;
-    }
-
 }
