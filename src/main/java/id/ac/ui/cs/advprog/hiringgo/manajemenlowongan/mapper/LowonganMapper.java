@@ -64,6 +64,14 @@ public class LowonganMapper {
         dto.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima());
         dto.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar());
 
+        List<Pendaftaran> daftarPendaftaran = pendaftaranService.getByLowongan(lowongan.getLowonganId());
+
+        List<UUID> idDaftarPendaftaran = daftarPendaftaran.stream()
+                .map(Pendaftaran::getPendaftaranId)
+                .collect(Collectors.toList());
+
+        dto.setIdDaftarPendaftaran(idDaftarPendaftaran);
+
         return dto;
     }
 

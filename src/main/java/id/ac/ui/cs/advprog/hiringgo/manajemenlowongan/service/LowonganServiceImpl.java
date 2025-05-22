@@ -7,8 +7,10 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
+import id.ac.ui.cs.advprog.hiringgo.notifikasi.event.NotifikasiEvent;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,13 +30,16 @@ public class LowonganServiceImpl implements LowonganService {
     private final PendaftaranRepository pendaftaranRepository;
     private final LowonganFilterService filterService;
     private final LowonganSortService sortService;
+    ApplicationEventPublisher eventPublisher;
+
     @Autowired
     public LowonganServiceImpl(LowonganRepository lowonganRepository, PendaftaranRepository pendaftaranRepository,
-                               LowonganFilterService filterService, LowonganSortService sortService) {
+                               LowonganFilterService filterService, LowonganSortService sortService, ApplicationEventPublisher eventPublisher) {
         this.lowonganRepository = lowonganRepository;
         this.pendaftaranRepository = pendaftaranRepository;
         this.filterService = filterService;
         this.sortService = sortService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -147,6 +152,15 @@ public class LowonganServiceImpl implements LowonganService {
             lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DITUTUP));
         }
         lowonganRepository.save(lowongan);
+
+        NotifikasiEvent event = new NotifikasiEvent(
+                pendaftaran.getKandidat(),
+                lowongan.getMataKuliah(),
+                lowongan.getTahunAjaran(),
+                lowongan.getSemester(),
+                "DITERIMA"
+        );
+        eventPublisher.publishEvent(event);
     }
 
 
@@ -161,6 +175,15 @@ public class LowonganServiceImpl implements LowonganService {
         Pendaftaran pendaftaran = result.getFirst();
         pendaftaran.setStatus(StatusPendaftaran.DITOLAK);
         pendaftaranRepository.save(pendaftaran);
+
+        NotifikasiEvent event = new NotifikasiEvent(
+                pendaftaran.getKandidat(),
+                result.getSecond().getMataKuliah(),
+                result.getSecond().getTahunAjaran(),
+                result.getSecond().getSemester(),
+                "DITOLAK"
+        );
+        eventPublisher.publishEvent(event);
     }
 
     @Override
@@ -186,7 +209,7 @@ public class LowonganServiceImpl implements LowonganService {
     }
 
 
-    private Pair<Pendaftaran, Lowongan> validasiPendaftaranDanLowongan(UUID lowonganId, UUID pendaftaranId, String username) {
+    Pair<Pendaftaran, Lowongan> validasiPendaftaranDanLowongan(UUID lowonganId, UUID pendaftaranId, String username) {
         Pendaftaran pendaftaran = pendaftaranRepository.findById(pendaftaranId)
                 .orElseThrow(() -> new IllegalArgumentException("Pendaftaran tidak ditemukan"));
 
@@ -211,7 +234,7 @@ public class LowonganServiceImpl implements LowonganService {
                 .noneMatch(d -> d.getUsername().equals(username));
     }
 
-    private Lowongan getAuthorizedLowongan(UUID lowonganId) {
+    Lowongan getAuthorizedLowongan(UUID lowonganId) {
         Lowongan existing = lowonganRepository.findById(lowonganId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lowongan not found"));
 
