@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
@@ -104,6 +105,7 @@ class PendaftaranRestControllerTest {
         pendaftaran.setIpk(BigDecimal.valueOf(3.75));
         pendaftaran.setSks(20);
         pendaftaran.setWaktuDaftar(LocalDateTime.now());
+        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
     }
 
     @Test
@@ -162,6 +164,25 @@ class PendaftaranRestControllerTest {
     }
 
     @Test
+    void testDaftarUserAlreadyRegistered() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
+
+        // Mock that user has already applied
+        List<Pendaftaran> existingPendaftaran = List.of(pendaftaran);
+        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
+                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(existingPendaftaran);
+
+        mockMvc.perform(
+                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(daftarForm))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Anda sudah mendaftar untuk lowongan ini"));
+    }
+
+    @Test
     void testDaftarLowonganNotFound() throws Exception {
         when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
         when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
@@ -204,6 +225,21 @@ class PendaftaranRestControllerTest {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Kuota lowongan sudah penuh!"));
+    }
+
+    @Test
+    void testDaftarUserNotFound() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenThrow(
+                new EntityNotFoundException("User not found: testUser"));
+
+        mockMvc.perform(
+                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(daftarForm))
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
     }
 
     @Test
@@ -265,6 +301,58 @@ class PendaftaranRestControllerTest {
     }
 
     @Test
+    void testGetLowonganApplyStatusWithNullPrincipal() {
+        PendaftaranRestController controller = new PendaftaranRestController(
+                lowonganService,
+                pendaftaranService,
+                jwtService,
+                userRepository,
+                pendaftaranRepository,
+                lowonganMapper
+        );
+
+        ResponseEntity<?> response = controller.getLowonganApplyStatus(lowonganId, null);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Anda harus login terlebih dahulu", response.getBody());
+    }
+
+    @Test
+    void testGetLowonganApplyStatusUserNotFound() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenThrow(
+                new EntityNotFoundException("User not found: testUser"));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
+                .andExpect(status().isUnauthorized())  // Changed from isInternalServerError()
+                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
+    }
+
+    @Test
+    void testGetLowonganApplyStatusUserHasNotApplied() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
+        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
+                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(new ArrayList<>());
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasApplied").value(false))
+                .andExpect(jsonPath("$.status").value("BELUM_DAFTAR"));
+    }
+
+    @Test
+    void testGetLowonganApplyStatusUserHasApplied() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
+        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
+                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(List.of(pendaftaran));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasApplied").value(true))
+                .andExpect(jsonPath("$.status").value("BELUM_DIPROSES"))
+                .andExpect(jsonPath("$.pendaftaranId").value(pendaftaran.getPendaftaranId().toString()));
+    }
+
+    @Test
     void testGetAllLowonganForMahasiswa() throws Exception {
         // Create test data
         Lowongan lowongan1 = new Lowongan();
@@ -305,5 +393,41 @@ class PendaftaranRestControllerTest {
                 .andExpect(jsonPath("$[0].idMataKuliah", is(dto1.getIdMataKuliah())))
                 .andExpect(jsonPath("$[1].lowonganId", is(dto2.getLowonganId().toString())))
                 .andExpect(jsonPath("$[1].idMataKuliah", is(dto2.getIdMataKuliah())));
+    }
+
+    @Test
+    void testGetLowonganApplyStatusGeneralException() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
+
+        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
+                eq(mahasiswaMock.getId()), eq(lowonganId)))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Terjadi kesalahan: Database connection failed"));
+    }
+
+    @Test
+    void testDaftarUserNotFoundViaEmptyOptional() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.empty());
+
+        mockMvc.perform(
+                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(daftarForm))
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
+    }
+
+    @Test
+    void testGetLowonganApplyStatusUserNotFoundViaEmptyOptional() throws Exception {
+        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
     }
 }

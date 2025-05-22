@@ -43,18 +43,29 @@ public class LowonganMapper {
         return lowongan;
     }
 
-    public LowonganDTO toDto(Lowongan entity) {
+    public LowonganDTO toDto(Lowongan lowongan) {
         LowonganDTO dto = new LowonganDTO();
 
-        dto.setLowonganId(entity.getLowonganId());
-        dto.setIdMataKuliah(entity.getMataKuliah() != null ? entity.getMataKuliah().getKode() : null);
-        dto.setTahunAjaran(entity.getTahunAjaran());
-        dto.setSemester(String.valueOf(entity.getSemester()));
-        dto.setStatusLowongan(String.valueOf(entity.getStatusLowongan()));
-        dto.setJumlahAsdosDibutuhkan(entity.getJumlahAsdosDibutuhkan());
-        dto.setJumlahAsdosDiterima(entity.getJumlahAsdosDiterima());
-        dto.setJumlahAsdosPendaftar(entity.getJumlahAsdosPendaftar());
+        dto.setLowonganId(lowongan.getLowonganId());
 
+        if (lowongan.getMataKuliah() != null) {
+            dto.setIdMataKuliah(lowongan.getMataKuliah().getKode());
+            dto.setNamaMataKuliah(lowongan.getMataKuliah().getNama());
+            dto.setDeskripsiMataKuliah(lowongan.getMataKuliah().getDeskripsi());
+        }
+
+        dto.setTahunAjaran(lowongan.getTahunAjaran());
+        dto.setSemester(lowongan.getSemester());
+        dto.setStatusLowongan(lowongan.getStatusLowongan());
+        dto.setJumlahAsdosDibutuhkan(lowongan.getJumlahAsdosDibutuhkan());
+        dto.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima());
+        dto.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar());
+
+        if (lowongan.getDaftarPendaftaran() != null) {
+            dto.setIdDaftarPendaftaran(lowongan.getDaftarPendaftaran().stream()
+                    .map(Pendaftaran::getPendaftaranId)
+                    .collect(Collectors.toList()));
+        }
 
         return dto;
     }

@@ -1,66 +1,83 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
-import lombok.RequiredArgsConstructor;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.strategy.PendaftaranStrategy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
 @Transactional
-@RequiredArgsConstructor
 public class PendaftaranServiceImpl implements PendaftaranService {
 
-    private static final String ERR_LOWONGAN_NOT_FOUND = "Lowongan tidak ditemukan";
-    private static final String ERR_KUOTA_PENUH       = "Kuota lowongan sudah penuh!";
-
-    private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
+    private PendaftaranStrategy pendaftaranStrategy;
+
+    @Autowired
+    public PendaftaranServiceImpl(PendaftaranRepository pendaftaranRepository,
+                                  PendaftaranStrategy standardPendaftaranStrategy) {
+        if (pendaftaranRepository == null) {
+            throw new IllegalArgumentException("PendaftaranRepository cannot be null");
+        }
+        if (standardPendaftaranStrategy == null) {
+            throw new IllegalArgumentException("PendaftaranStrategy cannot be null");
+        }
+        this.pendaftaranRepository = pendaftaranRepository;
+        this.pendaftaranStrategy = standardPendaftaranStrategy;
+    }
+
+    public void setPendaftaranStrategy(PendaftaranStrategy strategy) {
+        if (strategy == null) {
+            throw new IllegalArgumentException("PendaftaranStrategy cannot be null");
+        }
+        this.pendaftaranStrategy = strategy;
+    }
 
     @Override
     public Pendaftaran daftar(UUID lowonganId,
                               Mahasiswa kandidat,
                               BigDecimal ipk,
                               int sks) {
-        // 1) Cari lowongan, lempar NoSuchElementException dengan pesan yang di‐test
-        Lowongan lowongan = lowonganRepository.findById(lowonganId)
-                .orElseThrow(() ->
-                        new NoSuchElementException(ERR_LOWONGAN_NOT_FOUND)
-                );
-
-        // 2) Validasi kuota
-        if (lowongan.getJumlahAsdosDiterima() >= lowongan.getJumlahAsdosDibutuhkan()) {
-            throw new IllegalStateException(ERR_KUOTA_PENUH);
+        if (lowonganId == null) {
+            throw new IllegalArgumentException("Lowongan ID cannot be null");
+        }
+        if (kandidat == null) {
+            throw new IllegalArgumentException("Kandidat cannot be null");
+        }
+        if (ipk == null) {
+            throw new IllegalArgumentException("IPK cannot be null");
         }
 
-        // 3) Buat dan simpan pendaftaran
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidat(kandidat);
-        pendaftaran.setIpk(ipk);
-        pendaftaran.setSks(sks);
-        pendaftaran.setWaktuDaftar(LocalDateTime.now());
-        Pendaftaran saved = pendaftaranRepository.save(pendaftaran);
-
-        // 4) Update counter dan panggil save agar mock lowonganRepository verifikasi terpenuhi
-        lowongan.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar() + 1);
-        lowonganRepository.save(lowongan);
-
-        return saved;
+        try {
+            return pendaftaranStrategy.execute(lowonganId, kandidat, ipk, sks);
+        } catch (RuntimeException cause) {
+            throw new IllegalStateException(
+                    "Error during pendaftaran for lowongan " + lowonganId + " and kandidat " + kandidat.getId(),
+                    cause
+            );
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Pendaftaran> getByLowongan(UUID lowonganId) {
-        return pendaftaranRepository.findByLowonganLowonganId(lowonganId);
+        if (lowonganId == null) {
+            throw new IllegalArgumentException("Lowongan ID cannot be null");
+        }
+
+        try {
+            return pendaftaranRepository.findByLowonganLowonganId(lowonganId);
+        } catch (RuntimeException cause) {
+            throw new IllegalStateException(
+                    "Failed to retrieve pendaftaran for lowongan " + lowonganId,
+                    cause
+            );
+        }
     }
 }

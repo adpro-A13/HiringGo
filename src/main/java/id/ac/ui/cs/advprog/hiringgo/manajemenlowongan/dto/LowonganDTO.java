@@ -17,6 +17,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 public class LowonganDTO {
     private UUID lowonganId;
     private String idMataKuliah;
+    private String namaMataKuliah;
+    private String deskripsiMataKuliah;
+
     private String tahunAjaran;
     private String semester;
     private String statusLowongan;
@@ -24,5 +27,4 @@ public class LowonganDTO {
     private int jumlahAsdosDiterima;
     private int jumlahAsdosPendaftar;
     private List<UUID> idDaftarPendaftaran;
-
 }
