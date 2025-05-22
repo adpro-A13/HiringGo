@@ -66,8 +66,8 @@ class LowonganResponseTest {
         assertEquals(lowonganId, response.getLowonganId());
         assertEquals(idMataKuliah, response.getIdMataKuliah());
         assertEquals(tahunAjaran, response.getTahunAjaran());
-        assertEquals(semester, response.getSemester());
-        assertEquals(statusLowongan, response.getStatusLowongan());
+        assertEquals(semester.name(), response.getSemester());
+        assertEquals(statusLowongan.name(), response.getStatusLowongan());
         assertEquals(jumlahAsdosDibutuhkan, response.getJumlahAsdosDibutuhkan());
         assertEquals(jumlahAsdosDiterima, response.getJumlahAsdosDiterima());
         assertEquals(jumlahAsdosPendaftar, response.getJumlahAsdosPendaftar());
