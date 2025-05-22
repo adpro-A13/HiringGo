@@ -16,8 +16,7 @@ public class MahasiswaDashboardResponse extends DashboardResponse {
     private int pendingApplicationsCount;
     private int acceptedApplicationsCount;
     private int rejectedApplicationsCount;
-    private int totalLoggedHours;
+    private BigDecimal totalLoggedHours;
     private BigDecimal totalIncentive;
     private List<LowonganDTO> acceptedLowongan;
-    private List<LowonganDTO> recentLowongan;
 }
