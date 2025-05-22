@@ -44,10 +44,8 @@ public class StandardPendaftaranStrategy implements PendaftaranStrategy {
             updateLowonganCount(lowongan);
             return pendaftaranRepository.save(pendaftaran);
         } catch (IllegalStateException | IllegalArgumentException e) {
-            // propagate known exceptions as is
             throw e;
         } catch (Exception e) {
-            // wrap unexpected exceptions
             throw new IllegalStateException(
                     "Gagal melakukan pendaftaran untuk lowongan " + lowonganId + ": " + e.getMessage(),
                     e
