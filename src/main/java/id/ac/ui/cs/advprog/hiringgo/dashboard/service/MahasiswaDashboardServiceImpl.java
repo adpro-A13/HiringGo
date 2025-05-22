@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -124,11 +125,6 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
                 .map(this::convertToLowonganDTO)
                 .collect(Collectors.toList());
         response.setAcceptedLowongan(acceptedLowongan);
-
-        List<LowonganDTO> recentLowongan = allLowonganWithOpenStatus.stream()
-                .map(this::convertToLowonganDTO)
-                .collect(Collectors.toList());
-        response.setRecentLowongan(recentLowongan);
     }
 
     private int countApplicationsByStatus(List<Pendaftaran> applications, StatusPendaftaran status) {
@@ -140,23 +136,25 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
                 .count();
     }
 
-    private int calculateTotalLoggedHours(UUID userId) {
+    private BigDecimal calculateTotalLoggedHours(UUID userId) {
         List<Log> logs = logService.getLogsByUser(userId);
-        long totalLoggedHours = logs.stream()
+        long totalLoggedMinutes = logs.stream()
                 .map(log -> Duration.between(log.getWaktuMulai(), log.getWaktuSelesai()))
                 .mapToLong(Duration::toMinutes)
                 .sum();
-        return (int) totalLoggedHours;
+        return BigDecimal.valueOf(totalLoggedMinutes)
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateTotalIncentive(UUID userId) {
         List<Log> logs = logService.getLogsByUser(userId);
-        long totalLoggedHours = logs.stream()
+        long totalLoggedMinutes = logs.stream()
                 .map(log -> Duration.between(log.getWaktuMulai(), log.getWaktuSelesai()))
                 .mapToLong(Duration::toMinutes)
                 .sum();
 
-        return new BigDecimal(totalLoggedHours * 27.500);
+        BigDecimal totalHours = BigDecimal.valueOf(totalLoggedMinutes).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+        return totalHours.multiply(BigDecimal.valueOf(27500));
     }
 
     private LowonganDTO convertToLowonganDTO(Lowongan lowongan) {
