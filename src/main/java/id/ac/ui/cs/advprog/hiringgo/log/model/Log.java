@@ -70,7 +70,7 @@ public class Log {
         private LocalTime waktuSelesai;
         private LocalDate tanggalLog;
         private String pesanUntukDosen;
-        private LogStatus status = LogStatus.MENUNGGU; // default status
+        private LogStatus status = LogStatus.MENUNGGU;
 
         public Builder id(Long id) {
             this.id = id;
