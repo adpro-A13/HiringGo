@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,8 +82,6 @@ class DashboardControllerTest {
         Map<String, String> af = new HashMap<>();
         af.put("account-management", "/api/account-management");
         adminResponse.setAvailableFeatures(af);
-
-        // Remove the stubbing from here - we'll add it to individual tests
     }
 
     @Test
@@ -225,5 +224,72 @@ class DashboardControllerTest {
                 dashboardController.getAdminDashboard(authentication)
         );
         verify(adminDashboardService, never()).getDashboardData(any());
+    }
+
+    // New tests for exception handlers
+    @Test
+    void testHandleNotFound() {
+        NoSuchElementException ex = new NoSuchElementException("Element not found");
+        ResponseEntity<Map<String, String>> response = dashboardController.handleNotFound(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Element not found", response.getBody().get("message"));
+    }
+
+    @Test
+    void testHandleBadRequest() {
+        IllegalArgumentException ex = new IllegalArgumentException("Invalid argument");
+        ResponseEntity<Map<String, String>> response = dashboardController.handleBadRequest(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Invalid argument", response.getBody().get("message"));
+    }
+
+    @Test
+    void testHandleGeneralError() {
+        Exception ex = new RuntimeException("Some unexpected error");
+        ResponseEntity<Map<String, String>> response = dashboardController.handleGeneralError(ex);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Terjadi kesalahan server", response.getBody().get("message"));
+    }
+
+    @Test
+    void testMahasiswaDashboardWithNoSuchElementException() {
+        // Setup
+        when(authentication.isAuthenticated()).thenReturn(true);
+        Mahasiswa m = mock(Mahasiswa.class);
+        when(m.getId()).thenReturn(mahasiswaId);
+        when(authentication.getPrincipal()).thenReturn(m);
+
+        // Make the service throw the exception
+        NoSuchElementException ex = new NoSuchElementException("Mahasiswa tidak ditemukan");
+        when(mahasiswaDashboardService.getDashboardData(mahasiswaId)).thenThrow(ex);
+
+        // Execute and verify
+        assertThrows(NoSuchElementException.class, () ->
+                dashboardController.getMahasiswaDashboard(authentication)
+        );
+    }
+
+    @Test
+    void testDosenDashboardWithIllegalArgumentException() {
+        // Setup
+        when(authentication.isAuthenticated()).thenReturn(true);
+        Dosen d = mock(Dosen.class);
+        when(d.getId()).thenReturn(dosenId);
+        when(authentication.getPrincipal()).thenReturn(d);
+
+        // Make the service throw the exception
+        IllegalArgumentException ex = new IllegalArgumentException("Invalid dosen ID");
+        when(dosenDashboardService.getDashboardData(dosenId)).thenThrow(ex);
+
+        // Execute and verify
+        assertThrows(IllegalArgumentException.class, () ->
+                dashboardController.getDosenDashboard(authentication)
+        );
     }
 }
