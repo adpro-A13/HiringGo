@@ -23,9 +23,12 @@ import static org.mockito.Mockito.when;
 class LowonganResponseTest {
     private LowonganMapper lowonganMapper;
 
-    private PendaftaranServiceImpl pendaftaranService;
+    @Mock
+    private PendaftaranServiceImpl pendaftaranService; // Add @Mock annotation here
+
     @Mock
     private MataKuliahRepository mataKuliahRepository;
+
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
@@ -34,6 +37,7 @@ class LowonganResponseTest {
         when(mataKuliahRepository.findById("CSGE602022"))
                 .thenReturn(java.util.Optional.of(mataKuliah));
     }
+
     @Test
     @DisplayName("Test LowonganResponse constructor with Lowongan")
     void testConstructorWithLowongan() {
@@ -51,19 +55,19 @@ class LowonganResponseTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setMataKuliah(mataKuliah);
         lowongan.setTahunAjaran(tahunAjaran);
-        lowongan.setSemester(semester.toString());  // Convert enum to String
-        lowongan.setStatusLowongan(statusLowongan.toString());  // Convert enum to String
+        lowongan.setSemester(semester.getValue());
+        lowongan.setStatusLowongan(statusLowongan.getValue());
         lowongan.setJumlahAsdosDibutuhkan(jumlahAsdosDibutuhkan);
         lowongan.setJumlahAsdosDiterima(jumlahAsdosDiterima);
         lowongan.setJumlahAsdosPendaftar(jumlahAsdosPendaftar);
 
-        LowonganDTO response = lowonganMapper.toDto(lowongan);
+        var response = lowonganMapper.toDto(lowongan);
 
         assertEquals(lowonganId, response.getLowonganId());
         assertEquals(idMataKuliah, response.getIdMataKuliah());
         assertEquals(tahunAjaran, response.getTahunAjaran());
-        assertEquals(semester.getValue(), response.getSemester());  // Compare with enum directly
-        assertEquals(statusLowongan.getValue(), response.getStatusLowongan());  // Compare with enum directly
+        assertEquals(semester, response.getSemester());
+        assertEquals(statusLowongan, response.getStatusLowongan());
         assertEquals(jumlahAsdosDibutuhkan, response.getJumlahAsdosDibutuhkan());
         assertEquals(jumlahAsdosDiterima, response.getJumlahAsdosDiterima());
         assertEquals(jumlahAsdosPendaftar, response.getJumlahAsdosPendaftar());
@@ -76,7 +80,7 @@ class LowonganResponseTest {
 
         Lowongan lowongan = new Lowongan();
         lowongan.setMataKuliah(mataKuliah);
-        lowongan.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
+        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.toString());
 
         LowonganDTO response = lowonganMapper.toDto(lowongan);
 
@@ -84,8 +88,8 @@ class LowonganResponseTest {
         response.setLowonganId(lowonganId);
         response.setIdMataKuliah("CSGE602022");
         response.setTahunAjaran("2023/2024");
-        response.setSemester(String.valueOf(Semester.GENAP));  // Use enum directly
-        response.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));  // Use enum directly
+        response.setSemester(Semester.GENAP.toString());  // Use string value
+        response.setStatusLowongan(StatusLowongan.DIBUKA.toString());  // Use string value
         response.setJumlahAsdosDibutuhkan(3);
         response.setJumlahAsdosDiterima(1);
         response.setJumlahAsdosPendaftar(5);
@@ -93,8 +97,8 @@ class LowonganResponseTest {
         assertEquals(lowonganId, response.getLowonganId());
         assertEquals("CSGE602022", response.getIdMataKuliah());
         assertEquals("2023/2024", response.getTahunAjaran());
-        assertEquals(Semester.GENAP.getValue(), response.getSemester());  // Compare with enum directly
-        assertEquals(StatusLowongan.DIBUKA.getValue(), response.getStatusLowongan());  // Compare with enum directly
+        assertEquals(Semester.GENAP.toString(), response.getSemester());  // Compare with string representation
+        assertEquals(StatusLowongan.DIBUKA.toString(), response.getStatusLowongan());  // Compare with string representation
         assertEquals(3, response.getJumlahAsdosDibutuhkan());
         assertEquals(1, response.getJumlahAsdosDiterima());
         assertEquals(5, response.getJumlahAsdosPendaftar());
