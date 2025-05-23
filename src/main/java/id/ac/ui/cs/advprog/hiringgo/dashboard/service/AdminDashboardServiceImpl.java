@@ -10,6 +10,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganReposit
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.concurrent.CompletableFuture;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,20 +80,29 @@ public class AdminDashboardServiceImpl extends AbstractDashboardService {
     protected void populateRoleSpecificData(UUID userId, DashboardResponse baseResponse) {
         AdminDashboardResponse response = (AdminDashboardResponse) baseResponse;
 
-        int dosenCount = (int) StreamSupport.stream(userRepository.findAll().spliterator(), false)
-                .filter(Dosen.class::isInstance)
-                .count();
-        response.setDosenCount(dosenCount);
+        CompletableFuture<Integer> dosenCountFuture = CompletableFuture.supplyAsync(() ->
+                (int) StreamSupport.stream(userRepository.findAll().spliterator(), false)
+                        .filter(Dosen.class::isInstance)
+                        .count()
+        );
 
-        int mahasiswaCount = (int) StreamSupport.stream(userRepository.findAll().spliterator(), false)
-                .filter(Mahasiswa.class::isInstance)
-                .count();
-        response.setMahasiswaCount(mahasiswaCount);
+        CompletableFuture<Integer> mahasiswaCountFuture = CompletableFuture.supplyAsync(() ->
+                (int) StreamSupport.stream(userRepository.findAll().spliterator(), false)
+                        .filter(Mahasiswa.class::isInstance)
+                        .count()
+        );
 
-        int courseCount = (int) mataKuliahRepository.count();
-        response.setCourseCount(courseCount);
+        CompletableFuture<Integer> courseCountFuture = CompletableFuture.supplyAsync(() ->
+                (int) mataKuliahRepository.count()
+        );
 
-        int lowonganCount = (int) lowonganRepository.count();
-        response.setLowonganCount(lowonganCount);
+        CompletableFuture<Integer> lowonganCountFuture = CompletableFuture.supplyAsync(() ->
+                (int) lowonganRepository.count()
+        );
+
+        response.setDosenCount(dosenCountFuture.join());
+        response.setMahasiswaCount(mahasiswaCountFuture.join());
+        response.setCourseCount(courseCountFuture.join());
+        response.setLowonganCount(lowonganCountFuture.join());
     }
 }
