@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,16 +24,19 @@ class MataKuliahServiceTest {
     private MataKuliahServiceImpl mataKuliahService;
 
     @Test
-    void testCreateMataKuliah() {
+    void testCreateMataKuliah() throws Exception {
         MataKuliah matkul = new MataKuliah("CS001", "Dasar", "Deskripsi");
+        when(mataKuliahRepository.existsById("CS001")).thenReturn(false);
         when(mataKuliahRepository.save(matkul)).thenReturn(matkul);
 
-        MataKuliah result = mataKuliahService.create(matkul);
+        CompletableFuture<MataKuliah> resultFuture = mataKuliahService.create(matkul);
+        MataKuliah result = resultFuture.get(); // atau .join()
 
         assertNotNull(result);
         assertEquals("CS001", result.getKode());
         verify(mataKuliahRepository).save(matkul);
     }
+
 
     @Test
     void testCreateWhenKodeAlreadyExists_ShouldThrow() {
@@ -75,15 +79,14 @@ class MataKuliahServiceTest {
     }
 
     @Test
-    void testUpdateMataKuliah() {
-        MataKuliah original = new MataKuliah("CS003", "Pemrograman", "Spring Boot");
-
-        when(mataKuliahRepository.existsById("CS003")).thenReturn(true);
-        when(mataKuliahRepository.save(any(MataKuliah.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
+    void testUpdateMataKuliah() throws Exception {
         MataKuliah updated = new MataKuliah("CS003", "Pemrograman", "Belajar Design Pattern");
 
-        MataKuliah result = mataKuliahService.update(updated);
+        when(mataKuliahRepository.existsById("CS003")).thenReturn(true);
+        when(mataKuliahRepository.save(updated)).thenReturn(updated);
+
+        CompletableFuture<MataKuliah> resultFuture = mataKuliahService.update(updated);
+        MataKuliah result = resultFuture.get();
 
         assertEquals("CS003", result.getKode());
         assertEquals("Pemrograman", result.getNama());
@@ -92,6 +95,7 @@ class MataKuliahServiceTest {
         verify(mataKuliahRepository).existsById("CS003");
         verify(mataKuliahRepository).save(updated);
     }
+
 
     @Test
     void testUpdateMataKuliahNotFound() {
@@ -126,21 +130,25 @@ class MataKuliahServiceTest {
     }
 
     @Test
-    void testFindAllMataKuliah() {
+    void testFindAllMataKuliah() throws Exception {
         MataKuliah m1 = new MataKuliah("CS001", "Dasar", "desc");
         MataKuliah m2 = new MataKuliah("CS002", "Lanjut", "desc");
 
         when(mataKuliahRepository.findAll()).thenReturn(List.of(m1, m2));
 
-        List<MataKuliah> result = mataKuliahService.findAll();
+        CompletableFuture<List<MataKuliah>> resultFuture = mataKuliahService.findAll();
+        List<MataKuliah> result = resultFuture.get();
 
         assertEquals(2, result.size());
         verify(mataKuliahRepository).findAll();
     }
 
     @Test
-    void testDeleteMataKuliah() {
-        mataKuliahService.deleteByKode("CS001");
+    void testDeleteMataKuliah() throws Exception {
+        CompletableFuture<Void> future = mataKuliahService.deleteByKode("CS001");
+        future.get();
+
         verify(mataKuliahRepository).deleteById("CS001");
     }
+
 }
