@@ -45,36 +45,36 @@ public class MataKuliahController {
 
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public CompletableFuture<ResponseEntity<MataKuliahDTO>> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
+    public ResponseEntity<MataKuliahDTO> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
         try {
             MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
-            return mataKuliahService.create(mataKuliah)
-                    .thenApply(created -> ResponseEntity.status(HttpStatus.CREATED).body(mataKuliahMapper.toDto(created)));
+            MataKuliah createdMataKuliah = mataKuliahService.create(mataKuliah);
+            return ResponseEntity.status(HttpStatus.CREATED).body(mataKuliahMapper.toDto(createdMataKuliah));
         } catch (IllegalArgumentException e) {
-            return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
+            return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("update/{kode}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public CompletableFuture<ResponseEntity<MataKuliahDTO>> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
+    public ResponseEntity<MataKuliahDTO> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
         if (!kode.equals(mataKuliahDTO.getKode())) {
-            return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
+            return ResponseEntity.badRequest().build();
         }
 
         try {
             MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
-            return mataKuliahService.update(mataKuliah)
-                    .thenApply(updated -> ResponseEntity.ok(mataKuliahMapper.toDto(updated)));
+            MataKuliah updatedMataKuliah = mataKuliahService.update(mataKuliah);
+            return ResponseEntity.ok(mataKuliahMapper.toDto(updatedMataKuliah));
         } catch (IllegalArgumentException e) {
-            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
+            return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping("/{kode}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public CompletableFuture<ResponseEntity<Void>> deleteMataKuliah(@PathVariable String kode) {
-        return mataKuliahService.deleteByKode(kode)
-                .thenApply(v -> ResponseEntity.noContent().build());
+    public ResponseEntity<Void> deleteMataKuliah(@PathVariable String kode) {
+        mataKuliahService.deleteByKode(kode);
+        return ResponseEntity.noContent().build();
     }
 }

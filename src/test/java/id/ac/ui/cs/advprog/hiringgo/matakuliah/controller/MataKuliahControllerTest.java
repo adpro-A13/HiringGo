@@ -97,10 +97,10 @@ class MataKuliahControllerTest {
         entityIn.addDosenPengampu(dosenA);
 
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
-        when(mataKuliahService.create(entityIn)).thenReturn(CompletableFuture.completedFuture(entityIn));
+        when(mataKuliahService.create(entityIn)).thenReturn(entityIn);
         when(mataKuliahMapper.toDto(entityIn)).thenReturn(dtoIn);
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn).join();
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn);
 
         assertEquals(HttpStatus.CREATED, resp.getStatusCode());
         assertEquals("CS101", Objects.requireNonNull(resp.getBody()).getKode());
@@ -119,7 +119,7 @@ class MataKuliahControllerTest {
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(new MataKuliah("CS101","Dasar","Desc"));
         when(mataKuliahService.create(any())).thenThrow(new IllegalArgumentException("Kode sudah digunakan."));
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn).join();
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn);
 
         assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
         verify(mataKuliahMapper).toEntity(dtoIn);
@@ -135,10 +135,10 @@ class MataKuliahControllerTest {
         MataKuliah entityIn = new MataKuliah("CS101","Update","New");
 
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
-        when(mataKuliahService.update(entityIn)).thenReturn(CompletableFuture.completedFuture(entityIn));
+        when(mataKuliahService.update(entityIn)).thenReturn(entityIn);
         when(mataKuliahMapper.toDto(entityIn)).thenReturn(dtoIn);
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn).join();
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertEquals("Update", Objects.requireNonNull(resp.getBody()).getNama());
@@ -154,7 +154,7 @@ class MataKuliahControllerTest {
         MataKuliahDTO dtoIn = new MataKuliahDTO();
         dtoIn.setKode("CS999"); dtoIn.setNama("X"); dtoIn.setDeskripsi("D"); dtoIn.setDosenPengampuEmails(List.of());
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn).join();
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
 
         assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
         verifyNoInteractions(mataKuliahMapper, mataKuliahService);
@@ -171,7 +171,7 @@ class MataKuliahControllerTest {
         when(mataKuliahService.update(entityIn))
                 .thenThrow(new IllegalArgumentException("Mata Kuliah tidak ditemukan."));
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn).join();
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
 
         assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
         InOrder ord = inOrder(mataKuliahMapper, mataKuliahService);
@@ -181,11 +181,12 @@ class MataKuliahControllerTest {
 
     @Test
     void testDeleteMataKuliah() {
-        doReturn(CompletableFuture.completedFuture(null)).when(mataKuliahService).deleteByKode("CS101");
+        doNothing().when(mataKuliahService).deleteByKode("CS101");
 
-        ResponseEntity<Void> resp = mataKuliahController.deleteMataKuliah("CS101").join();
+        ResponseEntity<Void> resp = mataKuliahController.deleteMataKuliah("CS101");
 
         assertEquals(HttpStatus.NO_CONTENT, resp.getStatusCode());
         verify(mataKuliahService).deleteByKode("CS101");
+        verifyNoMoreInteractions(mataKuliahMapper);
     }
 }

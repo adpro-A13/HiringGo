@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface MataKuliahService {
-    CompletableFuture<MataKuliah> create(MataKuliah mataKuliah);
-    CompletableFuture<MataKuliah> update(MataKuliah mataKuliah);
-    CompletableFuture<Void> deleteByKode(String kode);
-    CompletableFuture<List<MataKuliah>> findAll();
+    MataKuliah create(MataKuliah mataKuliah);
+    MataKuliah update(MataKuliah mataKuliah);
     MataKuliah findByKode(String kode);
     List<MataKuliah> findByDosenPengampu(Dosen dosen);
+    CompletableFuture<List<MataKuliah>> findAll();
+    void deleteByKode(String kode);
 }

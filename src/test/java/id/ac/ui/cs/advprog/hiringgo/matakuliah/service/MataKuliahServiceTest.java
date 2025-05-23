@@ -24,19 +24,16 @@ class MataKuliahServiceTest {
     private MataKuliahServiceImpl mataKuliahService;
 
     @Test
-    void testCreateMataKuliah() throws Exception {
+    void testCreateMataKuliah() {
         MataKuliah matkul = new MataKuliah("CS001", "Dasar", "Deskripsi");
-        when(mataKuliahRepository.existsById("CS001")).thenReturn(false);
         when(mataKuliahRepository.save(matkul)).thenReturn(matkul);
 
-        CompletableFuture<MataKuliah> resultFuture = mataKuliahService.create(matkul);
-        MataKuliah result = resultFuture.get(); // atau .join()
+        MataKuliah result = mataKuliahService.create(matkul);
 
         assertNotNull(result);
         assertEquals("CS001", result.getKode());
         verify(mataKuliahRepository).save(matkul);
     }
-
 
     @Test
     void testCreateWhenKodeAlreadyExists_ShouldThrow() {
@@ -79,14 +76,15 @@ class MataKuliahServiceTest {
     }
 
     @Test
-    void testUpdateMataKuliah() throws Exception {
-        MataKuliah updated = new MataKuliah("CS003", "Pemrograman", "Belajar Design Pattern");
+    void testUpdateMataKuliah() {
+        MataKuliah original = new MataKuliah("CS003", "Pemrograman", "Spring Boot");
 
         when(mataKuliahRepository.existsById("CS003")).thenReturn(true);
-        when(mataKuliahRepository.save(updated)).thenReturn(updated);
+        when(mataKuliahRepository.save(any(MataKuliah.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CompletableFuture<MataKuliah> resultFuture = mataKuliahService.update(updated);
-        MataKuliah result = resultFuture.get();
+        MataKuliah updated = new MataKuliah("CS003", "Pemrograman", "Belajar Design Pattern");
+
+        MataKuliah result = mataKuliahService.update(updated);
 
         assertEquals("CS003", result.getKode());
         assertEquals("Pemrograman", result.getNama());
@@ -95,7 +93,6 @@ class MataKuliahServiceTest {
         verify(mataKuliahRepository).existsById("CS003");
         verify(mataKuliahRepository).save(updated);
     }
-
 
     @Test
     void testUpdateMataKuliahNotFound() {
@@ -144,11 +141,8 @@ class MataKuliahServiceTest {
     }
 
     @Test
-    void testDeleteMataKuliah() throws Exception {
-        CompletableFuture<Void> future = mataKuliahService.deleteByKode("CS001");
-        future.get();
-
+    void testDeleteMataKuliah() {
+        mataKuliahService.deleteByKode("CS001");
         verify(mataKuliahRepository).deleteById("CS001");
     }
-
 }
