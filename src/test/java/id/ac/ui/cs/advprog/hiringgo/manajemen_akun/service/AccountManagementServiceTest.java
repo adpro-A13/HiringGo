@@ -5,8 +5,9 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
+import id.ac.ui.cs.advprog.hiringgo.common.service.AsyncLogoutService;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
-import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.EditUserDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
@@ -30,6 +31,9 @@ class AccountManagementServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private AsyncLogoutService asyncLogoutService;
+
     private AccountManagementService accountManagementService;
 
     private Admin testAdmin;
@@ -43,7 +47,7 @@ class AccountManagementServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        accountManagementService = new AccountManagementService(userRepository, passwordEncoder);
+        accountManagementService = new AccountManagementService(userRepository, passwordEncoder, asyncLogoutService);
 
         testAdminId = UUID.randomUUID();
         testAdmin = new Admin("admin@test.com", "encoded_password");
@@ -383,79 +387,102 @@ class AccountManagementServiceTest {
         });
         assertEquals("Email already exists", exception.getMessage());
         verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    void changeUserRole_fromMahasiswaToAdmin_shouldChangeRole() {
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("ADMIN");
+    }    @Test
+    void editUser_fromMahasiswaToAdmin_shouldChangeRole() {
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("ADMIN");
         
         when(userRepository.findById(testMahasiswaId)).thenReturn(Optional.of(testMahasiswa));
-        when(userRepository.save(any(Admin.class))).thenAnswer(invocation -> {
-            Admin savedAdmin = invocation.getArgument(0);
-            savedAdmin.setId(UUID.randomUUID());
-            return savedAdmin;
-        });
+        
+        Admin adminWithSameId = new Admin("admin@test.com", "encoded_password");
+        adminWithSameId.setId(testMahasiswaId);
+        
+        when(userRepository.saveAndFlush(any(Admin.class))).thenReturn(adminWithSameId);
+        doNothing().when(userRepository).flush();
 
-        UserResponseDto result = accountManagementService.changeUserRole(testMahasiswaId.toString(), changeRoleDto);
-
+        UserResponseDto result = accountManagementService.editUser(testMahasiswaId.toString(), editUserDto);
         assertNotNull(result);
         assertEquals("ADMIN", result.getRole());
+        assertEquals(testMahasiswaId.toString(), result.getId());
         
-        verify(userRepository).delete(testMahasiswa);
-        verify(userRepository).save(any(Admin.class));
-    }
-
-    @Test
-    void changeUserRole_fromAdminToMahasiswa_shouldChangeRole() {
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("MAHASISWA");
+        verify(userRepository, times(1)).delete(testMahasiswa);
+        verify(userRepository, atLeastOnce()).flush();
+        verify(userRepository, times(1)).saveAndFlush(any(Admin.class));
+    }    @Test
+    void editUser_fromMahasiswaToAdmin_shouldPreserveUserId() {
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("ADMIN");
+        
+        when(userRepository.findById(testMahasiswaId)).thenReturn(Optional.of(testMahasiswa));
+        
+        Admin adminWithSameId = new Admin("admin@test.com", "encoded_password");
+        adminWithSameId.setId(testMahasiswaId);
+        
+        when(userRepository.saveAndFlush(any(Admin.class))).thenReturn(adminWithSameId);
+        doNothing().when(userRepository).flush();
+        
+        UserResponseDto result = accountManagementService.editUser(testMahasiswaId.toString(), editUserDto);
+        assertNotNull(result);
+        assertEquals("ADMIN", result.getRole());
+        assertEquals(testMahasiswaId.toString(), result.getId());
+        
+        verify(userRepository, times(1)).delete(testMahasiswa);
+        verify(userRepository, atLeastOnce()).flush();
+        verify(userRepository, times(1)).saveAndFlush(any(Admin.class));
+    }    @Test
+    void editUser_fromAdminToMahasiswa_shouldChangeRole() {        
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("MAHASISWA");
         
         when(userRepository.findById(testAdminId)).thenReturn(Optional.of(testAdmin));
-        when(userRepository.save(any(Mahasiswa.class))).thenAnswer(invocation -> {
+        
+        when(userRepository.saveAndFlush(any(Mahasiswa.class))).thenAnswer(invocation -> {
             Mahasiswa savedMahasiswa = invocation.getArgument(0);
-            savedMahasiswa.setId(UUID.randomUUID());
+
             return savedMahasiswa;
         });
-
-        UserResponseDto result = accountManagementService.changeUserRole(testAdminId.toString(), changeRoleDto);
-
-        assertNotNull(result);
-        assertEquals("MAHASISWA", result.getRole());
         
-        verify(userRepository).delete(testAdmin);
-        verify(userRepository).save(any(Mahasiswa.class));
-    }
+        doNothing().when(userRepository).flush();
 
-    @Test
-    void changeUserRole_fromDosenToMahasiswa_shouldChangeRole() {
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("MAHASISWA");
+        UserResponseDto result = accountManagementService.editUser(testAdminId.toString(), editUserDto);        assertNotNull(result);
+        assertEquals("MAHASISWA", result.getRole());
+        assertEquals(testAdminId.toString(), result.getId());
+        
+        verify(userRepository, times(1)).delete(testAdmin);
+        verify(userRepository, atLeastOnce()).flush();
+        verify(userRepository, times(1)).saveAndFlush(any(Mahasiswa.class));
+    }    @Test
+    void editUser_fromDosenToMahasiswa_shouldChangeRole() {        
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("MAHASISWA");
         
         when(userRepository.findById(testDosenId)).thenReturn(Optional.of(testDosen));
-        when(userRepository.save(any(Mahasiswa.class))).thenAnswer(invocation -> {
+        
+        when(userRepository.saveAndFlush(any(Mahasiswa.class))).thenAnswer(invocation -> {
             Mahasiswa savedMahasiswa = invocation.getArgument(0);
-            savedMahasiswa.setId(UUID.randomUUID());
+
             return savedMahasiswa;
         });
-
-        UserResponseDto result = accountManagementService.changeUserRole(testDosenId.toString(), changeRoleDto);
-
-        assertNotNull(result);
-        assertEquals("MAHASISWA", result.getRole());
         
-        verify(userRepository).delete(testDosen);
-        verify(userRepository).save(any(Mahasiswa.class));
+        doNothing().when(userRepository).flush();
+
+        UserResponseDto result = accountManagementService.editUser(testDosenId.toString(), editUserDto);        assertNotNull(result);
+        assertEquals("MAHASISWA", result.getRole());
+        assertEquals(testDosenId.toString(), result.getId());
+        
+        verify(userRepository, times(1)).delete(testDosen);
+        verify(userRepository, atLeastOnce()).flush();
+        verify(userRepository, times(1)).saveAndFlush(any(Mahasiswa.class));
     }
 
     @Test
-    void changeUserRole_toSameRole_shouldNotChangeAnything() {
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("ADMIN");
+    void editUser_toSameRole_shouldNotChangeAnything() {        
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("ADMIN");
         
         when(userRepository.findById(testAdminId)).thenReturn(Optional.of(testAdmin));
 
-        UserResponseDto result = accountManagementService.changeUserRole(testAdminId.toString(), changeRoleDto);
+        UserResponseDto result = accountManagementService.editUser(testAdminId.toString(), editUserDto);
 
         assertNotNull(result);
         assertEquals("ADMIN", result.getRole());
@@ -466,41 +493,41 @@ class AccountManagementServiceTest {
     }
 
     @Test
-    void changeUserRole_withInvalidIdFormat_shouldThrowException() {
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("ADMIN");
+    void editUser_withInvalidIdFormat_shouldThrowException() {        
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("ADMIN");
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountManagementService.changeUserRole("invalid-uuid", changeRoleDto);
+            accountManagementService.editUser("invalid-uuid", editUserDto);
         });
         
         assertEquals("Invalid user ID format", exception.getMessage());
     }
 
     @Test
-    void changeUserRole_withNonExistentId_shouldThrowException() {
+    void editUser_withNonExistentId_shouldThrowException() {        
         UUID nonExistentId = UUID.randomUUID();
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("ADMIN");
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("ADMIN");
         
         when(userRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountManagementService.changeUserRole(nonExistentId.toString(), changeRoleDto);
+            accountManagementService.editUser(nonExistentId.toString(), editUserDto);
         });
         
         assertEquals("User not found", exception.getMessage());
     }
 
     @Test
-    void changeUserRole_withInvalidRole_shouldThrowException() {
-        ChangeRoleDto changeRoleDto = new ChangeRoleDto();
-        changeRoleDto.setNewRole("INVALID_ROLE");
+    void editUser_withInvalidRole_shouldThrowException() {        
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("INVALID_ROLE");
         
         when(userRepository.findById(testAdminId)).thenReturn(Optional.of(testAdmin));
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountManagementService.changeUserRole(testAdminId.toString(), changeRoleDto);
+            accountManagementService.editUser(testAdminId.toString(), editUserDto);
         });
         
         assertEquals("Invalid role. Valid roles are: ADMIN, DOSEN, MAHASISWA", exception.getMessage());
@@ -537,4 +564,127 @@ class AccountManagementServiceTest {
         assertEquals("User not found", exception.getMessage());
         verify(userRepository, never()).delete(any());
     }
+
+    @Test
+    void editUser_withNullRole_shouldPreserveCurrentRole() {
+        when(userRepository.findById(testMahasiswaId)).thenReturn(Optional.of(testMahasiswa));
+        when(userRepository.save(any(Mahasiswa.class))).thenReturn(testMahasiswa);
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setFullName("Updated Name");
+        editUserDto.setIdentifier("12345678");
+        
+        UserResponseDto result = accountManagementService.editUser(testMahasiswaId.toString(), editUserDto);
+        
+        assertNotNull(result);
+        assertEquals("MAHASISWA", result.getRole());
+        assertEquals("Updated Name", result.getFullName());
+        assertEquals("12345678", result.getNim());
+        
+        verify(userRepository).save(any(Mahasiswa.class));
+        verify(userRepository, never()).delete(any());
+    }
+    
+    @Test    void editUser_updateMahasiswaNim_shouldSucceed() {
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setNewRole("MAHASISWA");
+        editUserDto.setIdentifier("98765432");
+        
+        when(userRepository.findById(testMahasiswaId)).thenReturn(Optional.of(testMahasiswa));
+        
+        Mahasiswa updatedMahasiswa = new Mahasiswa();
+        updatedMahasiswa.setId(testMahasiswaId);
+        updatedMahasiswa.setUsername(testMahasiswa.getUsername());
+        updatedMahasiswa.setPassword(testMahasiswa.getPassword());
+        updatedMahasiswa.setFullName(testMahasiswa.getFullName());
+        updatedMahasiswa.setNim("98765432");
+        
+        when(userRepository.save(any(Mahasiswa.class))).thenReturn(updatedMahasiswa);
+        
+        UserResponseDto result = accountManagementService.editUser(testMahasiswaId.toString(), editUserDto);
+        
+        assertNotNull(result);
+        assertEquals("98765432", result.getNim());
+        assertEquals(testMahasiswaId.toString(), result.getId());
+        
+        verify(userRepository, never()).delete(any());
+    }    
+    
+    @Test
+    void editUser_updateDosenNip_shouldSucceed() {
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setIdentifier("198701012022011001");
+        
+        when(userRepository.findById(testDosenId)).thenReturn(Optional.of(testDosen));
+        
+        Dosen updatedDosen = new Dosen();
+        updatedDosen.setId(testDosenId);
+        updatedDosen.setUsername(testDosen.getUsername());
+        updatedDosen.setPassword(testDosen.getPassword());
+        updatedDosen.setFullName(testDosen.getFullName());
+        updatedDosen.setNip("198701012022011001");
+        
+        when(userRepository.save(any(Dosen.class))).thenReturn(updatedDosen);
+        
+        UserResponseDto result = accountManagementService.editUser(testDosenId.toString(), editUserDto);
+        
+        assertNotNull(result);
+        assertEquals("198701012022011001", result.getNip());
+        assertEquals(testDosenId.toString(), result.getId());
+        
+        verify(userRepository, never()).delete(any());
+    }
+    
+    @Test
+    void editUser_updateEmail_shouldSucceed() {
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setEmail("new.email@test.com");
+        
+        when(userRepository.findById(testMahasiswaId)).thenReturn(Optional.of(testMahasiswa));
+        when(userRepository.findByEmail("new.email@test.com")).thenReturn(Optional.empty());
+        
+        Mahasiswa updatedMahasiswa = new Mahasiswa();
+        updatedMahasiswa.setId(testMahasiswaId);
+        updatedMahasiswa.setUsername("new.email@test.com");
+        updatedMahasiswa.setPassword(testMahasiswa.getPassword());
+        updatedMahasiswa.setFullName(testMahasiswa.getFullName());
+        updatedMahasiswa.setNim(testMahasiswa.getNim());
+        
+        when(userRepository.save(any(Mahasiswa.class))).thenReturn(updatedMahasiswa);
+        
+        UserResponseDto result = accountManagementService.editUser(testMahasiswaId.toString(), editUserDto);
+        
+        assertNotNull(result);
+        assertEquals("new.email@test.com", result.getEmail());
+        
+        verify(userRepository).save(any(Mahasiswa.class));
+        verify(userRepository, never()).delete(any());
+    }
+    
+    @Test
+    void editUser_updateOnlyFullName_shouldSucceed() {
+        EditUserDto editUserDto = new EditUserDto();
+        editUserDto.setFullName("Updated Full Name");
+        
+        when(userRepository.findById(testMahasiswaId)).thenReturn(Optional.of(testMahasiswa));
+        
+        Mahasiswa updatedMahasiswa = new Mahasiswa();
+        updatedMahasiswa.setId(testMahasiswaId);
+        updatedMahasiswa.setUsername(testMahasiswa.getUsername());
+        updatedMahasiswa.setPassword(testMahasiswa.getPassword());
+        updatedMahasiswa.setFullName("Updated Full Name");
+        updatedMahasiswa.setNim(testMahasiswa.getNim());
+        
+        when(userRepository.save(any(Mahasiswa.class))).thenReturn(updatedMahasiswa);
+        
+        UserResponseDto result = accountManagementService.editUser(testMahasiswaId.toString(), editUserDto);
+        
+        assertNotNull(result);
+        assertEquals("Updated Full Name", result.getFullName());
+        assertEquals(testMahasiswa.getNim(), result.getNim());
+        assertEquals(testMahasiswa.getUsername(), result.getEmail());
+        
+        verify(userRepository).save(any(Mahasiswa.class));
+        verify(userRepository, never()).delete(any());
+    }
+
 }

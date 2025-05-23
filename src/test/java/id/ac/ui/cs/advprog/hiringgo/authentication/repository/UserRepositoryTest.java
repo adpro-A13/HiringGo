@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,6 +26,7 @@ public class UserRepositoryTest {
     @Test
     public void whenFindByEmail_thenReturnUser() {
         Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(UUID.randomUUID());
         mahasiswa.setUsername("test@example.com");
         mahasiswa.setPassword("password123");
         mahasiswa.setFullName("Test User");
@@ -49,6 +51,7 @@ public class UserRepositoryTest {
     @Test
     public void whenSaveMultipleUserTypes_thenFindAll() {
         Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(UUID.randomUUID());
         mahasiswa.setUsername("student@example.com");
         mahasiswa.setPassword("password");
         mahasiswa.setFullName("Student Name");
@@ -56,6 +59,7 @@ public class UserRepositoryTest {
         entityManager.persist(mahasiswa);
 
         Dosen dosen = new Dosen();
+        dosen.setId(UUID.randomUUID());
         dosen.setUsername("professor@example.com");
         dosen.setPassword("password");
         dosen.setNip("12345");
@@ -63,6 +67,7 @@ public class UserRepositoryTest {
         entityManager.persist(dosen);
 
         Admin admin = new Admin();
+        admin.setId(UUID.randomUUID());
         admin.setUsername("admin@example.com");
         admin.setPassword("password");
         entityManager.persist(admin);
@@ -98,6 +103,7 @@ public class UserRepositoryTest {
     @Test
     public void whenDelete_thenRemoveUser() {
         Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(UUID.randomUUID());
         mahasiswa.setUsername("delete@example.com");
         mahasiswa.setPassword("password");
         mahasiswa.setFullName("To Delete");
