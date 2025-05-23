@@ -1,5 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.service;
-
+import java.util.concurrent.CompletableFuture;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
@@ -98,7 +98,7 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
         List<MataKuliahDTO> coursesDTO = convertCoursesToDTO(coursesTaught);
         response.setCoursesTaught(coursesDTO);
 
-        Map<String, List<LowonganDTO>> lowonganPerCourse = mapLowonganToCourses(coursesTaught);
+        Map<String, List<LowonganDTO>> lowonganPerCourse = mapLowonganToCoursesAsync(coursesTaught).join();
         response.setLowonganPerCourse(lowonganPerCourse);
 
         Map<String, Integer> acceptedAssistantsPerCourse = countAcceptedAssistantsPerCourse(coursesTaught);
@@ -143,6 +143,32 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
         }
 
         return result;
+    }
+
+    private CompletableFuture<Map<String, List<LowonganDTO>>> mapLowonganToCoursesAsync(List<MataKuliah> courses) {
+        return CompletableFuture.supplyAsync(() -> {
+            Map<String, List<LowonganDTO>> result = new HashMap<>();
+
+            List<CompletableFuture<Void>> futures = courses.stream()
+                    .map(course -> CompletableFuture.runAsync(() -> {
+                        try {
+                            List<Lowongan> openings = lowonganRepository.findByMataKuliah(course);
+                            if (openings != null && !openings.isEmpty()) {
+                                List<LowonganDTO> openingsDTO = openings.stream()
+                                        .map(lowonganMapper::toDto)
+                                        .collect(Collectors.toList());
+                                synchronized(result) {
+                                    result.put(course.getKode(), openingsDTO);
+                                }
+                            }
+                        } catch (Exception e) {
+                        }
+                    }))
+                    .collect(Collectors.toList());
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            return result;
+        });
     }
 
     private Map<String, Integer> countAcceptedAssistantsPerCourse(List<MataKuliah> courses) {
