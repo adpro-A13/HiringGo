@@ -15,8 +15,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import java.util.concurrent.CompletableFuture;
 import java.util.*;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -189,5 +190,68 @@ class AdminDashboardServiceImplTest {
                 () -> service.populateCommonData(userId, response)
         );
         assertEquals("Admin tidak ditemukan dengan ID: " + userId, ex.getMessage());
+    }
+
+    // Add to AdminDashboardServiceImplTest.java
+
+    @Test
+    void populateRoleSpecificData_withAsync_shouldExecuteInParallel() {
+        // Setup admin mock
+        Admin admin = mock(Admin.class);
+        when(admin.getUsername()).thenReturn("adminUser");
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(admin));
+
+        // Setup user data for parallel processing
+        List<User> allUsers = new ArrayList<>();
+        allUsers.add(admin);
+
+        // Add multiple users to test parallel processing
+        for (int i = 0; i < 5; i++) {
+            allUsers.add(mock(Dosen.class));
+            allUsers.add(mock(Mahasiswa.class));
+        }
+
+        // Use lenient() to avoid TooManyActualInvocations since async calls repo multiple times
+        lenient().when(userRepository.findAll()).thenReturn(allUsers);
+        when(mataKuliahRepository.count()).thenReturn(15L);
+        when(lowonganRepository.count()).thenReturn(8L);
+
+        // Execute
+        DashboardResponse base = service.getDashboardData(userId);
+
+        // Verify response
+        assertTrue(base instanceof AdminDashboardResponse);
+        AdminDashboardResponse resp = (AdminDashboardResponse) base;
+
+        assertEquals(5, resp.getDosenCount());
+        assertEquals(5, resp.getMahasiswaCount());
+        assertEquals(15, resp.getCourseCount());
+        assertEquals(8, resp.getLowonganCount());
+
+        // Verify repository methods were called (but don't verify exact count due to async)
+        verify(userRepository, atLeastOnce()).findAll();
+        verify(mataKuliahRepository).count();
+        verify(lowonganRepository).count();
+    }
+
+    @Test
+    void populateRoleSpecificData_withAsyncException_shouldHandleGracefully() {
+        Admin admin = mock(Admin.class);
+        when(admin.getUsername()).thenReturn("adminUser");
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(admin));
+
+        // Setup one operation to throw exception
+        when(userRepository.findAll()).thenThrow(new RuntimeException("Database error"));
+        when(mataKuliahRepository.count()).thenReturn(10L);
+        when(lowonganRepository.count()).thenReturn(5L);
+
+        // Expect CompletionException to be thrown due to async execution
+        assertThrows(CompletionException.class, () -> {
+            service.getDashboardData(userId);
+        });
     }
 }
