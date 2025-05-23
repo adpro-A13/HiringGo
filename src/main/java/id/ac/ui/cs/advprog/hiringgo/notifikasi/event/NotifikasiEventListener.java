@@ -16,8 +16,14 @@ public class NotifikasiEventListener {
     }
 
     @EventListener
-    @Async
+    @Async("taskExecutor")
     public void handleNotifikasiEvent(NotifikasiEvent event) {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         Notifikasi notif = new Notifikasi(
                 event.getMahasiswa(),
                 event.getMataKuliah(),
@@ -27,4 +33,5 @@ public class NotifikasiEventListener {
         );
         notifikasiRepository.save(notif);
     }
+
 }
