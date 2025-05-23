@@ -5,5 +5,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import java.util.List;
 
 public interface LowonganFilterStrategy {
-    List<Lowongan> filter(List<Lowongan> lowonganList);
+    List<Lowongan> filter(List<Lowongan> lowonganList, String filterValue);
+    String getStrategyName();
 }
+

@@ -31,11 +31,8 @@ public class LowonganTest {
                 "eb558e9f-1c39-460e-8860-71af6af63bd6",
                 mataKuliah,
                 "2024/2025",
-                "DIBUKA",
                 "GANJIL",
-                3,
-                2,
-                5
+                3
         );
 
         assertEquals(UUID.fromString("eb558e9f-1c39-460e-8860-71af6af63bd6"), lowongan.getLowonganId());
@@ -44,37 +41,20 @@ public class LowonganTest {
         assertEquals(StatusLowongan.DIBUKA, lowongan.getStatusLowongan());
         assertEquals(Semester.GANJIL, lowongan.getSemester());
         assertEquals(3, lowongan.getJumlahAsdosDibutuhkan());
-        assertEquals(2, lowongan.getJumlahAsdosDiterima());
-        assertEquals(5, lowongan.getJumlahAsdosPendaftar());
+        assertEquals(0, lowongan.getJumlahAsdosDiterima());
+        assertEquals(0, lowongan.getJumlahAsdosPendaftar());
     }
 
-    @Test
-    void testCreateLowonganInvalidStatus() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Lowongan(
-                    "a2c62328-4a37-4664-83c7-f32db8620155",
-                    mataKuliah,
-                    "2024/2025",
-                    "MEOW", // status tidak valid
-                    "GENAP",
-                    2,
-                    0,
-                    1
-            );
-        });
-    }
+
     @Test
     void testCreateLowonganInvalidSemester() {
         assertThrows(IllegalArgumentException.class, () -> {
             new Lowongan(
                     "a2c62328-4a37-4664-83c7-f32db8620155",
                     mataKuliah,
-                    "2024/2025",
-                    "DIBUKA", // status tidak valid
+                    "2024/2025",// status tidak valid
                     "semester 200",
-                    2,
-                    0,
-                    1
+                    2
             );
         });
     }

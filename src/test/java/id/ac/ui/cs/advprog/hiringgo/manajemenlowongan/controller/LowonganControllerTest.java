@@ -1,14 +1,14 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +18,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.core.Authentication;
@@ -41,10 +42,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class LowonganControllerTest {
 
     private MockMvc mockMvc;
-
+    private LowonganDTO dto;
+    private UUID id;
+    Lowongan lowongan;
+    LowonganDTO lowonganDto;
     @Mock
     private LowonganService lowonganService;
+    @Mock
+    private PendaftaranService pendaftaranService;
 
+    @Mock
+    private LowonganMapper lowonganMapper;
     @InjectMocks
     private LowonganController controller;
 
@@ -52,18 +60,19 @@ class LowonganControllerTest {
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setMessageConverters(new MappingJackson2HttpMessageConverter())
-                .alwaysDo(MockMvcResultHandlers.print())
-                .build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        dto = new LowonganDTO();
+        id = UUID.randomUUID();
+        lowongan = createTestLowongan(id);
+        lowonganDto = new LowonganDTO();
+        dto.setLowonganId(id);
     }
 
     @Test
-    @DisplayName("GET /api/lowongan - Success tanpa filter")
     void testGetAllLowonganWithoutFilter() throws Exception {
-        UUID id = UUID.randomUUID();
-        Lowongan lowongan = createTestLowongan(id);
         when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(List.of(lowongan));
+
+        when(lowonganMapper.toDtoList(any())).thenReturn(List.of(dto));
 
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("dosen@example.com");
@@ -83,10 +92,8 @@ class LowonganControllerTest {
     @Test
     @DisplayName("GET /api/lowongan dengan filter semester dan status - Success")
     void testGetAllLowonganWithFilters() throws Exception {
-        UUID id = UUID.randomUUID();
-        Lowongan lowongan = createTestLowongan(id);
-
         when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(List.of(lowongan));
+        when(lowonganMapper.toDtoList(anyList())).thenReturn(List.of(dto));
 
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("dosen@example.com");
@@ -109,8 +116,21 @@ class LowonganControllerTest {
     @DisplayName("GET /api/lowongan/{id} - Success")
     void testGetLowonganByIdSuccess() throws Exception {
         UUID id = UUID.randomUUID();
-        Lowongan lowongan = createTestLowongan(id);
+
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id);
+
+        LowonganDTO dto = new LowonganDTO();
+        dto.setLowonganId(id);
+
+        List<Pendaftaran> daftarPendaftaran = List.of(new Pendaftaran(), new Pendaftaran());
+        daftarPendaftaran.get(0).setPendaftaranId(UUID.randomUUID());
+        daftarPendaftaran.get(1).setPendaftaranId(UUID.randomUUID());
+
+        // Mock setup
         when(lowonganService.findById(id)).thenReturn(lowongan);
+        when(lowonganMapper.toDto(lowongan)).thenReturn(dto);
+        when(pendaftaranService.getByLowongan(id)).thenReturn(daftarPendaftaran);
 
         mockMvc.perform(get("/api/lowongan/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -118,10 +138,10 @@ class LowonganControllerTest {
                 .andExpect(jsonPath("$.lowonganId", is(id.toString())));
     }
 
+
     @Test
     @DisplayName("GET /api/lowongan/{id} - Not Found")
     void testGetLowonganByIdNotFound() throws Exception {
-        UUID id = UUID.randomUUID();
         when(lowonganService.findById(id)).thenThrow(new RuntimeException("Not found"));
 
         mockMvc.perform(get("/api/lowongan/{id}", id))
@@ -132,11 +152,10 @@ class LowonganControllerTest {
     @Test
     @DisplayName("POST /api/lowongan - Success")
     void testCreateLowonganSuccess() throws Exception {
-        UUID id = UUID.randomUUID();
         Lowongan inputLowongan = createTestLowongan(null);
-        Lowongan createdLowongan = createTestLowongan(id);
 
-        when(lowonganService.createLowongan(any())).thenReturn(createdLowongan);
+        when(lowonganService.createLowongan(any())).thenReturn(lowongan);
+        when(lowonganMapper.toDto(lowongan)).thenReturn(dto);
 
         mockMvc.perform(post("/api/lowongan")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,14 +175,13 @@ class LowonganControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(inputLowongan)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("\"Gagal membuat lowongan: Something went wrong\""));
+                .andExpect(content().string("Gagal membuat lowongan: Something went wrong"));
         ;
     }
 
     @Test
     @DisplayName("DELETE /api/lowongan/{id} - Success")
     void testDeleteLowonganSuccess() throws Exception {
-        UUID id = UUID.randomUUID();
 
         doNothing().when(lowonganService).deleteLowonganById(id);
 
@@ -174,13 +192,12 @@ class LowonganControllerTest {
     @Test
     @DisplayName("DELETE /api/lowongan/{id} - Not Found")
     void testDeleteLowonganNotFound() throws Exception {
-        UUID id = UUID.randomUUID();
 
         doThrow(new RuntimeException("Data tidak ditemukan")).when(lowonganService).deleteLowonganById(id);
 
         mockMvc.perform(delete("/api/lowongan/{id}", id))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("\"Lowongan dengan ID " + id + " tidak ditemukan\""));
+                .andExpect(content().string("Lowongan dengan ID " + id + " tidak ditemukan"));
     }
 
 
@@ -217,24 +234,31 @@ class LowonganControllerTest {
         UUID pendaftaranId = UUID.randomUUID();
         doNothing().when(lowonganService).tolakPendaftar(lowonganId, pendaftaranId);
 
-        mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}",lowonganId, pendaftaranId))
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}",lowonganId, pendaftaranId))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("PUT /api/lowongan/{id} - Success")
     void testUpdateLowonganSuccess() throws Exception {
-        UUID id = UUID.randomUUID();
         Lowongan updatedLowongan = createTestLowongan(id);
+        LowonganDTO updatedLowonganDto = new LowonganDTO();
+        updatedLowonganDto.setLowonganId(id);
+        updatedLowonganDto.setTahunAjaran("2024/2025");
+        updatedLowonganDto.setSemester(String.valueOf(updatedLowongan.getSemester()));
+        updatedLowonganDto.setJumlahAsdosDibutuhkan(5);
+
         when(lowonganService.updateLowongan(eq(id), ArgumentMatchers.<Lowongan>any()))
                 .thenReturn(updatedLowongan);
+        when(lowonganMapper.toDto(updatedLowongan)).thenReturn(updatedLowonganDto);
 
         mockMvc.perform(put("/api/lowongan/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(updatedLowongan)))
+                        .content(objectMapper.writeValueAsString(updatedLowonganDto))) // Kirim DTO, bukan entity
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lowonganId").value(id.toString()));
     }
+
 
 
     @Test
@@ -248,7 +272,7 @@ class LowonganControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(updatedLowongan)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("\"ID di URL dan body tidak cocok\""));
+                .andExpect(content().string("ID di URL dan body tidak cocok atau ID kosong"));
     }
 
     @Test
@@ -261,7 +285,7 @@ class LowonganControllerTest {
 
         mockMvc.perform(post("/api/lowongan/{lowonganId}/terima/{pendaftaranId}", lowonganId, pendaftaranId))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("\"Gagal menerima pendaftar: Pendaftaran tidak valid\""));
+                .andExpect(content().string("Gagal menerima pendaftar: Pendaftaran tidak valid"));
     }
 
     @Test
@@ -272,33 +296,35 @@ class LowonganControllerTest {
         doThrow(new IllegalArgumentException("Pendaftaran tidak valid"))
                 .when(lowonganService).tolakPendaftar(lowonganId, pendaftaranId);
 
-        mockMvc.perform(delete("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}", lowonganId, pendaftaranId))
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}", lowonganId, pendaftaranId))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("\"Gagal menolak pendaftar: Pendaftaran tidak valid\""));
+                .andExpect(content().string("Gagal menolak pendaftar: Pendaftaran tidak valid"));
     }
+
 
     @Test
     void testUpdateLowonganException() throws Exception {
-        UUID id = UUID.randomUUID();
-        Lowongan lowongan = new Lowongan();
-        lowongan.setLowonganId(id);
-        lowongan.setSemester("GANJIL");
-        lowongan.setTahunAjaran("2023");
-        lowongan.setJumlahAsdosDibutuhkan(3);
-        lowongan.setJumlahAsdosPendaftar(1);
-        lowongan.setJumlahAsdosDiterima(0);
-        lowongan.setStatusLowongan("DIBUKA");
+        dto.setLowonganId(id);
+        dto.setSemester(String.valueOf(Semester.GANJIL));
+        dto.setTahunAjaran("2023");
+        dto.setJumlahAsdosDibutuhkan(3);
+        dto.setJumlahAsdosPendaftar(1);
+        dto.setJumlahAsdosDiterima(0);
+        dto.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
         MataKuliah mk = new MataKuliah("CS100", "Advpro", "Advanced Programming");
-        lowongan.setMataKuliah(mk);
+        dto.setIdMataKuliah(mk.getKode());
 
+        Lowongan dummyLowongan = new Lowongan();
+        dummyLowongan.setLowonganId(id);
+
+        when(lowonganMapper.toEntity(org.mockito.ArgumentMatchers.any(LowonganDTO.class))).thenReturn(dummyLowongan);
         when(lowonganService.updateLowongan(eq(id), org.mockito.ArgumentMatchers.any(Lowongan.class)))
                 .thenThrow(new RuntimeException("Update gagal"));
 
         mockMvc.perform(put("/api/lowongan/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(lowongan)))
+                        .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("\"Gagal memperbarui lowongan: Update gagal\""));
+                .andExpect(content().string("Gagal memperbarui lowongan: Update gagal"));
     }
-
 }

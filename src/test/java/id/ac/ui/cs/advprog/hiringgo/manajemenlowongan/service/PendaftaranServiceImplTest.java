@@ -1,20 +1,19 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.strategy.PendaftaranStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,123 +22,307 @@ import static org.mockito.Mockito.*;
 class PendaftaranServiceImplTest {
 
     @Mock
-    private LowonganRepository lowonganRepository;
-
-    @Mock
     private PendaftaranRepository pendaftaranRepository;
 
-    @InjectMocks
-    private PendaftaranServiceImpl pendaftaranService;
+    @Mock
+    private PendaftaranStrategy standardPendaftaranStrategy;
 
+    @Mock
+    private PendaftaranStrategy alternativeStrategy;
+
+    private PendaftaranServiceImpl pendaftaranService;
     private UUID lowonganId;
-    private Lowongan lowongan;
     private Mahasiswa kandidat;
     private BigDecimal ipk;
     private int sks;
+    private Pendaftaran expectedPendaftaran;
 
     @BeforeEach
     void setUp() {
+        // Initialize service with the mocked standard strategy
+        pendaftaranService = new PendaftaranServiceImpl(pendaftaranRepository, standardPendaftaranStrategy);
+
+        // Test data
         lowonganId = UUID.randomUUID();
-        lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
-        lowongan.setJumlahAsdosDibutuhkan(5);
-        lowongan.setJumlahAsdosPendaftar(2);
         kandidat = new Mahasiswa();
-        ipk = new BigDecimal("3.5");
+        kandidat.setId(UUID.randomUUID()); // Set ID for error message
+        ipk = new BigDecimal("3.75");
         sks = 100;
+
+        // Expected pendaftaran result
+        expectedPendaftaran = new Pendaftaran();
+        expectedPendaftaran.setPendaftaranId(UUID.randomUUID());
+        expectedPendaftaran.setIpk(ipk);
+        expectedPendaftaran.setSks(sks);
+        expectedPendaftaran.setKandidat(kandidat);
     }
 
     @Test
-    void testDaftarSuccess() {
-        // Stub repository: Lowongan ditemukan dan simpan Pendaftaran berhasil
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
-        when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> {
-            Pendaftaran saved = invocation.getArgument(0);
-            saved.setPendaftaranId(UUID.randomUUID());  // mimic generated ID
-            return saved;
-        });
+    void testConstructorWithNullRepository() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                new PendaftaranServiceImpl(null, standardPendaftaranStrategy)
+        );
+        assertEquals("PendaftaranRepository cannot be null", exception.getMessage());
+    }
 
+    @Test
+    void testConstructorWithNullStrategy() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                new PendaftaranServiceImpl(pendaftaranRepository, null)
+        );
+        assertEquals("PendaftaranStrategy cannot be null", exception.getMessage());
+    }
+
+    @Test
+    void testConstructorValidParameters() {
+        PendaftaranServiceImpl service = new PendaftaranServiceImpl(pendaftaranRepository, standardPendaftaranStrategy);
+        assertNotNull(service);
+
+        // Test the service works by making a call
+        when(standardPendaftaranStrategy.execute(any(), any(), any(), anyInt()))
+                .thenReturn(new Pendaftaran());
+
+        service.daftar(UUID.randomUUID(), kandidat, ipk, sks);
+        verify(standardPendaftaranStrategy).execute(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void testDaftarDelegatesCorrectlyToStrategy() {
+        // Configure the mock strategy
+        when(standardPendaftaranStrategy.execute(lowonganId, kandidat, ipk, sks))
+                .thenReturn(expectedPendaftaran);
+
+        // Call the service method
         Pendaftaran result = pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
 
-        // Pastikan hasil tidak null dan field sesuai
-        assertNotNull(result);
-        assertEquals(lowongan, result.getLowongan());
-        assertEquals(kandidat, result.getKandidat());
-        assertEquals(ipk, result.getIpk());
-        assertEquals(sks, result.getSks());
-        assertNotNull(result.getWaktuDaftar());
-        // jumlahAsdosPendaftar di Lowongan seharusnya bertambah 1
-        assertEquals(3, lowongan.getJumlahAsdosPendaftar());
-        // Verifikasi interaksi repository
-        verify(lowonganRepository).findById(lowonganId);
-        verify(pendaftaranRepository).save(any(Pendaftaran.class));
-        verify(lowonganRepository).save(lowongan);
+        // Verify that strategy was called with correct parameters
+        verify(standardPendaftaranStrategy).execute(lowonganId, kandidat, ipk, sks);
+
+        // Verify the result
+        assertEquals(expectedPendaftaran, result);
     }
 
     @Test
-    void testDaftarLowonganNotFound() {
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.empty());
+    void testDaftarExceptionHandling() {
+        // Test that exceptions from the strategy are properly wrapped
+        RuntimeException strategyException = new RuntimeException("Strategy error");
+        when(standardPendaftaranStrategy.execute(lowonganId, kandidat, ipk, sks))
+                .thenThrow(strategyException);
 
-        NoSuchElementException exception = assertThrows(NoSuchElementException.class, () -> {
+        // The service should wrap the exception in an IllegalStateException
+        IllegalStateException actualException = assertThrows(IllegalStateException.class, () -> {
             pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
         });
-        assertEquals("Lowongan tidak ditemukan", exception.getMessage());
 
-        // Repository pendaftaran dan simpan lowongan tidak dipanggil
-        verify(pendaftaranRepository, never()).save(any(Pendaftaran.class));
-        verify(lowonganRepository, never()).save(any(Lowongan.class));
+        // Verify the exception message and cause
+        assertTrue(actualException.getMessage().contains("Error during pendaftaran"));
+        assertEquals(strategyException, actualException.getCause());
     }
 
     @Test
-    void testDaftarLowonganFull() {
-        // Kondisi lowongan sudah penuh (pendaftar >= dibutuhkan)
-        lowongan.setJumlahAsdosPendaftar(5);
-        lowongan.setJumlahAsdosDibutuhkan(5);
-        when(lowonganRepository.findById(lowonganId)).thenReturn(Optional.of(lowongan));
+    void testSetPendaftaranStrategy() {
+        // Configure alternative strategy
+        when(alternativeStrategy.execute(lowonganId, kandidat, ipk, sks))
+                .thenReturn(expectedPendaftaran);
 
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
+        // Switch to alternative strategy
+        pendaftaranService.setPendaftaranStrategy(alternativeStrategy);
+
+        // Call the service method
+        Pendaftaran result = pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
+
+        // Verify alternative strategy was used
+        verify(alternativeStrategy).execute(lowonganId, kandidat, ipk, sks);
+        verify(standardPendaftaranStrategy, never()).execute(any(), any(), any(), anyInt());
+
+        // Verify the result
+        assertEquals(expectedPendaftaran, result);
+    }
+
+    @Test
+    void testSetPendaftaranStrategyWithNull() {
+        // Test setting null strategy (should throw IllegalArgumentException)
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.setPendaftaranStrategy(null);
         });
-        assertEquals("Kuota lowongan sudah penuh!", exception.getMessage());
-        // Pastikan pendaftaran tidak disimpan
-        verify(pendaftaranRepository, never()).save(any(Pendaftaran.class));
-        verify(lowonganRepository, never()).save(any(Lowongan.class));
+
+        assertEquals("PendaftaranStrategy cannot be null", exception.getMessage());
+
+        // Verify the original strategy is still used
+        when(standardPendaftaranStrategy.execute(any(), any(), any(), anyInt()))
+                .thenReturn(new Pendaftaran());
+
+        pendaftaranService.daftar(lowonganId, kandidat, ipk, sks);
+        verify(standardPendaftaranStrategy).execute(any(), any(), any(), anyInt());
     }
 
     @Test
     void testGetByLowongan() {
-        List<Pendaftaran> expectedPendaftaran = Arrays.asList(
-                createPendaftaran(UUID.randomUUID(), lowongan, new Mahasiswa()),
-                createPendaftaran(UUID.randomUUID(), lowongan, new Mahasiswa())
-        );
+        // Create test data
+        List<Pendaftaran> expectedList = new ArrayList<>();
+        expectedList.add(new Pendaftaran());
+        expectedList.add(new Pendaftaran());
 
-        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(expectedPendaftaran);
+        // Configure repository mock
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(expectedList);
 
-        List<Pendaftaran> resultList = pendaftaranService.getByLowongan(lowonganId);
+        // Call the service method
+        List<Pendaftaran> result = pendaftaranService.getByLowongan(lowonganId);
 
-        assertEquals(expectedPendaftaran, resultList);
-        assertEquals(2, resultList.size());
+        // Verify repository interaction
         verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
+
+        // Verify the result
+        assertEquals(expectedList, result);
+        assertEquals(2, result.size());
     }
 
     @Test
-    void testGetByLowonganEmptyResult() {
-        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(Collections.emptyList());
+    void testGetByLowonganWithEmptyResult() {
+        // Configure repository mock to return empty list
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(new ArrayList<>());
 
-        List<Pendaftaran> resultList = pendaftaranService.getByLowongan(lowonganId);
+        // Call the service method
+        List<Pendaftaran> result = pendaftaranService.getByLowongan(lowonganId);
 
-        assertTrue(resultList.isEmpty());
+        // Verify repository interaction
         verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
+
+        // Verify the result
+        assertTrue(result.isEmpty());
     }
 
-    private Pendaftaran createPendaftaran(UUID id, Lowongan lowongan, Mahasiswa kandidat) {
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(id);
-        pendaftaran.setLowongan(lowongan);
-        pendaftaran.setKandidat(kandidat);
-        pendaftaran.setIpk(new BigDecimal("3.5"));
-        pendaftaran.setSks(100);
-        pendaftaran.setWaktuDaftar(LocalDateTime.now());
-        return pendaftaran;
+    @Test
+    void testGetByLowonganExceptionHandling() {
+        // Test that exceptions from the repository are properly wrapped
+        RuntimeException repoException = new RuntimeException("Database error");
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId))
+                .thenThrow(repoException);
+
+        // The service should wrap the exception in an IllegalStateException
+        IllegalStateException actualException = assertThrows(IllegalStateException.class, () -> {
+            pendaftaranService.getByLowongan(lowonganId);
+        });
+
+        // Verify the exception message and cause
+        assertTrue(actualException.getMessage().contains("Failed to retrieve pendaftaran"));
+        assertEquals(repoException, actualException.getCause());
+    }
+
+    @Test
+    void testGetByLowonganWithNullParameter() {
+        // Test with null lowonganId
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.getByLowongan(null);
+        });
+
+        assertEquals("Lowongan ID cannot be null", exception.getMessage());
+        verify(pendaftaranRepository, never()).findByLowonganLowonganId(null);
+    }
+
+    @Test
+    void testDaftarWithNullLowonganId() {
+        // Test with null lowonganId
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.daftar(null, kandidat, ipk, sks);
+        });
+
+        assertEquals("Lowongan ID cannot be null", exception.getMessage());
+        verify(standardPendaftaranStrategy, never()).execute(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void testDaftarWithNullKandidat() {
+        // Test with null kandidat
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.daftar(lowonganId, null, ipk, sks);
+        });
+
+        assertEquals("Kandidat cannot be null", exception.getMessage());
+        verify(standardPendaftaranStrategy, never()).execute(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void testDaftarWithNullIpk() {
+        // Test with null ipk
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.daftar(lowonganId, kandidat, null, sks);
+        });
+
+        assertEquals("IPK cannot be null", exception.getMessage());
+        verify(standardPendaftaranStrategy, never()).execute(any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowongan() {
+        // Create test data
+        List<Pendaftaran> pendaftaranList = new ArrayList<>();
+        Pendaftaran pendaftaran1 = new Pendaftaran();
+        UUID pendaftaranId1 = UUID.randomUUID();
+        pendaftaran1.setPendaftaranId(pendaftaranId1);
+
+        Pendaftaran pendaftaran2 = new Pendaftaran();
+        UUID pendaftaranId2 = UUID.randomUUID();
+        pendaftaran2.setPendaftaranId(pendaftaranId2);
+
+        pendaftaranList.add(pendaftaran1);
+        pendaftaranList.add(pendaftaran2);
+
+        // Configure repository mock
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(pendaftaranList);
+
+        // Call the service method
+        List<UUID> result = pendaftaranService.getPendaftaranIdsByLowongan(lowonganId);
+
+        // Verify repository interaction
+        verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
+
+        // Verify the result
+        assertEquals(2, result.size());
+        assertTrue(result.contains(pendaftaranId1));
+        assertTrue(result.contains(pendaftaranId2));
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowonganWithEmptyResult() {
+        // Configure repository mock to return empty list
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId)).thenReturn(new ArrayList<>());
+
+        // Call the service method
+        List<UUID> result = pendaftaranService.getPendaftaranIdsByLowongan(lowonganId);
+
+        // Verify repository interaction
+        verify(pendaftaranRepository).findByLowonganLowonganId(lowonganId);
+
+        // Verify the result
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowonganExceptionHandling() {
+        // Test that exceptions from the repository are properly wrapped
+        RuntimeException repoException = new RuntimeException("Database error");
+        when(pendaftaranRepository.findByLowonganLowonganId(lowonganId))
+                .thenThrow(repoException);
+
+        // The service should wrap the exception in an IllegalStateException
+        IllegalStateException actualException = assertThrows(IllegalStateException.class, () -> {
+            pendaftaranService.getPendaftaranIdsByLowongan(lowonganId);
+        });
+
+        // Verify the exception message and cause
+        assertTrue(actualException.getMessage().contains("Failed to retrieve pendaftaran IDs"));
+        assertEquals(repoException, actualException.getCause());
+    }
+
+    @Test
+    void testGetPendaftaranIdsByLowonganWithNullParameter() {
+        // Test with null lowonganId
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranService.getPendaftaranIdsByLowongan(null);
+        });
+
+        assertEquals("Lowongan ID cannot be null", exception.getMessage());
+        verify(pendaftaranRepository, never()).findByLowonganLowonganId(null);
     }
 }

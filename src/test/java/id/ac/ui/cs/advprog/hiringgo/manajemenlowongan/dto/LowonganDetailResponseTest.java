@@ -7,8 +7,6 @@ import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,8 +30,8 @@ class LowonganDetailResponseTest {
         lowongan.setLowonganId(lowonganId);
         lowongan.setMataKuliah(mataKuliah);
         lowongan.setTahunAjaran(tahunAjaran);
-        lowongan.setSemester(semester.toString());  // Convert enum to String
-        lowongan.setStatusLowongan(statusLowongan.toString());  // Convert enum to String
+        lowongan.setSemester(semester.toString());
+        lowongan.setStatusLowongan(statusLowongan.toString());
         lowongan.setJumlahAsdosDibutuhkan(jumlahAsdosDibutuhkan);
         lowongan.setJumlahAsdosDiterima(jumlahAsdosDiterima);
         lowongan.setJumlahAsdosPendaftar(jumlahAsdosPendaftar);
@@ -64,7 +62,6 @@ class LowonganDetailResponseTest {
         lowongan.setStatusLowongan("DIBUKA");
         lowongan.setTahunAjaran("2023/2024");
 
-
         LowonganDetailResponse response = new LowonganDetailResponse(lowongan);
 
         UUID lowonganId = UUID.randomUUID();
@@ -94,5 +91,44 @@ class LowonganDetailResponseTest {
         assertEquals(3, response.getJumlahAsdosDibutuhkan());
         assertEquals(1, response.getJumlahAsdosDiterima());
         assertEquals(5, response.getJumlahAsdosPendaftar());
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────────
+    // New test to cover equals(Object) and hashCode()
+    // ────────────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Test equals() and hashCode() for LowonganDetailResponse")
+    void testEqualsAndHashCode() {
+        MataKuliah mk = new MataKuliah("ABC123", "Course", "Desc");
+        Lowongan l = new Lowongan();
+        l.setLowonganId(UUID.randomUUID());
+        l.setMataKuliah(mk);
+        l.setTahunAjaran("2024/2025");
+        l.setSemester("GANJIL");
+        l.setStatusLowongan("DIBUKA");
+        l.setJumlahAsdosDibutuhkan(1);
+        l.setJumlahAsdosDiterima(0);
+        l.setJumlahAsdosPendaftar(0);
+
+        LowonganDetailResponse a = new LowonganDetailResponse(l);
+        LowonganDetailResponse b = new LowonganDetailResponse(l);
+
+        // reflexive and symmetric
+        assertEquals(a, a);
+        assertEquals(a, b);
+        assertEquals(b, a);
+
+        // consistent hashCode
+        assertEquals(a.hashCode(), b.hashCode());
+
+        // null and different type
+        assertNotEquals(a, null);
+        assertNotEquals(a, "string");
+
+        // change one field -> not equal
+        b.setStatusLowongan("TUTUP");
+        assertNotEquals(a, b);
+        assertNotEquals(a.hashCode(), b.hashCode());
     }
 }
