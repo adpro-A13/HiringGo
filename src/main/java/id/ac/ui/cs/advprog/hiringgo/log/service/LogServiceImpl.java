@@ -13,6 +13,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.scheduling.annotation.Async;
 
 @Service
 public class LogServiceImpl implements LogService {
@@ -115,6 +116,7 @@ public class LogServiceImpl implements LogService {
         return logRepository.save(existing);
     }
 
+    @Async
     @Override
     public void deleteLog(Long id) {
         logRepository.deleteById(id);
