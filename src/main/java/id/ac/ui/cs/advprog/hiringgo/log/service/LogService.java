@@ -14,7 +14,7 @@ public interface LogService {
     Optional<Log> getLogById(Long id);
     List<Log> getAllLogs();
     List<Log> getLogsByStatus(LogStatus status);
-    List<Log> getLogsByMonth(int bulan, int tahun);
+    List<Log> getLogsByMonth(int bulan, int tahun, UUID id);
     List<Log> getLogsByMataKuliah(String kode);
     List<Log> getLogsByUser(UUID idUser);
 

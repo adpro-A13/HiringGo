@@ -138,10 +138,13 @@ class LogControllerTest {
 
     @Test
     void getLogsByDateRange_shouldReturnLogs() throws Exception {
-        when(logService.getLogsByMonth(any(Integer.class), any(Integer.class)))
+        UUID userId = UUID.randomUUID();
+
+        when(logService.getLogsByMonth(any(Integer.class), any(Integer.class), any(UUID.class)))
                 .thenReturn(Collections.singletonList(sampleLog));
 
         mockMvc.perform(get("/api/logs/month")
+                        .param("id", String.valueOf(userId))
                         .param("bulan", String.valueOf(LocalDate.now().getMonthValue()))
                         .param("tahun", String.valueOf(LocalDate.now().getYear())))
                 .andExpect(status().isOk())

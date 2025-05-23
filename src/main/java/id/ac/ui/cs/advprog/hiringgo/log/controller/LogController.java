@@ -73,9 +73,10 @@ public class LogController {
 
     @GetMapping("/month")
     public ResponseEntity<List<Log>> getLogsByMonth(
+            @RequestParam UUID id,
             @RequestParam int bulan,
             @RequestParam int tahun) {
-        List<Log> logs = logService.getLogsByMonth(bulan, tahun);
+        List<Log> logs = logService.getLogsByMonth(bulan, tahun, id);
         return ResponseEntity.ok(logs);
     }
 

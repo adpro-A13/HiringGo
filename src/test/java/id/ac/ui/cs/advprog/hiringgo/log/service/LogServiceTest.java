@@ -282,6 +282,7 @@ public class LogServiceTest {
         // Arrange
         int month = 5;
         int year = 2023;
+        UUID userId = UUID.randomUUID();
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
@@ -298,17 +299,17 @@ public class LogServiceTest {
 
         List<Log> expectedLogs = Arrays.asList(log1, log2);
 
-        when(logRepository.findByTanggalLogBetween(startDate, endDate))
+        when(logRepository.findByTanggalLogBetweenAndUser_Id(startDate, endDate, userId))
                 .thenReturn(expectedLogs);
 
         // Act
-        List<Log> actualLogs = logService.getLogsByMonth(month, year);
+        List<Log> actualLogs = logService.getLogsByMonth(month, year, userId);
 
         // Assert
         assertEquals(2, actualLogs.size());
         assertEquals("Monthly Log 1", actualLogs.get(0).getJudul());
         assertEquals("Monthly Log 2", actualLogs.get(1).getJudul());
-        verify(logRepository).findByTanggalLogBetween(startDate, endDate);
+        verify(logRepository).findByTanggalLogBetweenAndUser_Id(startDate, endDate, userId);
     }
 
     @Test

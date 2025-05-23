@@ -54,10 +54,10 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public List<Log> getLogsByMonth(int bulan, int tahun) {
+    public List<Log> getLogsByMonth(int bulan, int tahun, UUID id) {
         LocalDate from = LocalDate.of(tahun, bulan, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
-        return logRepository.findByTanggalLogBetween(from, to);
+        return logRepository.findByTanggalLogBetweenAndUser_Id(from, to, id);
     }
 
     @Override
