@@ -38,7 +38,7 @@ class MataKuliahExceptionHandlerTest {
 
     @Test
     void testHandleDosenEmailNotFoundException() {
-        BaseException ex = new DosenEmailNotFound("Dosen tidak ditemukan");
+        BaseException ex = new DosenEmailNotFoundException("Dosen tidak ditemukan");
 
         ResponseEntity<Map<String, Object>> response = handler.handleBaseException(ex);
 

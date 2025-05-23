@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.dto.MataKuliahDTO;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.DosenEmailNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.springframework.stereotype.Component;
 
@@ -23,14 +24,13 @@ public class MataKuliahMapper {
     public MataKuliah toEntity(MataKuliahDTO dto) {
         MataKuliah mataKuliah = new MataKuliah(dto.getKode(), dto.getNama(), dto.getDeskripsi());
 
-        // Konversi dari email → Dosen
         if (dto.getDosenPengampuEmails() != null) {
             for (String email : dto.getDosenPengampuEmails()) {
                 User user = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new IllegalArgumentException("Pengguna dengan email " + email + " tidak ditemukan"));
+                        .orElseThrow(() -> new DosenEmailNotFoundException("Pengguna dengan email " + email + " tidak ditemukan"));
 
                 if (!(user instanceof Dosen dosen)) {
-                    throw new IllegalArgumentException("Pengguna dengan email " + email + " bukan seorang dosen");
+                    throw new DosenEmailNotFoundException("Pengguna dengan email " + email + " bukan seorang dosen");
                 }
                 mataKuliah.addDosenPengampu(dosen);
             }

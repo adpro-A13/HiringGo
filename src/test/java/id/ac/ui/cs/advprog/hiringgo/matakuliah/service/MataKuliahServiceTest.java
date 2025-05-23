@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.junit.jupiter.api.Test;
@@ -64,8 +65,8 @@ class MataKuliahServiceTest {
     void testFindByKodeNotFound() {
         when(mataKuliahRepository.findByKode("CS002")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
+        MataKuliahNotFoundException ex = assertThrows(
+                MataKuliahNotFoundException.class,
                 () -> mataKuliahService.findByKode("CS002")
         );
 

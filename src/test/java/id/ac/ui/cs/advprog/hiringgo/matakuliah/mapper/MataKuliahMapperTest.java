@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.dto.MataKuliahDTO;
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.DosenEmailNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ class MataKuliahMapperTest {
 
         when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
 
-        Exception ex = assertThrows(IllegalArgumentException.class, () -> mapper.toEntity(dto));
+        Exception ex = assertThrows(DosenEmailNotFoundException.class, () -> mapper.toEntity(dto));
         assertEquals("Pengguna dengan email notfound@example.com tidak ditemukan", ex.getMessage());
     }
 
@@ -66,10 +67,10 @@ class MataKuliahMapperTest {
         dto.setDeskripsi("Machine Learning");
         dto.setDosenPengampuEmails(List.of("user@example.com"));
 
-        User user = mock(User.class); // bukan Dosen
+        User user = mock(User.class);
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
 
-        Exception ex = assertThrows(IllegalArgumentException.class, () -> mapper.toEntity(dto));
+        Exception ex = assertThrows(DosenEmailNotFoundException.class, () -> mapper.toEntity(dto));
         assertEquals("Pengguna dengan email user@example.com bukan seorang dosen", ex.getMessage());
     }
 
