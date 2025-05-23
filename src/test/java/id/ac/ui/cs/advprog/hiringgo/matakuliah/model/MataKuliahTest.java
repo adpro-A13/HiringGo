@@ -81,4 +81,68 @@ class MataKuliahTest {
         IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class, () -> mk.addDosenPengampu(null));
         assertEquals("Dosen tidak boleh null", ex1.getMessage());
     }
+    @Test
+    void constructorAndGetters() {
+        MataKuliah mk = new MataKuliah("CS001", "Dasar", "Deskripsi");
+        assertEquals("CS001", mk.getKode());
+        assertEquals("Dasar", mk.getNama());
+        assertEquals("Deskripsi", mk.getDeskripsi());
+        assertTrue(mk.getDosenPengampu().isEmpty());
+    }
+
+    @Test
+    void setterNamaDeskripsi() {
+        MataKuliah mk = new MataKuliah("CS002", "OldName", "OldDesc");
+        mk.setNama("NewName");
+        mk.setDeskripsi("NewDesc");
+        assertEquals("NewName", mk.getNama());
+        assertEquals("NewDesc", mk.getDeskripsi());
+    }
+
+    @Test
+    void addDosenPengampuAndImmutability() {
+        MataKuliah mk = new MataKuliah("CS003", "M1", "D1");
+        Dosen dosen = new Dosen("a@ui.ac.id", "pass", "FullName", "NIP001");
+        mk.addDosenPengampu(dosen);
+        Set<Dosen> pengampu = mk.getDosenPengampu();
+        assertTrue(pengampu.contains(dosen));
+        assertThrows(UnsupportedOperationException.class, () -> pengampu.add(dosen));
+    }
+
+    @Test
+    void addInvalidDosenThrows() {
+        MataKuliah mk = new MataKuliah("CS004", "M2", "D2");
+        IllegalArgumentException ex1 = assertThrows(
+                IllegalArgumentException.class,
+                () -> mk.addDosenPengampu(null)
+        );
+        assertEquals("Dosen tidak boleh null", ex1.getMessage());
+        Dosen invalid = new Dosen("e@ui.ac.id", "pw", "Name", "   ");
+        IllegalArgumentException ex2 = assertThrows(
+                IllegalArgumentException.class,
+                () -> mk.addDosenPengampu(invalid)
+        );
+        assertEquals("Dosen tidak boleh null", ex2.getMessage());
+    }
+
+    @Test
+    void equalsAndHashCodeBasedOnKode() {
+        MataKuliah mk1 = new MataKuliah("CS005", "N1", "D1");
+        MataKuliah mk2 = new MataKuliah("CS005", "N2", "D2");
+        MataKuliah mk3 = new MataKuliah("CS006", "N1", "D1");
+
+        assertEquals(mk1, mk2);
+        assertEquals(mk1.hashCode(), mk2.hashCode());
+        assertNotEquals(mk1, mk3);
+        assertNotEquals(mk1.hashCode(), mk3.hashCode());
+        assertNotEquals(mk1, null);
+        assertNotEquals(mk1, "mk1");
+    }
+
+    @Test
+    void toStringContainsKode() {
+        MataKuliah mk = new MataKuliah("CS007", "M3", "D3");
+        String repr = mk.toString();
+        assertTrue(repr.contains("CS007"), () -> "toString should include kode, was: " + repr);
+    }
 }

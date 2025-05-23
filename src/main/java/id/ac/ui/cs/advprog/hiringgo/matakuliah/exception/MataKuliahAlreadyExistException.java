@@ -6,8 +6,4 @@ public class MataKuliahAlreadyExistException extends BaseException {
     public MataKuliahAlreadyExistException(String message) {
         super(message, HttpStatus.CONFLICT);
     }
-
-    public MataKuliahAlreadyExistException(String message, Throwable cause) {
-        super(message, HttpStatus.CONFLICT, cause);
-    }
 }
