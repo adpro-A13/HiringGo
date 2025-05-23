@@ -23,11 +23,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.Mockito.lenient;
 import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.fail;
-
+import java.util.concurrent.CompletableFuture;
 import java.util.*;
-
+import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import java.util.stream.Collectors;
 
 @ExtendWith(MockitoExtension.class)
 class DosenDashboardServiceImplTest {
@@ -449,5 +450,153 @@ class DosenDashboardServiceImplTest {
                 () -> service.populateRoleSpecificData(userId, response)
         );
         assertEquals("Dosen tidak ditemukan", ex.getMessage());
+    }
+
+    // Add to DosenDashboardServiceImplTest.java
+
+    @Test
+    void mapLowonganToCoursesAsync_shouldProcessInParallel() {
+        // Setup dosen and courses
+        when(userRepository.findById(userId)).thenReturn(Optional.of(dosenMock));
+
+        // Create multiple courses for parallel processing
+        List<MataKuliah> courses = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            MataKuliah course = new MataKuliah("CS10" + i, "Course " + i, "Description " + i);
+            courses.add(course);
+
+            // Setup lowongan for each course
+            Lowongan lowongan = new Lowongan();
+            lowongan.setMataKuliah(course);
+            lowongan.setJumlahAsdosDibutuhkan(3);
+            lowongan.setJumlahAsdosDiterima(1);
+
+            lenient().when(lowonganRepository.findByMataKuliah(course))
+                    .thenReturn(Collections.singletonList(lowongan));
+
+            LowonganDTO dto = mock(LowonganDTO.class);
+            when(lowonganMapper.toDto(lowongan)).thenReturn(dto);
+        }
+
+        when(mataKuliahRepository.findByDosenPengampu(dosenMock)).thenReturn(courses);
+
+        DashboardResponse response = service.getDashboardData(userId);
+        DosenDashboardResponse dosenResponse = (DosenDashboardResponse) response;
+
+        assertEquals(5, dosenResponse.getCoursesTaught().size());
+        assertEquals(5, dosenResponse.getLowonganPerCourse().size());
+        assertEquals(5, dosenResponse.getAcceptedAssistantsPerCourse().size());
+
+        for (MataKuliah course : courses) {
+            verify(lowonganRepository, atLeastOnce()).findByMataKuliah(course);
+        }
+    }
+
+    @Test
+    void mapLowonganToCoursesAsync_withPartialFailures_shouldContinueProcessing() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(dosenMock));
+
+        List<MataKuliah> courses = Arrays.asList(mataKuliah1, mataKuliah2);
+        when(mataKuliahRepository.findByDosenPengampu(dosenMock)).thenReturn(courses);
+
+        when(lowonganRepository.findByMataKuliah(mataKuliah1))
+                .thenReturn(Collections.singletonList(lowongan1));
+
+        when(lowonganRepository.findByMataKuliah(mataKuliah2))
+                .thenThrow(new RuntimeException("Database error"));
+
+        assertDoesNotThrow(() -> {
+            DashboardResponse response = service.getDashboardData(userId);
+            DosenDashboardResponse dosenResponse = (DosenDashboardResponse) response;
+
+            assertTrue(dosenResponse.getLowonganPerCourse().containsKey("CS101"));
+            assertFalse(dosenResponse.getLowonganPerCourse().containsKey("CS102"));
+        });
+    }
+
+    @Test
+    void populateRoleSpecificData_asyncPerformanceTest() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(dosenMock));
+
+        List<MataKuliah> manyCourses = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            MataKuliah course = new MataKuliah("CS" + String.format("%03d", i), "Course " + i, "Desc " + i);
+            manyCourses.add(course);
+
+            when(lowonganRepository.findByMataKuliah(course))
+                    .thenReturn(Collections.singletonList(lowongan1));
+        }
+
+        when(mataKuliahRepository.findByDosenPengampu(dosenMock)).thenReturn(manyCourses);
+
+        long startTime = System.currentTimeMillis();
+
+        DashboardResponse response = service.getDashboardData(userId);
+
+        long duration = System.currentTimeMillis() - startTime;
+
+        DosenDashboardResponse dosenResponse = (DosenDashboardResponse) response;
+        assertEquals(10, dosenResponse.getCoursesTaught().size());
+
+        assertTrue(duration < 5000, "Async processing took too long: " + duration + "ms");
+    }
+
+    private Map<String, List<LowonganDTO>> mapLowonganToCourses(List<MataKuliah> courses) {
+        Map<String, List<LowonganDTO>> result = new HashMap<>();
+
+        for (MataKuliah course : courses) {
+            try {
+                List<Lowongan> openings = lowonganRepository.findByMataKuliah(course);
+                if (openings != null && !openings.isEmpty()) {
+                    List<LowonganDTO> openingsDTO = openings.stream()
+                            .map(lowonganMapper::toDto)
+                            .collect(Collectors.toList());
+                    result.put(course.getKode(), openingsDTO);
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        return result;
+    }
+
+    @Test
+    void mapLowonganToCourses_shouldCoverAllBranches() throws Exception {
+        // Setup courses untuk test semua kondisi
+        MataKuliah course1 = new MataKuliah("CS101", "Course 1", "Desc 1"); // Success case
+        MataKuliah course2 = new MataKuliah("CS102", "Course 2", "Desc 2"); // Null case
+        MataKuliah course3 = new MataKuliah("CS103", "Course 3", "Desc 3"); // Empty case
+        MataKuliah course4 = new MataKuliah("CS104", "Course 4", "Desc 4"); // Exception case
+
+        List<MataKuliah> courses = Arrays.asList(course1, course2, course3, course4);
+
+        // Setup repository responses
+        Lowongan lowongan1 = new Lowongan();
+        when(lowonganRepository.findByMataKuliah(course1)).thenReturn(Arrays.asList(lowongan1)); // Success
+        when(lowonganRepository.findByMataKuliah(course2)).thenReturn(null); // Null
+        when(lowonganRepository.findByMataKuliah(course3)).thenReturn(Collections.emptyList()); // Empty
+        when(lowonganRepository.findByMataKuliah(course4)).thenThrow(new RuntimeException("Error")); // Exception
+
+        // Setup mapper
+        LowonganDTO dto1 = mock(LowonganDTO.class);
+        when(lowonganMapper.toDto(lowongan1)).thenReturn(dto1);
+
+        // Execute via reflection
+        Method method = DosenDashboardServiceImpl.class.getDeclaredMethod("mapLowonganToCourses", List.class);
+        method.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, List<LowonganDTO>> result = (Map<String, List<LowonganDTO>>) method.invoke(service, courses);
+
+        // Verify - only course1 should be in result
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("CS101"));
+        assertEquals(1, result.get("CS101").size());
+
+        // Verify all repository calls were made
+        verify(lowonganRepository).findByMataKuliah(course1);
+        verify(lowonganRepository).findByMataKuliah(course2);
+        verify(lowonganRepository).findByMataKuliah(course3);
+        verify(lowonganRepository).findByMataKuliah(course4);
+        verify(lowonganMapper).toDto(lowongan1);
     }
 }
