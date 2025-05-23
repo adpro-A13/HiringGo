@@ -13,6 +13,8 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.scheduling.annotation.Async;
 
 @Service
@@ -54,11 +56,13 @@ public class LogServiceImpl implements LogService {
         return logRepository.findByStatus(status);
     }
 
+    @Async
     @Override
-    public List<Log> getLogsByMonth(int bulan, int tahun, UUID id) {
+    public CompletableFuture<List<Log>> getLogsByMonth(int bulan, int tahun, UUID id) {
         LocalDate from = LocalDate.of(tahun, bulan, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
-        return logRepository.findByTanggalLogBetweenAndUser_Id(from, to, id);
+        List<Log> result = logRepository.findByTanggalLogBetweenAndUser_Id(from, to, id);
+        return CompletableFuture.completedFuture(result);
     }
 
     @Override

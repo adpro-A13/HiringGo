@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -303,7 +304,8 @@ public class LogServiceTest {
                 .thenReturn(expectedLogs);
 
         // Act
-        List<Log> actualLogs = logService.getLogsByMonth(month, year, userId);
+        CompletableFuture<List<Log>> future = logService.getLogsByMonth(month, year, userId);
+        List<Log> actualLogs = future.join();
 
         // Assert
         assertEquals(2, actualLogs.size());

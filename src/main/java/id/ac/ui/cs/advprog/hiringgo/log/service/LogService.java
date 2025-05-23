@@ -7,6 +7,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public interface LogService {
     Log createLog(CreateLogRequest request);
@@ -14,7 +15,7 @@ public interface LogService {
     Optional<Log> getLogById(Long id);
     List<Log> getAllLogs();
     List<Log> getLogsByStatus(LogStatus status);
-    List<Log> getLogsByMonth(int bulan, int tahun, UUID id);
+    CompletableFuture<List<Log>> getLogsByMonth(int bulan, int tahun, UUID id);
     List<Log> getLogsByMataKuliah(String kode);
     List<Log> getLogsByUser(UUID idUser);
 

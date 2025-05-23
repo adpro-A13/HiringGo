@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -141,14 +143,19 @@ class LogControllerTest {
         UUID userId = UUID.randomUUID();
 
         when(logService.getLogsByMonth(any(Integer.class), any(Integer.class), any(UUID.class)))
-                .thenReturn(Collections.singletonList(sampleLog));
+                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(sampleLog)));
 
-        mockMvc.perform(get("/api/logs/month")
+        MvcResult mvcResult = mockMvc.perform(get("/api/logs/month")
                         .param("id", String.valueOf(userId))
                         .param("bulan", String.valueOf(LocalDate.now().getMonthValue()))
                         .param("tahun", String.valueOf(LocalDate.now().getYear())))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
+
     }
 
     @Test
