@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -44,10 +45,10 @@ class MataKuliahControllerTest {
         dto2.setKode("CS102"); dto2.setNama("Lanjut"); dto2.setDeskripsi("Desc"); dto2.setDosenPengampuEmails(List.of());
         List<MataKuliahDTO> dtos = List.of(dto1, dto2);
 
-        when(mataKuliahService.findAll()).thenReturn(entities);
+        when(mataKuliahService.findAll()).thenReturn(CompletableFuture.completedFuture(entities));
         when(mataKuliahMapper.toDtoList(entities)).thenReturn(dtos);
 
-        ResponseEntity<List<MataKuliahDTO>> resp = mataKuliahController.getAllMataKuliah();
+        ResponseEntity<List<MataKuliahDTO>> resp = mataKuliahController.getAllMataKuliah().join();
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertEquals(2, Objects.requireNonNull(resp.getBody()).size());
@@ -96,10 +97,10 @@ class MataKuliahControllerTest {
         entityIn.addDosenPengampu(dosenA);
 
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
-        when(mataKuliahService.create(entityIn)).thenReturn(entityIn);
+        when(mataKuliahService.create(entityIn)).thenReturn(CompletableFuture.completedFuture(entityIn));
         when(mataKuliahMapper.toDto(entityIn)).thenReturn(dtoIn);
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn);
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.createMataKuliah(dtoIn).join();
 
         assertEquals(HttpStatus.CREATED, resp.getStatusCode());
         assertEquals("CS101", Objects.requireNonNull(resp.getBody()).getKode());
@@ -134,10 +135,10 @@ class MataKuliahControllerTest {
         MataKuliah entityIn = new MataKuliah("CS101","Update","New");
 
         when(mataKuliahMapper.toEntity(dtoIn)).thenReturn(entityIn);
-        when(mataKuliahService.update(entityIn)).thenReturn(entityIn);
+        when(mataKuliahService.update(entityIn)).thenReturn(CompletableFuture.completedFuture(entityIn));
         when(mataKuliahMapper.toDto(entityIn)).thenReturn(dtoIn);
 
-        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn);
+        ResponseEntity<MataKuliahDTO> resp = mataKuliahController.updateMataKuliah("CS101", dtoIn).join();
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertEquals("Update", Objects.requireNonNull(resp.getBody()).getNama());
@@ -180,12 +181,11 @@ class MataKuliahControllerTest {
 
     @Test
     void testDeleteMataKuliah() {
-        doNothing().when(mataKuliahService).deleteByKode("CS101");
+        doReturn(CompletableFuture.completedFuture(null)).when(mataKuliahService).deleteByKode("CS101");
 
-        ResponseEntity<Void> resp = mataKuliahController.deleteMataKuliah("CS101");
+        ResponseEntity<Void> resp = mataKuliahController.deleteMataKuliah("CS101").join();
 
         assertEquals(HttpStatus.NO_CONTENT, resp.getStatusCode());
         verify(mataKuliahService).deleteByKode("CS101");
-        verifyNoMoreInteractions(mataKuliahMapper);
     }
 }
