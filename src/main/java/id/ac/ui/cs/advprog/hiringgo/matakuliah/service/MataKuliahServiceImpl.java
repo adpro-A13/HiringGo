@@ -5,7 +5,8 @@ import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahAlreadyExistE
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,20 +20,35 @@ public class MataKuliahServiceImpl implements MataKuliahService {
         this.mataKuliahRepository = mataKuliahRepository;
     }
 
+    @Async("taskExecutor")
     @Override
-    public MataKuliah create(MataKuliah mataKuliah) {
+    public CompletableFuture<MataKuliah> create(MataKuliah mataKuliah) {
         if (mataKuliahRepository.existsById(mataKuliah.getKode())) {
             throw new MataKuliahAlreadyExistException("Kode sudah digunakan.");
         }
-        return mataKuliahRepository.save(mataKuliah);
+        return CompletableFuture.completedFuture(mataKuliahRepository.save(mataKuliah));
     }
 
+    @Async("taskExecutor")
     @Override
-    public MataKuliah update(MataKuliah mataKuliah) {
+    public CompletableFuture<MataKuliah> update(MataKuliah mataKuliah) {
         if (!mataKuliahRepository.existsById(mataKuliah.getKode())) {
             throw new MataKuliahNotFoundException("Mata Kuliah tidak ditemukan.");
         }
-        return mataKuliahRepository.save(mataKuliah);
+        return CompletableFuture.completedFuture(mataKuliahRepository.save(mataKuliah));
+    }
+
+    @Async("taskExecutor")
+    @Override
+    public CompletableFuture<Void> deleteByKode(String kode) {
+        mataKuliahRepository.deleteById(kode);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async("taskExecutor")
+    @Override
+    public CompletableFuture<List<MataKuliah>> findAll() {
+        return CompletableFuture.completedFuture(mataKuliahRepository.findAll());
     }
 
     @Override
@@ -41,20 +57,11 @@ public class MataKuliahServiceImpl implements MataKuliahService {
                 .orElseThrow(() -> new MataKuliahNotFoundException("Mata kuliah tidak ditemukan"));
     }
 
+    @Override
     public List<MataKuliah> findByDosenPengampu(Dosen dosen) {
         if (dosen == null) {
             throw new MataKuliahNotFoundException("Dosen tidak ditemukan");
         }
         return mataKuliahRepository.findByDosenPengampu(dosen);
-    }
-
-    @Override
-    public List<MataKuliah> findAll() {
-        return mataKuliahRepository.findAll();
-    }
-
-    @Override
-    public void deleteByKode(String kode) {
-        mataKuliahRepository.deleteById(kode);
     }
 }
