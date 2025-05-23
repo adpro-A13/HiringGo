@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.junit.jupiter.api.Test;
@@ -50,23 +51,26 @@ class MataKuliahServiceTest {
     @Test
     void testFindByKodeExists() {
         MataKuliah matkul = new MataKuliah("CS001", "Dasar", "Deskripsi");
-        when(mataKuliahRepository.findById("CS001")).thenReturn(Optional.of(matkul));
+        when(mataKuliahRepository.findByKode("CS001")).thenReturn(Optional.of(matkul));
 
         MataKuliah result = mataKuliahService.findByKode("CS001");
 
         assertNotNull(result);
         assertEquals("Dasar", result.getNama());
-        verify(mataKuliahRepository).findById("CS001");
+        verify(mataKuliahRepository).findByKode("CS001");
     }
 
     @Test
     void testFindByKodeNotFound() {
-        when(mataKuliahRepository.findById("CS002")).thenReturn(Optional.empty());
+        when(mataKuliahRepository.findByKode("CS002")).thenReturn(Optional.empty());
 
-        MataKuliah result = mataKuliahService.findByKode("CS002");
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> mataKuliahService.findByKode("CS002")
+        );
 
-        assertNull(result);
-        verify(mataKuliahRepository).findById("CS002");
+        assertEquals("Mata kuliah tidak ditemukan", ex.getMessage());
+        verify(mataKuliahRepository).findByKode("CS002");
     }
 
     @Test
@@ -101,6 +105,23 @@ class MataKuliahServiceTest {
 
         verify(mataKuliahRepository).existsById("CS020");
         verify(mataKuliahRepository, never()).save(any());
+    }
+
+    @Test
+    void testFindByDosenPengampu(){
+        Dosen dosen = mock(Dosen.class);
+
+        MataKuliah m1 = new MataKuliah("CS101", "Algoritma", "Dasar algoritma");
+        MataKuliah m2 = new MataKuliah("CS102", "Struktur Data", "List, Stack, Queue");
+
+        List<MataKuliah> listMK = List.of(m1, m2);
+        when(mataKuliahRepository.findByDosenPengampu(dosen)).thenReturn(listMK);
+
+        List<MataKuliah> result = mataKuliahService.findByDosenPengampu(dosen);
+
+        assertEquals(2, result.size());
+        assertEquals("CS101", result.getFirst().getKode());
+        verify(mataKuliahRepository).findByDosenPengampu(dosen);
     }
 
     @Test
