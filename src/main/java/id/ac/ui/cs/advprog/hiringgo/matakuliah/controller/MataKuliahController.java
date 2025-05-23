@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/matakuliah")
@@ -27,9 +28,9 @@ public class MataKuliahController {
 
     @GetMapping("/getAll")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<MataKuliahDTO>> getAllMataKuliah() {
-        List<MataKuliah> mataKuliahList = mataKuliahService.findAll();
-        return ResponseEntity.ok(mataKuliahMapper.toDtoList(mataKuliahList));
+    public CompletableFuture<ResponseEntity<List<MataKuliahDTO>>> getAllMataKuliah() {
+        return mataKuliahService.findAll()
+                .thenApply(mks -> ResponseEntity.ok(mataKuliahMapper.toDtoList(mks)));
     }
 
     @GetMapping("/{kode}")
@@ -44,36 +45,36 @@ public class MataKuliahController {
 
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<MataKuliahDTO> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
+    public CompletableFuture<ResponseEntity<MataKuliahDTO>> createMataKuliah(@RequestBody MataKuliahDTO mataKuliahDTO) {
         try {
             MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
-            MataKuliah createdMataKuliah = mataKuliahService.create(mataKuliah);
-            return ResponseEntity.status(HttpStatus.CREATED).body(mataKuliahMapper.toDto(createdMataKuliah));
+            return mataKuliahService.create(mataKuliah)
+                    .thenApply(created -> ResponseEntity.status(HttpStatus.CREATED).body(mataKuliahMapper.toDto(created)));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
         }
     }
 
     @PutMapping("update/{kode}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<MataKuliahDTO> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
+    public CompletableFuture<ResponseEntity<MataKuliahDTO>> updateMataKuliah(@PathVariable String kode, @RequestBody MataKuliahDTO mataKuliahDTO) {
         if (!kode.equals(mataKuliahDTO.getKode())) {
-            return ResponseEntity.badRequest().build();
+            return CompletableFuture.completedFuture(ResponseEntity.badRequest().build());
         }
 
         try {
             MataKuliah mataKuliah = mataKuliahMapper.toEntity(mataKuliahDTO);
-            MataKuliah updatedMataKuliah = mataKuliahService.update(mataKuliah);
-            return ResponseEntity.ok(mataKuliahMapper.toDto(updatedMataKuliah));
+            return mataKuliahService.update(mataKuliah)
+                    .thenApply(updated -> ResponseEntity.ok(mataKuliahMapper.toDto(updated)));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            return CompletableFuture.completedFuture(ResponseEntity.notFound().build());
         }
     }
 
     @DeleteMapping("/{kode}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Void> deleteMataKuliah(@PathVariable String kode) {
-        mataKuliahService.deleteByKode(kode);
-        return ResponseEntity.noContent().build();
+    public CompletableFuture<ResponseEntity<Void>> deleteMataKuliah(@PathVariable String kode) {
+        return mataKuliahService.deleteByKode(kode)
+                .thenApply(v -> ResponseEntity.noContent().build());
     }
 }
