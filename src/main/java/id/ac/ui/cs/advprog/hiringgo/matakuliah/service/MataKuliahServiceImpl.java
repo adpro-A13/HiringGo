@@ -42,6 +42,9 @@ public class MataKuliahServiceImpl implements MataKuliahService {
     }
 
     public List<MataKuliah> findByDosenPengampu(Dosen dosen) {
+        if (dosen == null) {
+            throw new MataKuliahNotFoundException("Dosen tidak ditemukan");
+        }
         return mataKuliahRepository.findByDosenPengampu(dosen);
     }
 
