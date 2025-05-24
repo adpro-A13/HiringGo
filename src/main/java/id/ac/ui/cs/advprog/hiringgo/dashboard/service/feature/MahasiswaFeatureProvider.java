@@ -6,8 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class MahasiswaFeatureProvider {
+public class MahasiswaFeatureProvider implements FeatureProvider {
 
+    @Override
     public Map<String, String> getAvailableFeatures() {
         Map<String, String> features = new HashMap<>();
         features.put("pendaftaran", "/api/pendaftaran");
