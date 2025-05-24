@@ -72,8 +72,9 @@ jobs:
             # Login to Docker Hub
             docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
             
-            # Pull new image
+            # Pull new image & cleanup old images
             docker pull $IMAGE
+            docker image prune -f
             
             # Run new container
             docker run -d --name=web_server -p 8080:8080 \
@@ -84,9 +85,9 @@ jobs:
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               $IMAGE
             
-            # Health check
-            sleep 20
-            if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
+            # Health check - ganti sesuai aplikasi kamu
+            sleep 15
+            if curl -f http://localhost:8080/ > /dev/null 2>&1; then
               echo "Deployment successful!"
               echo $IMAGE_TAG | sudo tee /opt/advshop/.current_version
               echo "$(date): Deployed $IMAGE_TAG" | sudo tee -a /opt/advshop/.deployment_history
@@ -149,8 +150,9 @@ jobs:
             # Login to Docker Hub
             docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
             
-            # Pull rollback image
+            # Pull rollback image & cleanup
             docker pull $ROLLBACK_IMAGE
+            docker image prune -f
             
             # Run rollback container
             docker run -d --name=web_server -p 8080:8080 \
@@ -162,8 +164,8 @@ jobs:
               $ROLLBACK_IMAGE
             
             # Health check
-            sleep 20
-            if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
+            sleep 15
+            if curl -f http://localhost:8080/ > /dev/null 2>&1; then
               echo "Rollback successful!"
               echo $ROLLBACK_VERSION | sudo tee /opt/advshop/.current_version
               echo "$(date): Rolled back to $ROLLBACK_VERSION" | sudo tee -a /opt/advshop/.deployment_history
