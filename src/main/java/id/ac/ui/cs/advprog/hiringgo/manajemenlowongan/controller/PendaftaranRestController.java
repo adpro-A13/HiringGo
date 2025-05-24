@@ -15,7 +15,6 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,7 +28,6 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/lowongandaftar")
@@ -38,7 +36,6 @@ public class PendaftaranRestController {
 
     private final LowonganService lowonganService;
     private final PendaftaranService pendaftaranService;
-    private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PendaftaranRepository pendaftaranRepository;
     private final LowonganMapper lowonganMapper;
@@ -54,14 +51,13 @@ public class PendaftaranRestController {
     ) {
         this.lowonganService = lowonganService;
         this.pendaftaranService = pendaftaranService;
-        this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.pendaftaranRepository = pendaftaranRepository;
         this.lowonganMapper = lowonganMapper;
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getLowonganDetail(@PathVariable UUID id) {
+    public ResponseEntity<Object> getLowonganDetail(@PathVariable UUID id) {
         try {
             Lowongan lowongan = lowonganService.findById(id);
             LowonganDetailResponse response = new LowonganDetailResponse(lowongan);
@@ -73,7 +69,7 @@ public class PendaftaranRestController {
     }
 
     @PostMapping("/{id}/daftar")
-    public ResponseEntity<?> daftar(
+    public ResponseEntity<Object> daftar(
             @PathVariable UUID id,
             @Valid @RequestBody DaftarForm form,
             Principal principal) {
@@ -122,7 +118,7 @@ public class PendaftaranRestController {
     }
 
     @GetMapping("/{id}/status")
-    public ResponseEntity<?> getLowonganApplyStatus(@PathVariable UUID id, Principal principal) {
+    public ResponseEntity<Object> getLowonganApplyStatus(@PathVariable UUID id, Principal principal) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Anda harus login terlebih dahulu");

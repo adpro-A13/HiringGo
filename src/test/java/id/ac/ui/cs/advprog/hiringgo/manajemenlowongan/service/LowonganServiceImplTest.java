@@ -4,8 +4,6 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
@@ -24,11 +22,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.context.ApplicationEventPublisher;
 
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -135,7 +131,7 @@ class LowonganServiceImplTest {
     @Test
     void testCreateLowonganWhenLowonganAlreadyExists() {
         Lowongan newLowongan = new Lowongan();
-        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
         newLowongan.setMataKuliah(mataKuliah);
         newLowongan.setSemester("GANJIL");
         newLowongan.setTahunAjaran("2023");
@@ -360,7 +356,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTerimaPendaftarLowonganNotFound() {
-        MataKuliah mataKuliah = createMataKuliah("CS321", "Pemrograman Lanjut", "Advanced Java", dosenPengampu);
+        mataKuliah = createMataKuliah("CS321", "Pemrograman Lanjut", "Advanced Java", dosenPengampu);
         Lowongan fakeLowongan = createLowongan(id1, mataKuliah, 2, 0);
         Pendaftaran pendaftaran = createPendaftaran(id2, fakeLowongan, StatusPendaftaran.BELUM_DIPROSES);
 
@@ -406,7 +402,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTerimaPendaftarLowonganFull() {
-        MataKuliah mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
+        mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
         mataKuliah.addDosenPengampu(dosenPengampu);
         Lowongan lowongan = createLowongan(id1, mataKuliah, 1, 1);
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
@@ -497,9 +493,7 @@ class LowonganServiceImplTest {
         Lowongan lowongan = createLowongan(id1, mk, 2, 1);
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        Authentication auth = mock(Authentication.class);
         when(auth.getName()).thenReturn("dosen@example.com");
-        SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(securityContext);
 
@@ -587,7 +581,7 @@ class LowonganServiceImplTest {
     }
 
     private MataKuliah createMataKuliah(String kode, String namaSingkat, String deskripsi, Dosen dosenPengampu) {
-        MataKuliah mataKuliah = new MataKuliah(kode, namaSingkat, deskripsi);
+        mataKuliah = new MataKuliah(kode, namaSingkat, deskripsi);
         mataKuliah.addDosenPengampu(dosenPengampu);
         return mataKuliah;
     }

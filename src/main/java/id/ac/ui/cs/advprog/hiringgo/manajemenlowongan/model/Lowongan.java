@@ -1,7 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
@@ -9,8 +7,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
