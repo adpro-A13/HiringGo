@@ -7,7 +7,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,19 +20,14 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -46,13 +43,21 @@ class LowonganControllerTest {
     private UUID id;
     Lowongan lowongan;
     LowonganDTO lowonganDto;
+
     @Mock
     private LowonganService lowonganService;
+
     @Mock
     private PendaftaranService pendaftaranService;
+    @Mock
+    private LowonganSortService lowonganSortService;
+
+    @Mock
+    private LowonganFilterService lowonganFilterService;
 
     @Mock
     private LowonganMapper lowonganMapper;
+
     @InjectMocks
     private LowonganController controller;
 
@@ -115,12 +120,7 @@ class LowonganControllerTest {
     @Test
     @DisplayName("GET /api/lowongan/{id} - Success")
     void testGetLowonganByIdSuccess() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(id);
-
-        LowonganDTO dto = new LowonganDTO();
         dto.setLowonganId(id);
 
         List<Pendaftaran> daftarPendaftaran = List.of(new Pendaftaran(), new Pendaftaran());
@@ -176,7 +176,6 @@ class LowonganControllerTest {
                         .content(objectMapper.writeValueAsString(inputLowongan)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Gagal membuat lowongan: Something went wrong"));
-        ;
     }
 
     @Test
@@ -202,17 +201,17 @@ class LowonganControllerTest {
 
 
     private Lowongan createTestLowongan(UUID id) {
-        Lowongan lowongan = new Lowongan();
         MataKuliah mataKuliah = new MataKuliah("CS100", "AdvProg", "Design Pattern");
-        lowongan.setLowonganId(id);
-        lowongan.setMataKuliah(mataKuliah);
-        lowongan.setSemester(Semester.GENAP.getValue());
-        lowongan.setTahunAjaran("2024");
-        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
-        lowongan.setJumlahAsdosDibutuhkan(2);
-        lowongan.setJumlahAsdosDiterima(0);
-        lowongan.setJumlahAsdosPendaftar(0);
-        return lowongan;
+        Lowongan lowonganTest = new Lowongan();
+        lowonganTest.setLowonganId(id);
+        lowonganTest.setMataKuliah(mataKuliah);
+        lowonganTest.setSemester(Semester.GENAP.getValue());
+        lowonganTest.setTahunAjaran("2024");
+        lowonganTest.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
+        lowonganTest.setJumlahAsdosDibutuhkan(2);
+        lowonganTest.setJumlahAsdosDiterima(0);
+        lowonganTest.setJumlahAsdosPendaftar(0);
+        return lowonganTest;
     }
 
     @Test

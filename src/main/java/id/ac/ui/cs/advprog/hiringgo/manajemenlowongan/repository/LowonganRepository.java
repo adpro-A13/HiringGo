@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Repository
 public interface LowonganRepository extends JpaRepository<Lowongan, UUID> {
-    Optional<Lowongan> findByMataKuliahAndSemesterAndTahunAjaran(MataKuliah MataKuliah, Semester semester, String tahunAjaran);
+    Optional<Lowongan> findByMataKuliahAndSemesterAndTahunAjaran(MataKuliah mataKuliah, Semester semester, String tahunAjaran);
     List<Lowongan> findByStatusLowongan(StatusLowongan statusLowongan);
     List<Lowongan> findByMataKuliah(MataKuliah mataKuliah);
 }

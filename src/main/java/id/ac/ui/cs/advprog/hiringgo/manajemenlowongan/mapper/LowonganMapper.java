@@ -2,15 +2,12 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper;
 
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranServiceImpl;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 public class LowonganMapper {
@@ -72,6 +69,6 @@ public class LowonganMapper {
     public List<LowonganDTO> toDtoList(List<Lowongan> entities) {
         return entities.stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

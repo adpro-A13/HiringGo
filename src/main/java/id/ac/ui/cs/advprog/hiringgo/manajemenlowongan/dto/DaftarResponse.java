@@ -1,6 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto;
 
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import lombok.Data;
 

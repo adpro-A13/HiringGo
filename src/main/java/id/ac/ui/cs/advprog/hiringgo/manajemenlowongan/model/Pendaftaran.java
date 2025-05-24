@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
