@@ -9,7 +9,6 @@ import java.util.UUID;
 public interface LowonganService {
     Lowongan findById(UUID id);
     List<Lowongan> findAll();
-    List<Lowongan> filterLowongan(String strategyName, String filterValue, List<Lowongan> lowonganList);
     Lowongan createLowongan(Lowongan lowongan);
     Lowongan updateLowongan(UUID id, Lowongan updatedLowongan);
     void deleteLowonganById(UUID id);

@@ -65,18 +65,6 @@ public class LowonganServiceImpl implements LowonganService {
     }
 
     @Override
-    public List<Lowongan> filterLowongan(String strategyName, String filterValue, List<Lowongan> lowonganList) {
-        return filterService.filter(lowonganList, strategyName, filterValue);
-    }
-
-
-    public List<Lowongan> getSortedLowongan(String sortKey) {
-        List<Lowongan> list = lowonganRepository.findAll();
-        return sortService.sort(list, sortKey);
-    }
-
-
-    @Override
     public Lowongan createLowongan(Lowongan lowongan) {
         Optional<Lowongan> existing = lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
                 lowongan.getMataKuliah(),
