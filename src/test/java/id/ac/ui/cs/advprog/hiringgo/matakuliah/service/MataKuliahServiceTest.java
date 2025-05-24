@@ -133,8 +133,7 @@ class MataKuliahServiceTest {
 
         when(mataKuliahRepository.findAll()).thenReturn(List.of(m1, m2));
 
-        CompletableFuture<List<MataKuliah>> resultFuture = mataKuliahService.findAll();
-        List<MataKuliah> result = resultFuture.get();
+        List<MataKuliah> result = mataKuliahService.findAll();
 
         assertEquals(2, result.size());
         verify(mataKuliahRepository).findAll();

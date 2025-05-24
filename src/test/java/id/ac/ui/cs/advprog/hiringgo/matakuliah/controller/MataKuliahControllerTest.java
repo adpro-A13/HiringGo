@@ -48,7 +48,7 @@ class MataKuliahControllerTest {
         when(mataKuliahService.findAll()).thenReturn(CompletableFuture.completedFuture(entities));
         when(mataKuliahMapper.toDtoList(entities)).thenReturn(dtos);
 
-        ResponseEntity<List<MataKuliahDTO>> resp = mataKuliahController.getAllMataKuliah().join();
+        ResponseEntity<List<MataKuliahDTO>> resp = mataKuliahController.getAllMataKuliah();
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertEquals(2, Objects.requireNonNull(resp.getBody()).size());

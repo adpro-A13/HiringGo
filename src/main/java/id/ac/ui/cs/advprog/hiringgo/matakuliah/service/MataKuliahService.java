@@ -10,6 +10,7 @@ public interface MataKuliahService {
     MataKuliah update(MataKuliah mataKuliah);
     MataKuliah findByKode(String kode);
     List<MataKuliah> findByDosenPengampu(Dosen dosen);
-    CompletableFuture<List<MataKuliah>> findAll();
+//    CompletableFuture<List<MataKuliah>> findAll();
+    List<MataKuliah> findAll();
     void deleteByKode(String kode);
 }

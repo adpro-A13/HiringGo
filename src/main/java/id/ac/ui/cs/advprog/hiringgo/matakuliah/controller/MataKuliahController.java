@@ -28,9 +28,9 @@ public class MataKuliahController {
 
     @GetMapping("/getAll")
     @PreAuthorize("isAuthenticated()")
-    public CompletableFuture<ResponseEntity<List<MataKuliahDTO>>> getAllMataKuliah() {
-        return mataKuliahService.findAll()
-                .thenApply(mks -> ResponseEntity.ok(mataKuliahMapper.toDtoList(mks)));
+    public ResponseEntity<List<MataKuliahDTO>> getAllMataKuliah() {
+        List<MataKuliah> mataKuliahList = mataKuliahService.findAll();
+        return ResponseEntity.ok(mataKuliahMapper.toDtoList(mataKuliahList));
     }
 
     @GetMapping("/{kode}")

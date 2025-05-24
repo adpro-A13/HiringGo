@@ -50,10 +50,15 @@ public class MataKuliahServiceImpl implements MataKuliahService {
         return mataKuliahRepository.findByDosenPengampu(dosen);
     }
 
-    @Async("taskExecutor")
+//    @Async("taskExecutor")
+//    @Override
+//    public CompletableFuture<List<MataKuliah>> findAll() {
+//        return CompletableFuture.completedFuture(mataKuliahRepository.findAll());
+//    }
+
     @Override
-    public CompletableFuture<List<MataKuliah>> findAll() {
-        return CompletableFuture.completedFuture(mataKuliahRepository.findAll());
+    public List<MataKuliah> findAll() {
+        return mataKuliahRepository.findAll();
     }
 
     @Override
