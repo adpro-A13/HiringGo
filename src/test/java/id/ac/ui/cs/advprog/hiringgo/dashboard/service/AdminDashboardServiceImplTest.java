@@ -178,4 +178,16 @@ class AdminDashboardServiceImplTest {
         assertEquals(0, resp.getCourseCount());
         assertEquals(0, resp.getLowonganCount());
     }
+
+    @Test
+    void populateCommonData_withNonExistentAdmin_shouldThrow() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        DashboardResponse response = new AdminDashboardResponse();
+
+        NoSuchElementException ex = assertThrows(
+                NoSuchElementException.class,
+                () -> service.populateCommonData(userId, response)
+        );
+        assertEquals("Admin tidak ditemukan dengan ID: " + userId, ex.getMessage());
+    }
 }

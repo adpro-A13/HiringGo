@@ -11,19 +11,24 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.notifikasi.event.NotifikasiEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+import org.springframework.data.util.Pair;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.ApplicationEventPublisher;
+
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,11 +37,14 @@ class LowonganServiceImplTest {
 
     @Mock
     private LowonganRepository lowonganRepository;
-
+    @Mock
+    private LowonganFilterService filterService;
     @Mock
     private PendaftaranRepository pendaftaranRepository;
     @InjectMocks
     private LowonganServiceImpl lowonganService;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private UUID id1;
     private UUID id2;
@@ -210,40 +218,6 @@ class LowonganServiceImplTest {
     }
 
     @Test
-    void testFilterByStatusLowongan() {
-        Lowongan aktif = new Lowongan();
-        aktif.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
-
-        Lowongan tidakAktif = new Lowongan();
-        tidakAktif.setStatusLowongan(StatusLowongan.DITUTUP.getValue());
-
-        when(lowonganRepository.findAll()).thenReturn(List.of(aktif, tidakAktif));
-
-        var strategy = new FilterByStatus(StatusLowongan.DIBUKA);
-        List<Lowongan> result = lowonganService.filterLowongan(strategy);
-
-        assertEquals(1, result.size());
-        assertEquals(StatusLowongan.DIBUKA, result.get(0).getStatusLowongan());
-    }
-
-    @Test
-    void testFilterBySemester() {
-        Lowongan genap = new Lowongan();
-        genap.setSemester(Semester.GENAP.getValue());
-
-        Lowongan ganjil = new Lowongan();
-        ganjil.setSemester(Semester.GANJIL.getValue());
-
-        when(lowonganRepository.findAll()).thenReturn(List.of(genap, ganjil));
-
-        var strategy = new FilterBySemester(Semester.GANJIL);
-        List<Lowongan> result = lowonganService.filterLowongan(strategy);
-
-        assertEquals(1, result.size());
-        assertEquals(Semester.GANJIL, result.get(0).getSemester());
-    }
-
-    @Test
     void testDeleteLowonganByIdSuccess() {
         Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(id1);
@@ -303,45 +277,68 @@ class LowonganServiceImplTest {
     }
 
     @Test
-    void testTerimaPendaftarSuccess() {
-        MataKuliah mataKuliah = createMataKuliah("CS123", "Algoritma", "Dasar pemrograman", dosenPengampu);
-        Lowongan lowongan = createLowongan(id1, mataKuliah, 2, 1);
-        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
-
+    void testTerimaPendaftar_Success() {
+        MataKuliah mk = createMataKuliah("CS100", "Advpro", "advanced programming", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mk, 2, 1);
+        lowongan.setTahunAjaran("2023/2024");
+        lowongan.setSemester(String.valueOf(Semester.GENAP));
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+        LowonganServiceImpl spyService = Mockito.spy(lowonganService);
+        Mockito.doReturn(Pair.of(pendaftaran, lowongan))
+                .when(spyService)
+                .validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        Mockito.doReturn(lowongan).when(spyService).getAuthorizedLowongan(id1);
+
         when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        lowonganService.terimaPendaftar(id1, id2);
+        spyService.eventPublisher = eventPublisher;
+
+        spyService.terimaPendaftar(id1, id2);
 
         assertEquals(StatusPendaftaran.DITERIMA, pendaftaran.getStatus());
-        assertEquals(2, lowongan.getJumlahAsdosDiterima());
-        assertEquals(StatusLowongan.DITUTUP, lowongan.getStatusLowongan());
+        verify(pendaftaranRepository).save(pendaftaran);
 
-        verify(pendaftaranRepository).findById(id2);
+        assertEquals(2, lowongan.getJumlahAsdosDiterima());
+        assertEquals((StatusLowongan.DITUTUP), lowongan.getStatusLowongan());
         verify(lowonganRepository).save(lowongan);
+
+        ArgumentCaptor<NotifikasiEvent> eventCaptor = ArgumentCaptor.forClass(NotifikasiEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        NotifikasiEvent publishedEvent = eventCaptor.getValue();
+        assertEquals(pendaftaran.getKandidat(), publishedEvent.getMahasiswa());
+        assertEquals(mk, publishedEvent.getMataKuliah());
+        assertEquals("2023/2024", publishedEvent.getTahunAjaran());
+        assertEquals(Semester.GENAP, publishedEvent.getSemester());
+        assertEquals("DITERIMA", publishedEvent.getStatus());
     }
 
-
     @Test
-    void testTolakPendaftarSuccess() {
-        MataKuliah mataKuliah = createMataKuliah("CS123", "Algoritma", "Dasar pemrograman", dosenPengampu);
-        Lowongan lowongan = createLowongan(id1, mataKuliah, 2, 1);
+    void testTerimaPendaftar_ThrowsWhenLowonganFull() {
+        MataKuliah mk = createMataKuliah("CS100", "Advpro", "advanced programming", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mk, 1, 1);
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
-        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
-        when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        LowonganServiceImpl spyService = Mockito.spy(lowonganService);
+        Mockito.doReturn(Pair.of(pendaftaran, lowongan))
+                .when(spyService)
+                .validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        Mockito.doReturn(lowongan).when(spyService).getAuthorizedLowongan(id1);
 
-        lowonganService.tolakPendaftar(id1, id2);
 
-        assertEquals(StatusPendaftaran.DITOLAK, pendaftaran.getStatus());
-        verify(pendaftaranRepository).findById(id2);
-        verify(lowonganRepository, times(2)).findById(id1);
-        verify(pendaftaranRepository).save(pendaftaran);
+        spyService.eventPublisher = eventPublisher;
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
+            spyService.terimaPendaftar(id1, id2);
+        });
+
+        assertEquals("Lowongan sudah penuh", ex.getMessage());
+
+        verify(pendaftaranRepository, never()).save(any());
+        verify(lowonganRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
 
@@ -494,6 +491,26 @@ class LowonganServiceImplTest {
         verifyNoMoreInteractions(pendaftaranRepository, lowonganRepository);
     }
 
+    @Test
+    void testTolakPendaftarSuccess() {
+        MataKuliah mk = createMataKuliah("CS101", "Algoritma", "algoritma", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mk, 2, 1);
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("dosen@example.com");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(pendaftaranRepository.findById(id2)).thenReturn(Optional.of(pendaftaran));
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+
+        lowonganService.tolakPendaftar(id1, id2);
+
+        assertEquals(StatusPendaftaran.DITOLAK, pendaftaran.getStatus());
+        verify(pendaftaranRepository).save(pendaftaran);
+    }
 
 
     @Test

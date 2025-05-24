@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranServiceImpl;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,11 @@ import java.util.stream.Collectors;
 @Component
 public class LowonganMapper {
 
+    private final PendaftaranServiceImpl pendaftaranService;
     private final MataKuliahRepository mataKuliahRepository;
 
-    public LowonganMapper(MataKuliahRepository mataKuliahRepository) {
+    public LowonganMapper(PendaftaranServiceImpl pendaftaranService, MataKuliahRepository mataKuliahRepository) {
+        this.pendaftaranService = pendaftaranService;
         this.mataKuliahRepository = mataKuliahRepository;
     }
 
@@ -27,7 +30,6 @@ public class LowonganMapper {
             lowongan.setLowonganId(dto.getLowonganId());
         }
 
-        // Convert idMataKuliah (kode) ke MataKuliah entity
         if (dto.getIdMataKuliah() != null) {
             MataKuliah mataKuliah = mataKuliahRepository.findById(dto.getIdMataKuliah())
                     .orElseThrow(() -> new IllegalArgumentException("MataKuliah dengan kode " + dto.getIdMataKuliah() + " tidak ditemukan"));
@@ -35,8 +37,8 @@ public class LowonganMapper {
         }
 
         lowongan.setTahunAjaran(dto.getTahunAjaran());
-        lowongan.setSemester(String.valueOf(dto.getSemester()));
-        lowongan.setStatusLowongan(String.valueOf(dto.getStatusLowongan()));
+        lowongan.setSemester((dto.getSemester()));
+        lowongan.setStatusLowongan((dto.getStatusLowongan()));
         lowongan.setJumlahAsdosDibutuhkan(dto.getJumlahAsdosDibutuhkan());
         lowongan.setJumlahAsdosDiterima(dto.getJumlahAsdosDiterima());
         lowongan.setJumlahAsdosPendaftar(dto.getJumlahAsdosPendaftar());
@@ -44,23 +46,25 @@ public class LowonganMapper {
         return lowongan;
     }
 
-    public LowonganDTO toDto(Lowongan entity) {
+    public LowonganDTO toDto(Lowongan lowongan) {
         LowonganDTO dto = new LowonganDTO();
 
-        dto.setLowonganId(entity.getLowonganId());
-        dto.setIdMataKuliah(entity.getMataKuliah() != null ? entity.getMataKuliah().getKode() : null);
-        dto.setTahunAjaran(entity.getTahunAjaran());
-        dto.setSemester(entity.getSemester());
-        dto.setStatusLowongan(entity.getStatusLowongan());
-        dto.setJumlahAsdosDibutuhkan(entity.getJumlahAsdosDibutuhkan());
-        dto.setJumlahAsdosDiterima(entity.getJumlahAsdosDiterima());
-        dto.setJumlahAsdosPendaftar(entity.getJumlahAsdosPendaftar());
+        dto.setLowonganId(lowongan.getLowonganId());
 
-        List<UUID> daftarPendaftaranIds = entity.getDaftarPendaftaran()
-                .stream()
-                .map(Pendaftaran::getPendaftaranId)
-                .collect(Collectors.toList());
-        dto.setIdDaftarPendaftaran(daftarPendaftaranIds);
+        if (lowongan.getMataKuliah() != null) {
+            dto.setIdMataKuliah(lowongan.getMataKuliah().getKode());
+            dto.setNamaMataKuliah(lowongan.getMataKuliah().getNama());
+            dto.setDeskripsiMataKuliah(lowongan.getMataKuliah().getDeskripsi());
+        }
+
+        dto.setTahunAjaran(lowongan.getTahunAjaran());
+        dto.setSemester(String.valueOf(lowongan.getSemester()));
+        dto.setStatusLowongan(String.valueOf(lowongan.getStatusLowongan()));
+        dto.setJumlahAsdosDibutuhkan(lowongan.getJumlahAsdosDibutuhkan());
+        dto.setJumlahAsdosDiterima(lowongan.getJumlahAsdosDiterima());
+        dto.setJumlahAsdosPendaftar(lowongan.getJumlahAsdosPendaftar());
+
+        dto.setIdDaftarPendaftaran(pendaftaranService.getPendaftaranIdsByLowongan(lowongan.getLowonganId()));
 
         return dto;
     }

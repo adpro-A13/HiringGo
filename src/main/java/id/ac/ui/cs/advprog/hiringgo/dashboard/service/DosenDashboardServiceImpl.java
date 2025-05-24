@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -48,16 +49,11 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
 
     @Override
     protected void validateUser(UUID userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new NoSuchElementException("User tidak ditemukan dengan ID: " + userId);
-        }
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User tidak ditemukan dengan ID: " + userId));
 
-        boolean isDosen = userRepository.findById(userId)
-                .filter(Dosen.class::isInstance)
-                .isPresent();
-
-        if (!isDosen) {
-            throw new IllegalArgumentException("User dengan ID: " + userId + " bukan dosen");
+        if (!(user instanceof Dosen)) {
+            throw new IllegalArgumentException("User dengan ID: " + userId + " bukan seorang Dosen");
         }
     }
 
@@ -87,53 +83,96 @@ public class DosenDashboardServiceImpl extends AbstractDashboardService {
     }
 
     @Override
-    protected void populateRoleSpecificData(UUID userId, DashboardResponse baseResponse) {
-        DosenDashboardResponse response = (DosenDashboardResponse) baseResponse;
+    protected void populateRoleSpecificData(UUID userId, DashboardResponse dashboardResponse) {
+        DosenDashboardResponse response = (DosenDashboardResponse) dashboardResponse;
 
-        Dosen dosen = userRepository.findById(userId)
-                .filter(Dosen.class::isInstance)
-                .map(Dosen.class::cast)
+        Dosen dosen = getDosenById(userId);
+
+        List<MataKuliah> coursesTaught = getCoursesTaughtByDosen(dosen);
+
+        if (coursesTaught.isEmpty()) {
+            setEmptyResponseData(response);
+            return;
+        }
+
+        List<MataKuliahDTO> coursesDTO = convertCoursesToDTO(coursesTaught);
+        response.setCoursesTaught(coursesDTO);
+
+        Map<String, List<LowonganDTO>> lowonganPerCourse = mapLowonganToCourses(coursesTaught);
+        response.setLowonganPerCourse(lowonganPerCourse);
+
+        Map<String, Integer> acceptedAssistantsPerCourse = countAcceptedAssistantsPerCourse(coursesTaught);
+        response.setAcceptedAssistantsPerCourse(acceptedAssistantsPerCourse);
+    }
+
+    private Dosen getDosenById(UUID userId) {
+        return userRepository.findById(userId)
+                .filter(user -> user instanceof Dosen)
+                .map(user -> (Dosen) user)
                 .orElseThrow(() -> new NoSuchElementException("Dosen tidak ditemukan"));
+    }
 
-        List<MataKuliah> coursesTaught = mataKuliahRepository.findByDosenPengampu(dosen);
-        response.setCourseCount(coursesTaught.size());
+    private List<MataKuliah> getCoursesTaughtByDosen(Dosen dosen) {
+        try {
+            return mataKuliahRepository.findByDosenPengampu(dosen);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 
-        List<MataKuliahDTO> courseDTOs = mataKuliahMapper.toDtoList(coursesTaught);
-        response.setCourses(courseDTOs);
-
-        List<String> mataKuliahKodes = coursesTaught.stream()
-                .map(MataKuliah::getKode)
+    private List<MataKuliahDTO> convertCoursesToDTO(List<MataKuliah> courses) {
+        return courses.stream()
+                .map(mataKuliahMapper::toDto)
                 .collect(Collectors.toList());
+    }
 
-        int totalAcceptedAssistants = 0;
-        int totalOpenPositions = 0;
+    private Map<String, List<LowonganDTO>> mapLowonganToCourses(List<MataKuliah> courses) {
+        Map<String, List<LowonganDTO>> result = new HashMap<>();
 
-        List<Lowongan> allOpenLowongan = lowonganRepository.findByStatusLowongan(StatusLowongan.DIBUKA);
-
-        List<Lowongan> dosenLowongan = allOpenLowongan.stream()
-                .filter(l -> l.getMataKuliah() != null &&
-                        mataKuliahKodes.contains(l.getMataKuliah().getKode()))
-                .collect(Collectors.toList());
-
-        for (Lowongan lowongan : dosenLowongan) {
-            totalAcceptedAssistants += lowongan.getJumlahAsdosDiterima();
-
-            int openPositionsInCourse = lowongan.getJumlahAsdosDibutuhkan() - lowongan.getJumlahAsdosDiterima();
-            int allowedPosition = 0;
-            if (openPositionsInCourse > allowedPosition) {
-                totalOpenPositions += openPositionsInCourse;
+        for (MataKuliah course : courses) {
+            try {
+                List<Lowongan> openings = lowonganRepository.findByMataKuliah(course);
+                if (openings != null && !openings.isEmpty()) {
+                    List<LowonganDTO> openingsDTO = openings.stream()
+                            .map(lowonganMapper::toDto)
+                            .collect(Collectors.toList());
+                    result.put(course.getKode(), openingsDTO);
+                }
+            } catch (Exception e) {
             }
         }
 
-        response.setAcceptedAssistantCount(totalAcceptedAssistants);
-        response.setOpenPositionCount(totalOpenPositions);
+        return result;
+    }
 
-        List<LowonganDTO> openLowonganDTOs = dosenLowongan.stream()
-                .filter(l -> l.getJumlahAsdosDiterima() < l.getJumlahAsdosDibutuhkan())
-                .map(this::convertToLowonganDTO)
-                .collect(Collectors.toList());
+    private Map<String, Integer> countAcceptedAssistantsPerCourse(List<MataKuliah> courses) {
+        Map<String, Integer> acceptedPerCourse = new HashMap<>();
 
-        response.setOpenPositions(openLowonganDTOs);
+        for (MataKuliah course : courses) {
+            try {
+                String courseCode = course.getKode();
+                List<Lowongan> openings = lowonganRepository.findByMataKuliah(course);
+
+                int acceptedForCourse = 0;
+                if (openings != null && !openings.isEmpty()) {
+                    acceptedForCourse = openings.stream()
+                            .mapToInt(Lowongan::getJumlahAsdosDiterima)
+                            .sum();
+                }
+
+                acceptedPerCourse.put(courseCode, acceptedForCourse);
+            } catch (Exception e) {
+                acceptedPerCourse.put(course.getKode(), 0);
+            }
+        }
+
+        return acceptedPerCourse;
+    }
+
+    private void setEmptyResponseData(DosenDashboardResponse response) {
+        response.setCoursesTaught(Collections.emptyList());
+        response.setLowonganPerCourse(Collections.emptyMap());
+        response.setAcceptedAssistantsPerCourse(Collections.emptyMap());
     }
 
     private LowonganDTO convertToLowonganDTO(Lowongan lowongan) {

@@ -150,12 +150,16 @@ public class PendaftaranRestController {
                     "pendaftaranId", pendaftaran.getPendaftaranId()
             ));
 
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("User tidak ditemukan: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Terjadi kesalahan: " + e.getMessage());
         }
     }
-    @GetMapping("/list") // New endpoint to get all lowongan for Mahasiswa
+
+    @GetMapping("/list")
     public ResponseEntity<List<LowonganDTO>> getAllLowonganForMahasiswa() {
         List<Lowongan> lowonganList = lowonganService.findAll();
         List<LowonganDTO> lowonganDTOList = lowonganMapper.toDtoList(lowonganList);

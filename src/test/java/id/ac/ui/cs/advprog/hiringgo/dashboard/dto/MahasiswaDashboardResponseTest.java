@@ -49,8 +49,10 @@ class MahasiswaDashboardResponseTest {
         dto.setRejectedApplicationsCount(2);
         assertEquals(2, dto.getRejectedApplicationsCount());
 
-        dto.setTotalLoggedHours(40);
-        assertEquals(40, dto.getTotalLoggedHours());
+        // Fix: Use BigDecimal instead of int
+        BigDecimal hours = new BigDecimal("40.00");
+        dto.setTotalLoggedHours(hours);
+        assertEquals(hours, dto.getTotalLoggedHours());
 
         BigDecimal incentive = new BigDecimal("123.45");
         dto.setTotalIncentive(incentive);
@@ -63,10 +65,5 @@ class MahasiswaDashboardResponseTest {
         dto.setAcceptedLowongan(accepted);
         assertSame(accepted, dto.getAcceptedLowongan());
 
-        LowonganDTO rec1 = mock(LowonganDTO.class);
-        LowonganDTO rec2 = mock(LowonganDTO.class);
-        List<LowonganDTO> recent = Arrays.asList(rec1, rec2);
-        dto.setRecentLowongan(recent);
-        assertSame(recent, dto.getRecentLowongan());
     }
 }

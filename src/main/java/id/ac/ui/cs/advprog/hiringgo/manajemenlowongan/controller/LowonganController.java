@@ -8,7 +8,11 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,39 +33,55 @@ public class LowonganController {
     private LowonganService lowonganService;
 
     private final LowonganMapper lowonganMapper;
+    @Autowired
+    private PendaftaranService pendaftaranService;
 
-    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper) {
+    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper, PendaftaranService pendaftaranService) {
         this.lowonganService = lowonganService;
         this.lowonganMapper = lowonganMapper;
+        this.pendaftaranService = pendaftaranService;
     }
+
+    @Autowired
+    private LowonganSortService lowonganSortService;
+
+    @Autowired
+    private LowonganFilterService lowonganFilterService;
 
     @GetMapping
     public ResponseEntity<List<LowonganDTO>> getAllLowongan(
-            @RequestParam(required = false) Semester semester,
-            @RequestParam(required = false) StatusLowongan status) {
-
+            @RequestParam(required = false) String filterStrategy,
+            @RequestParam(required = false) String filterValue,
+            @RequestParam(required = false) String sortStrategy
+    ) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
-        if (semester != null) {
-            lowonganList = new FilterBySemester(semester).filter(lowonganList);
+        if (filterStrategy != null && filterValue != null) {
+            lowonganList = lowonganFilterService.filter(lowonganList, filterStrategy, filterValue);
         }
 
-        if (status != null) {
-            lowonganList = new FilterByStatus(status).filter(lowonganList);
+        if (sortStrategy != null && !sortStrategy.isEmpty()) {
+            lowonganList = lowonganSortService.sort(lowonganList, sortStrategy);
         }
 
         List<LowonganDTO> responses = lowonganMapper.toDtoList(lowonganList);
-
         return ResponseEntity.ok(responses);
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {
         try {
             Lowongan lowongan = lowonganService.findById(id);
             LowonganDTO response = lowonganMapper.toDto(lowongan);
+
+            List<UUID> idDaftarPendaftaran = pendaftaranService.getByLowongan(lowongan.getLowonganId())
+                    .stream()
+                    .map(Pendaftaran::getPendaftaranId)
+                    .collect(Collectors.toList());
+
+            response.setIdDaftarPendaftaran(idDaftarPendaftaran);
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -106,7 +126,7 @@ public class LowonganController {
         }
     }
 
-    @DeleteMapping("/{lowonganId}/tolak/{pendaftaranId}")
+    @PostMapping("/{lowonganId}/tolak/{pendaftaranId}")
     public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
             lowonganService.tolakPendaftar(lowonganId, pendaftaranId);

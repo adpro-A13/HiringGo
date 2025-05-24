@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -73,7 +74,6 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
 
     @Override
     protected void populateCommonData(UUID userId, DashboardResponse response) {
-        // Ambil dan cast ke Mahasiswa
         Mahasiswa mahasiswa = userRepository.findById(userId)
                 .filter(Mahasiswa.class::isInstance)
                 .map(Mahasiswa.class::cast)
@@ -84,7 +84,6 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
         response.setFullName(mahasiswa.getFullName());
 
         Map<String, String> features = new HashMap<>();
-//      taro api disini sisanya
         features.put("pendaftaran", "/api/pendaftaran");
         features.put("lowongan", "/api/lowongan");
         features.put("profile", "/api/profile");
@@ -96,22 +95,17 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
     protected void populateRoleSpecificData(UUID userId, DashboardResponse baseResponse) {
         MahasiswaDashboardResponse response = (MahasiswaDashboardResponse) baseResponse;
 
-        // Hitung lowongan yang masih terbuka
         List<Lowongan> allLowonganWithOpenStatus = lowonganRepository.findByStatusLowongan(StatusLowongan.DIBUKA);
         int openLowonganCount = (int) allLowonganWithOpenStatus.stream()
                 .filter(lowongan -> lowongan.getJumlahAsdosPendaftar() < lowongan.getJumlahAsdosDibutuhkan())
                 .count();
         response.setOpenLowonganCount(openLowonganCount);
 
-        // Ambil semua lowongan (untuk total)
         List<Lowongan> allLowongan = lowonganRepository.findAll();
         response.setTotalLowonganCount(allLowongan.size());
 
-        // Ambil semua pendaftaran untuk mahasiswa ini
         List<Pendaftaran> allApplications = pendaftaranRepository.findByKandidatId(userId);
         response.setTotalApplicationsCount(allApplications.size());
-
-        // Hitung pendaftaran berdasarkan status
         int pendingCount = countApplicationsByStatus(allApplications, StatusPendaftaran.BELUM_DIPROSES);
         int acceptedCount = countApplicationsByStatus(allApplications, StatusPendaftaran.DITERIMA);
         int rejectedCount = countApplicationsByStatus(allApplications, StatusPendaftaran.DITOLAK);
@@ -131,11 +125,6 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
                 .map(this::convertToLowonganDTO)
                 .collect(Collectors.toList());
         response.setAcceptedLowongan(acceptedLowongan);
-
-        List<LowonganDTO> recentLowongan = allLowonganWithOpenStatus.stream()
-                .map(this::convertToLowonganDTO)
-                .collect(Collectors.toList());
-        response.setRecentLowongan(recentLowongan);
     }
 
     private int countApplicationsByStatus(List<Pendaftaran> applications, StatusPendaftaran status) {
@@ -147,23 +136,25 @@ public class MahasiswaDashboardServiceImpl extends AbstractDashboardService {
                 .count();
     }
 
-    private int calculateTotalLoggedHours(UUID userId) {
+    private BigDecimal calculateTotalLoggedHours(UUID userId) {
         List<Log> logs = logService.getLogsByUser(userId);
-        long totalLoggedHours = logs.stream()
+        long totalLoggedMinutes = logs.stream()
                 .map(log -> Duration.between(log.getWaktuMulai(), log.getWaktuSelesai()))
                 .mapToLong(Duration::toMinutes)
                 .sum();
-        return (int) totalLoggedHours;
+        return BigDecimal.valueOf(totalLoggedMinutes)
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateTotalIncentive(UUID userId) {
         List<Log> logs = logService.getLogsByUser(userId);
-        long totalLoggedHours = logs.stream()
+        long totalLoggedMinutes = logs.stream()
                 .map(log -> Duration.between(log.getWaktuMulai(), log.getWaktuSelesai()))
                 .mapToLong(Duration::toMinutes)
                 .sum();
 
-        return new BigDecimal(totalLoggedHours * 27.500);
+        BigDecimal totalHours = BigDecimal.valueOf(totalLoggedMinutes).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+        return totalHours.multiply(BigDecimal.valueOf(27500));
     }
 
     private LowonganDTO convertToLowonganDTO(Lowongan lowongan) {
