@@ -106,7 +106,13 @@ public class AccountManagementService {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        Admin admin = new Admin(adminDto.getEmail(), passwordEncoder.encode(adminDto.getPassword()));
+        User admin = UserFactory.createUser(
+            UserRoleEnums.ADMIN,
+            adminDto.getEmail(),
+            passwordEncoder.encode(adminDto.getPassword()),
+            null,
+            null
+        );
         User savedAdmin = userRepository.save(admin);
         return mapUserToDto(savedAdmin);
     }
@@ -149,7 +155,7 @@ public class AccountManagementService {
         if (userOptional.isEmpty()) {
             throw new IllegalArgumentException("User not found");
         }
-          User currentUser = userOptional.get();
+        User currentUser = userOptional.get();
         String oldEmail = currentUser.getUsername();
         String oldPassword = currentUser.getPassword();
         String password = currentUser.getPassword();
@@ -208,9 +214,9 @@ public class AccountManagementService {
           boolean emailChanged = !oldEmail.equals(email);
           boolean passwordChanged = editUserDto.getPassword() != null && !editUserDto.getPassword().isEmpty() && !passwordEncoder.matches(editUserDto.getPassword(), oldPassword);
         if (currentUser.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals(newRole.getValue()))) {            // Handle password update for same-role scenario
+                .anyMatch(auth -> auth.getAuthority().equals(newRole.getValue()))) {
             if (editUserDto.getPassword() != null && !editUserDto.getPassword().isEmpty()) {
-                currentUser.setPassword(password); // Use the already encoded password
+                currentUser.setPassword(password);
             }
             
             if (currentUser instanceof Mahasiswa) {
