@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -37,6 +38,7 @@ class AccountManagementServiceTest {
     private UUID testAdminId;
     private UUID testDosenId;
     private UUID testMahasiswaId;
+    private MahasiswaDto testMahasiswaDto;
 
     @BeforeEach
     void setUp() {
@@ -62,6 +64,12 @@ class AccountManagementServiceTest {
         testMahasiswa.setPassword("encoded_password");
         testMahasiswa.setFullName("Test Mahasiswa");
         testMahasiswa.setNim("54321");
+
+        testMahasiswaDto = new MahasiswaDto();
+        testMahasiswaDto.setEmail("mahasiswa@test.com");
+        testMahasiswaDto.setPassword("password");
+        testMahasiswaDto.setFullName("Test Mahasiswa");
+        testMahasiswaDto.setNim("13518000");
 
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
     }
@@ -302,6 +310,77 @@ class AccountManagementServiceTest {
             accountManagementService.createAdminAccount(adminDto);
         });
         
+        assertEquals("Email already exists", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createMahasiswaAccount_withValidData_shouldCreateMahasiswa() {
+        when(userRepository.findByEmail(testMahasiswaDto.getEmail())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(testMahasiswaDto.getPassword())).thenReturn("encoded_password");
+        when(userRepository.save(any(Mahasiswa.class))).thenAnswer(invocation -> {
+            Mahasiswa savedMahasiswa = invocation.getArgument(0);
+            savedMahasiswa.setId(UUID.randomUUID());
+            return savedMahasiswa;
+        });
+
+        UserResponseDto result = accountManagementService.createMahasiswaAccount(testMahasiswaDto);
+
+        assertNotNull(result);
+        assertEquals("mahasiswa@test.com", result.getEmail());
+        assertEquals("MAHASISWA", result.getRole());
+        assertEquals("Test Mahasiswa", result.getFullName());
+        assertEquals("13518000", result.getNim());
+        verify(passwordEncoder).encode("password");
+        verify(userRepository).save(any(Mahasiswa.class));
+    }
+
+    @Test
+    void createMahasiswaAccount_withMissingEmail_shouldThrowException() {
+        testMahasiswaDto.setEmail(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountManagementService.createMahasiswaAccount(testMahasiswaDto);
+        });
+        assertEquals("Email is required", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createMahasiswaAccount_withMissingPassword_shouldThrowException() {
+        testMahasiswaDto.setPassword(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountManagementService.createMahasiswaAccount(testMahasiswaDto);
+        });
+        assertEquals("Password is required", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createMahasiswaAccount_withMissingFullName_shouldThrowException() {
+        testMahasiswaDto.setFullName(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountManagementService.createMahasiswaAccount(testMahasiswaDto);
+        });
+        assertEquals("Full name is required", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createMahasiswaAccount_withMissingNim_shouldThrowException() {
+        testMahasiswaDto.setNim(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountManagementService.createMahasiswaAccount(testMahasiswaDto);
+        });
+        assertEquals("NIM is required", exception.getMessage());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void createMahasiswaAccount_withExistingEmail_shouldThrowException() {
+        when(userRepository.findByEmail(testMahasiswaDto.getEmail())).thenReturn(Optional.of(testMahasiswa));
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountManagementService.createMahasiswaAccount(testMahasiswaDto);
+        });
         assertEquals("Email already exists", exception.getMessage());
         verify(userRepository, never()).save(any());
     }
