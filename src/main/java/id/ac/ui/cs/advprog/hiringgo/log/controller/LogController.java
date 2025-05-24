@@ -45,8 +45,8 @@ public class LogController {
     }
 
     @GetMapping("/mata-kuliah/{kode}")
-    public ResponseEntity<List<Log>> getLogsByMataKuliah(@PathVariable String kode) {
-        List<Log> logs = logService.getLogsByMataKuliah(kode);
+    public ResponseEntity<List<Log>> getLogsByPendaftaran(@PathVariable String kode) {
+        List<Log> logs = logService.getLogsByPendaftaran(kode);
         return ResponseEntity.ok(logs);
     }
 

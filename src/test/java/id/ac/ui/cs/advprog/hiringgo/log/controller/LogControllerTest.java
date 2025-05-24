@@ -92,11 +92,11 @@ class LogControllerTest {
     }
 
     @Test
-    void getLogsByMataKuliah_shouldReturnLogsList() throws Exception {
-        String kodeMataKuliah = "CS-001";
-        when(logService.getLogsByMataKuliah(kodeMataKuliah)).thenReturn(Collections.singletonList(sampleLog));
+    void getLogsByPendaftaran_shouldReturnLogsList() throws Exception {
+        String kodePendaftaran = "CS-001";
+        when(logService.getLogsByPendaftaran(kodePendaftaran)).thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/api/logs/mata-kuliah/{kode}", kodeMataKuliah))
+        mockMvc.perform(get("/api/logs/mata-kuliah/{kode}", kodePendaftaran))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }

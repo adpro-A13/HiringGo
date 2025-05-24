@@ -8,12 +8,15 @@ import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Optional;
@@ -27,28 +30,32 @@ import static org.mockito.Mockito.*;
 public class LogServiceTest {
 
     private LogRepository logRepository;
-    private MataKuliahRepository mataKuliahRepository;
+    private PendaftaranRepository pendaftaranRepository;
+    private Lowongan lowongan;
     private UserRepository userRepository;
     private LogService logService;
 
     @BeforeEach
     void setUp() {
         logRepository = mock(LogRepository.class);
-        mataKuliahRepository = mock(MataKuliahRepository.class);
+        pendaftaranRepository = mock(PendaftaranRepository.class);
+        lowongan = mock(Lowongan.class);
         userRepository = mock(UserRepository.class);
-        logService = new LogServiceImpl(logRepository, mataKuliahRepository, userRepository);
+        logService = new LogServiceImpl(logRepository, pendaftaranRepository, userRepository);
     }
 
     @Test
     void testCreateLogValid() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
-
-        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
         User user = new Mahasiswa();
         user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
 
         CreateLogRequest request = new CreateLogRequest();
         request.setJudul("Asistensi");
@@ -56,10 +63,10 @@ public class LogServiceTest {
         request.setTanggalLog(LocalDate.now());
         request.setWaktuMulai(LocalTime.of(9, 0));
         request.setWaktuSelesai(LocalTime.of(10, 0));
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(logRepository.save(any(Log.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -70,31 +77,35 @@ public class LogServiceTest {
         assertEquals(LogStatus.MENUNGGU, result.getStatus());
         assertEquals("Asistensi", result.getJudul());
         assertEquals(user, result.getUser());
-        assertEquals(mataKuliah, result.getMataKuliah());
+        assertEquals(pendaftaran, result.getPendaftaran());
         verify(logRepository).save(any(Log.class));
     }
 
     @Test
-    void testCreateLogMataKuliahNotFound() {
+    void testCreateLogPendaftaranNotFound() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
         User user = new Mahasiswa();
         user.setId(userId);
 
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
+
         CreateLogRequest request = new CreateLogRequest();
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
         request.setWaktuMulai(LocalTime.of(9, 0));
         request.setWaktuSelesai(LocalTime.of(10, 0));
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.empty());
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.empty());
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         // Act & Assert
         Exception exception = assertThrows(RuntimeException.class, () -> logService.createLog(request));
-        assertEquals("Mata Kuliah Not Found", exception.getMessage());
+        assertEquals("Pendaftaran Not Found", exception.getMessage());
         verify(logRepository, never()).save(any());
     }
 
@@ -102,17 +113,22 @@ public class LogServiceTest {
     void testCreateLogUserNotFound() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
-        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
 
         CreateLogRequest request = new CreateLogRequest();
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
         request.setWaktuMulai(LocalTime.of(9, 0));
         request.setWaktuSelesai(LocalTime.of(10, 0));
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -125,12 +141,14 @@ public class LogServiceTest {
     void testCreateLogInvalidTime() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
-
-        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
         User user = new Mahasiswa();
         user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
 
         CreateLogRequest request = new CreateLogRequest();
         request.setJudul("Asistensi");
@@ -138,10 +156,10 @@ public class LogServiceTest {
         request.setTanggalLog(LocalDate.now());
         request.setWaktuMulai(LocalTime.of(14, 0));
         request.setWaktuSelesai(LocalTime.of(12, 0));
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         // Act & Assert
@@ -315,9 +333,9 @@ public class LogServiceTest {
     }
 
     @Test
-    void testGetLogsByMataKuliah() {
+    void testGetLogsByPendaftaran() {
         // Arrange
-        String kode = "CS101";
+        UUID kode = UUID.randomUUID();
         Log log1 = new Log.Builder()
                 .id(1L)
                 .judul("MK Log 1")
@@ -329,16 +347,16 @@ public class LogServiceTest {
 
         List<Log> expectedLogs = Arrays.asList(log1, log2);
 
-        when(logRepository.findByMataKuliah_Kode(kode)).thenReturn(expectedLogs);
+        when(logRepository.findByPendaftaran_pendaftaranId(kode)).thenReturn(expectedLogs);
 
         // Act
-        List<Log> actualLogs = logService.getLogsByMataKuliah(kode);
+        List<Log> actualLogs = logService.getLogsByPendaftaran(String.valueOf(kode));
 
         // Assert
         assertEquals(2, actualLogs.size());
         assertEquals("MK Log 1", actualLogs.get(0).getJudul());
         assertEquals("MK Log 2", actualLogs.get(1).getJudul());
-        verify(logRepository).findByMataKuliah_Kode(kode);
+        verify(logRepository).findByPendaftaran_pendaftaranId(UUID.fromString(String.valueOf(kode)));
     }
 
     @Test
