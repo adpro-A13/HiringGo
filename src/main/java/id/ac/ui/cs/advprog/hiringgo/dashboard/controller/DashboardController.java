@@ -48,20 +48,18 @@ public class DashboardController {
 
         Mahasiswa mahasiswa = (Mahasiswa) authentication.getPrincipal();
         DashboardResponse dashboardResponse = mahasiswaDashboardService.getDashboardData(mahasiswa.getId());
-
         return ResponseEntity.ok(dashboardResponse);
     }
 
     @GetMapping("/dosen")
     @PreAuthorize("hasAuthority('DOSEN')")
     public ResponseEntity<DashboardResponse> getDosenDashboard(Authentication authentication) {
-        if (authentication ==   null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).build();
         }
 
         Dosen dosen = (Dosen) authentication.getPrincipal();
         DashboardResponse dashboardResponse = dosenDashboardService.getDashboardData(dosen.getId());
-
         return ResponseEntity.ok(dashboardResponse);
     }
 
@@ -74,27 +72,6 @@ public class DashboardController {
 
         Admin admin = (Admin) authentication.getPrincipal();
         DashboardResponse dashboardResponse = adminDashboardService.getDashboardData(admin.getId());
-
         return ResponseEntity.ok(dashboardResponse);
-    }
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, String>> handleNotFound(NoSuchElementException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneralError(Exception ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Terjadi kesalahan server");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }
