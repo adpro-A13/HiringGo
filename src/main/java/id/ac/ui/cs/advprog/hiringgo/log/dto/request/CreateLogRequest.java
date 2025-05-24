@@ -14,7 +14,7 @@ import java.util.UUID;
 @Data
 public class CreateLogRequest {
     private String judul;
-    private String mataKuliah;
+    private String Pendaftaran;
     private UUID user;
     private LogKategori kategori;
     private LocalTime waktuMulai;

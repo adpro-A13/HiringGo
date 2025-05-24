@@ -36,10 +36,10 @@ class CreateLogRequestTest {
     }
 
     @Test
-    void testSetAndGetMataKuliah() {
-        String expectedMataKuliah = "Pemrograman Lanjut";
-        createLogRequest.setMataKuliah(expectedMataKuliah);
-        assertEquals(expectedMataKuliah, createLogRequest.getMataKuliah());
+    void testSetAndGetPendaftaran() {
+        String expectedPendaftaran = "Pemrograman Lanjut";
+        createLogRequest.setPendaftaran(expectedPendaftaran);
+        assertEquals(expectedPendaftaran, createLogRequest.getPendaftaran());
     }
 
     @Test
@@ -96,7 +96,7 @@ class CreateLogRequestTest {
         String pesanUntukDosen = "Mohon review";
 
         createLogRequest.setJudul(judul);
-        createLogRequest.setMataKuliah(mataKuliah);
+        createLogRequest.setPendaftaran(mataKuliah);
         createLogRequest.setUser(testUserId);
         createLogRequest.setKategori(kategori);
         createLogRequest.setWaktuMulai(testStartTime);
@@ -107,7 +107,7 @@ class CreateLogRequestTest {
 
         assertAll("All fields should be set correctly",
                 () -> assertEquals(judul, createLogRequest.getJudul()),
-                () -> assertEquals(mataKuliah, createLogRequest.getMataKuliah()),
+                () -> assertEquals(mataKuliah, createLogRequest.getPendaftaran()),
                 () -> assertEquals(testUserId, createLogRequest.getUser()),
                 () -> assertEquals(kategori, createLogRequest.getKategori()),
                 () -> assertEquals(testStartTime, createLogRequest.getWaktuMulai()),
@@ -145,7 +145,7 @@ class CreateLogRequestTest {
     @Test
     void testToString() {
         createLogRequest.setJudul("Test Log");
-        createLogRequest.setMataKuliah("Test Course");
+        createLogRequest.setPendaftaran("Test Course");
 
         String toString = createLogRequest.toString();
 
@@ -158,7 +158,7 @@ class CreateLogRequestTest {
     void testNullValues() {
         // Test that null values can be set and retrieved
         createLogRequest.setJudul(null);
-        createLogRequest.setMataKuliah(null);
+        createLogRequest.setPendaftaran(null);
         createLogRequest.setUser(null);
         createLogRequest.setKategori(null);
         createLogRequest.setWaktuMulai(null);
@@ -169,7 +169,7 @@ class CreateLogRequestTest {
 
         assertAll("All null values should be handled correctly",
                 () -> assertNull(createLogRequest.getJudul()),
-                () -> assertNull(createLogRequest.getMataKuliah()),
+                () -> assertNull(createLogRequest.getPendaftaran()),
                 () -> assertNull(createLogRequest.getUser()),
                 () -> assertNull(createLogRequest.getKategori()),
                 () -> assertNull(createLogRequest.getWaktuMulai()),

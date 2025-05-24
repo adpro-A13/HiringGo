@@ -4,8 +4,9 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,22 +22,22 @@ import org.springframework.scheduling.annotation.Async;
 public class LogServiceImpl implements LogService {
 
     private final LogRepository logRepository;
-    private final MataKuliahRepository mataKuliahRepository;
+    private final PendaftaranRepository pendaftaranRepository;
     private final UserRepository userRepository;
 
-    public LogServiceImpl(LogRepository logRepository, MataKuliahRepository mataKuliahRepository, UserRepository userRepository) {
+    public LogServiceImpl(LogRepository logRepository, PendaftaranRepository pendaftaranRepository, UserRepository userRepository) {
         this.logRepository = logRepository;
-        this.mataKuliahRepository = mataKuliahRepository;
+        this.pendaftaranRepository = pendaftaranRepository;
         this.userRepository = userRepository;
     }
 
     @Override
     public Log createLog(CreateLogRequest request) {
-        MataKuliah mataKuliah = mataKuliahRepository.findById(request.getMataKuliah()).orElseThrow(()->new RuntimeException("Mata Kuliah Not Found"));
+        Pendaftaran pendaftaran = pendaftaranRepository.findById(UUID.fromString(request.getPendaftaran())).orElseThrow(()->new RuntimeException("Pendaftaran Not Found"));
         User user = userRepository.findById(request.getUser()).orElseThrow(()->new RuntimeException("User Not Found"));
 
         Log log = new Log.Builder()
-                .mataKuliah(mataKuliah)
+                .pendaftaran(pendaftaran)
                 .user(user)
                 .judul(request.getJudul())
                 .kategori(request.getKategori())
@@ -66,8 +67,8 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public List<Log> getLogsByMataKuliah(String kode) {
-        return logRepository.findByMataKuliah_Kode(kode);
+    public List<Log> getLogsByPendaftaran(String kode) {
+        return logRepository.findByPendaftaran_pendaftaranId(UUID.fromString(kode));
     }
 
     @Override
@@ -124,5 +125,14 @@ public class LogServiceImpl implements LogService {
     @Override
     public void deleteLog(Long id) {
         logRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Pendaftaran> getLowonganYangDiterima(UUID kandidatId) {
+        List<Pendaftaran> semuaPendaftaran = pendaftaranRepository.findByKandidatId(kandidatId);
+
+        return semuaPendaftaran.stream()
+                .filter(pendaftaran -> pendaftaran.getStatus() == StatusPendaftaran.DITERIMA)
+                .toList();
     }
 }

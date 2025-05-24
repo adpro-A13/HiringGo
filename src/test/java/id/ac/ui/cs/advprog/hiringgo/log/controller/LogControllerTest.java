@@ -7,6 +7,8 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -92,11 +94,11 @@ class LogControllerTest {
     }
 
     @Test
-    void getLogsByMataKuliah_shouldReturnLogsList() throws Exception {
-        String kodeMataKuliah = "CS-001";
-        when(logService.getLogsByMataKuliah(kodeMataKuliah)).thenReturn(Collections.singletonList(sampleLog));
+    void getLogsByPendaftaran_shouldReturnLogsList() throws Exception {
+        String kodePendaftaran = "CS-001";
+        when(logService.getLogsByPendaftaran(kodePendaftaran)).thenReturn(Collections.singletonList(sampleLog));
 
-        mockMvc.perform(get("/api/logs/mata-kuliah/{kode}", kodeMataKuliah))
+        mockMvc.perform(get("/api/logs/listLog/{kode}", kodePendaftaran))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
@@ -271,5 +273,23 @@ class LogControllerTest {
         mockMvc.perform(delete("/api/logs/{id}", 999L))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Log tidak ditemukan"));
+    }
+
+    @Test
+    void getLowonganYangDiterima_shouldReturnListPendaftaran() throws Exception {
+        UUID kandidatId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+
+        Pendaftaran pendaftaran = new Pendaftaran();
+        pendaftaran.setPendaftaranId(pendaftaranId);
+        pendaftaran.setStatus(StatusPendaftaran.DITERIMA);
+
+        when(logService.getLowonganYangDiterima(kandidatId))
+                .thenReturn(Collections.singletonList(pendaftaran));
+
+        mockMvc.perform(get("/api/logs/listLowongan/{kandidatId}", kandidatId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].pendaftaranId").value(pendaftaranId.toString()))
+                .andExpect(jsonPath("$[0].status").value("DITERIMA"));
     }
 }
