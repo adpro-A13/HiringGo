@@ -86,7 +86,7 @@ jobs:
             
             # Health check
             sleep 10
-            if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+            if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
               echo "Deployment successful!"
               echo $IMAGE_TAG | sudo tee /opt/advshop/.current_version
               echo "$(date): Deployed $IMAGE_TAG" | sudo tee -a /opt/advshop/.deployment_history
