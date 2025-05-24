@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public class LowonganDetailResponse {
     private UUID lowonganId;
     private String idMataKuliah;
-    private String mataKuliah; // This would come from another service in a real app
+    private String mataKuliah;
     private String tahunAjaran;
     private String semester;
     private String statusLowongan;
@@ -29,13 +29,13 @@ public class LowonganDetailResponse {
     public LowonganDetailResponse(Lowongan lowongan) {
         this.lowonganId = lowongan.getLowonganId();
         this.idMataKuliah = lowongan.getMataKuliah().getKode();
-        this.mataKuliah = "Mata Kuliah " + lowongan.getMataKuliah().getKode(); // Placeholder
+        this.mataKuliah = "Mata Kuliah " + lowongan.getMataKuliah().getKode();
         this.tahunAjaran = lowongan.getTahunAjaran();
         this.semester = lowongan.getSemester().toString();
         this.statusLowongan = lowongan.getStatusLowongan().toString();
-        this.judul = "Asisten Dosen " + lowongan.getMataKuliah().getKode(); // Placeholder
-        this.deskripsi = "Deskripsi untuk " + lowongan.getMataKuliah(); // Placeholder
-        this.persyaratan = "Persyaratan untuk " + lowongan.getMataKuliah(); // Placeholder
+        this.judul = "Asisten Dosen " + lowongan.getMataKuliah().getKode();
+        this.deskripsi = "Deskripsi untuk " + lowongan.getMataKuliah();
+        this.persyaratan = "Persyaratan untuk " + lowongan.getMataKuliah();
         this.jumlahAsdosDibutuhkan = lowongan.getJumlahAsdosDibutuhkan();
         this.jumlahAsdosDiterima = lowongan.getJumlahAsdosDiterima();
         this.jumlahAsdosPendaftar = lowongan.getJumlahAsdosPendaftar();
