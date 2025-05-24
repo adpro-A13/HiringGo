@@ -173,14 +173,15 @@ public class LogServiceTest {
     void testUpdateStatus() {
         // Arrange
         Log log = new Log.Builder()
+                .id(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                 .status(LogStatus.MENUNGGU)
                 .build();
 
-        when(logRepository.findById(1L)).thenReturn(Optional.of(log));
+        when(logRepository.findById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))).thenReturn(Optional.of(log));
         when(logRepository.save(any(Log.class))).thenReturn(log);
 
         // Act
-        Log updated = logService.updateStatus(1L, LogStatus.DITERIMA);
+        Log updated = logService.updateStatus(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"), LogStatus.DITERIMA);
 
         // Assert
         assertEquals(LogStatus.DITERIMA, updated.getStatus());
@@ -191,13 +192,14 @@ public class LogServiceTest {
     void testGetLogById() {
         // Arrange
         Log log = new Log.Builder()
+                .id(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                 .judul("Review")
                 .build();
 
-        when(logRepository.findById(1L)).thenReturn(Optional.of(log));
+        when(logRepository.findById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))).thenReturn(Optional.of(log));
 
         // Act
-        Optional<Log> found = logService.getLogById(1L);
+        Optional<Log> found = logService.getLogById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
 
         // Assert
         assertTrue(found.isPresent());
@@ -207,10 +209,10 @@ public class LogServiceTest {
     @Test
     void testGetLogByIdNotFound() {
         // Arrange
-        when(logRepository.findById(99L)).thenReturn(Optional.empty());
+        when(logRepository.findById(UUID.fromString("17fc3ab6-2a61-426a-b9a7-19fb09492104"))).thenReturn(Optional.empty());
 
         // Act
-        Optional<Log> found = logService.getLogById(99L);
+        Optional<Log> found = logService.getLogById(UUID.fromString("17fc3ab6-2a61-426a-b9a7-19fb09492104"));
 
         // Assert
         assertFalse(found.isPresent());
@@ -247,11 +249,11 @@ public class LogServiceTest {
                 .waktuSelesai(LocalTime.of(11, 0))
                 .build();
 
-        when(logRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(logRepository.findById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))).thenReturn(Optional.of(existing));
         when(logRepository.save(any(Log.class))).thenReturn(updated);
 
         // Act
-        Log result = logService.updateLog(1L, updated);
+        Log result = logService.updateLog(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"), updated);
 
         // Assert
         assertEquals("Sidang", result.getJudul());
@@ -261,11 +263,11 @@ public class LogServiceTest {
     @Test
     void testDeleteLog() {
         // Arrange
-        doNothing().when(logRepository).deleteById(1L);
+        doNothing().when(logRepository).deleteById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
 
         // Act & Assert
-        assertDoesNotThrow(() -> logService.deleteLog(1L));
-        verify(logRepository).deleteById(1L);
+        assertDoesNotThrow(() -> logService.deleteLog(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25")));
+        verify(logRepository).deleteById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
     }
 
     @Test
@@ -273,12 +275,12 @@ public class LogServiceTest {
         // Arrange
         LogStatus status = LogStatus.DITERIMA;
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("Log 1")
                 .status(status)
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("Log 2")
                 .status(status)
                 .build();
@@ -307,12 +309,12 @@ public class LogServiceTest {
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("Monthly Log 1")
                 .tanggalLog(LocalDate.of(year, month, 15))
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("Monthly Log 2")
                 .tanggalLog(LocalDate.of(year, month, 20))
                 .build();
@@ -338,11 +340,11 @@ public class LogServiceTest {
         // Arrange
         UUID kode = UUID.randomUUID();
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("MK Log 1")
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("MK Log 2")
                 .build();
 
@@ -365,11 +367,11 @@ public class LogServiceTest {
         // Arrange
         UUID userId = UUID.randomUUID();
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("User Log 1")
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("User Log 2")
                 .build();
 
@@ -390,7 +392,7 @@ public class LogServiceTest {
     @Test
     void testUpdateLogNotFound() {
         // Arrange
-        Long id = 999L;
+        UUID id = UUID.randomUUID();
         Log updatedLog = new Log.Builder()
                 .judul("Updated Log")
                 .waktuMulai(LocalTime.of(10, 0))
@@ -411,7 +413,7 @@ public class LogServiceTest {
     @Test
     void testUpdateStatusNotFound() {
         // Arrange
-        Long id = 999L;
+        UUID id = UUID.randomUUID();
         LogStatus newStatus = LogStatus.DITERIMA;
 
         when(logRepository.findById(id)).thenReturn(Optional.empty());
@@ -428,7 +430,7 @@ public class LogServiceTest {
     @Test
     void testDeleteLogWithNonExistentId() {
         // Arrange
-        Long id = 999L;
+        UUID id = UUID.randomUUID();
         doThrow(new RuntimeException("Log not found")).when(logRepository).deleteById(id);
 
         // Act & Assert

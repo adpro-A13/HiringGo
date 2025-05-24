@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.propertyeditors.UUIDEditor;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -54,7 +55,7 @@ class LogControllerTest {
         objectMapper.registerModule(new JavaTimeModule());
 
         sampleLog = new Log.Builder()
-                .id(1L)
+                .id(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                 .judul("Test Log")
                 .keterangan("This is a test log")
                 .kategori(LogKategori.LAIN_LAIN)
@@ -80,7 +81,7 @@ class LogControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createLogRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                 .andExpect(jsonPath("$.judul").value("Test Log"));
     }
 
@@ -115,18 +116,18 @@ class LogControllerTest {
 
     @Test
     void getLogById_shouldReturnLog() throws Exception {
-        when(logService.getLogById(1L)).thenReturn(Optional.of(sampleLog));
+        when(logService.getLogById(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))).thenReturn(Optional.of(sampleLog));
 
-        mockMvc.perform(get("/api/logs/{id}", 1L))
+        mockMvc.perform(get("/api/logs/{id}", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.judul").value("Test Log"));
     }
 
     @Test
     void getLogById_shouldReturnNotFound() throws Exception {
-        when(logService.getLogById(1L)).thenReturn(Optional.empty());
+        when(logService.getLogById(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/logs/{id}", 1L))
+        mockMvc.perform(get("/api/logs/{id}", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Log not found"));
     }
@@ -163,15 +164,16 @@ class LogControllerTest {
     @Test
     void updateLogStatus_shouldReturnUpdatedLog() throws Exception {
         Log updatedLog = new Log.Builder()
-                .id(1L)
+                .id(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                 .judul("Test Log")
                 .status(LogStatus.DITERIMA)
                 .build();
 
         // Mock the command pattern behavior
-        when(logService.updateStatus(eq(1L), eq(LogStatus.DITERIMA))).thenReturn(updatedLog);
+        when(logService.updateStatus(eq(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")),
+                eq(LogStatus.DITERIMA))).thenReturn(updatedLog);
 
-        mockMvc.perform(patch("/api/logs/{id}/status", 1L)
+        mockMvc.perform(patch("/api/logs/{id}/status", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"DITERIMA\""))
                 .andExpect(status().isOk())
@@ -181,7 +183,7 @@ class LogControllerTest {
     @Test
     void updateLog_shouldReturnUpdatedLog() throws Exception {
         Log updatedLog = new Log.Builder()
-                .id(1L)
+                .id(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                 .judul("Updated Test Log")
                 .keterangan("Updated description")
                 .kategori(LogKategori.LAIN_LAIN)
@@ -192,21 +194,21 @@ class LogControllerTest {
                 .status(LogStatus.MENUNGGU)
                 .build();
 
-        when(logService.updateLog(eq(1L), any(Log.class))).thenReturn(updatedLog);
+        when(logService.updateLog(eq(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")), any(Log.class))).thenReturn(updatedLog);
 
-        mockMvc.perform(put("/api/logs/{id}", 1L)
+        mockMvc.perform(put("/api/logs/{id}", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedLog)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.id").value("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                 .andExpect(jsonPath("$.judul").value("Updated Test Log"));
     }
 
     @Test
     void deleteLog_shouldReturnNoContent() throws Exception {
-        doNothing().when(logService).deleteLog(1L);
+        doNothing().when(logService).deleteLog(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"));
 
-        mockMvc.perform(delete("/api/logs/{id}", 1L))
+        mockMvc.perform(delete("/api/logs/{id}", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")))
                 .andExpect(status().isNoContent());
     }
 
@@ -236,10 +238,10 @@ class LogControllerTest {
 
     @Test
     void updateLogStatus_shouldHandleNotFound() throws Exception {
-        when(logService.updateStatus(eq(999L), any(LogStatus.class)))
+        when(logService.updateStatus(eq(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25")), any(LogStatus.class)))
                 .thenThrow(new RuntimeException("Log tidak ditemukan"));
 
-        mockMvc.perform(patch("/api/logs/{id}/status", 999L)
+        mockMvc.perform(patch("/api/logs/{id}/status", UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"DITERIMA\""))
                 .andExpect(status().isNotFound())
@@ -249,16 +251,16 @@ class LogControllerTest {
     @Test
     void updateLog_shouldHandleNotFound() throws Exception {
         Log updatedLog = new Log.Builder()
-                .id(999L)
+                .id(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                 .judul("Updated Test Log")
                 .waktuMulai(LocalTime.of(10, 0))
                 .waktuSelesai(LocalTime.of(12, 0))
                 .build();
 
-        when(logService.updateLog(eq(999L), any(Log.class)))
+        when(logService.updateLog(eq(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25")), any(Log.class)))
                 .thenThrow(new RuntimeException("Log tidak ditemukan"));
 
-        mockMvc.perform(put("/api/logs/{id}", 999L)
+        mockMvc.perform(put("/api/logs/{id}", UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updatedLog)))
                 .andExpect(status().isNotFound())
@@ -268,9 +270,9 @@ class LogControllerTest {
     @Test
     void deleteLog_shouldHandleNotFound() throws Exception {
         doThrow(new RuntimeException("Log tidak ditemukan"))
-                .when(logService).deleteLog(999L);
+                .when(logService).deleteLog(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
 
-        mockMvc.perform(delete("/api/logs/{id}", 999L))
+        mockMvc.perform(delete("/api/logs/{id}", UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25")))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Log tidak ditemukan"));
     }

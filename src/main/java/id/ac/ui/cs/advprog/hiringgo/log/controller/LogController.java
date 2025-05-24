@@ -58,7 +58,7 @@ public class LogController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getLogById(@PathVariable Long id) {
+    public ResponseEntity<?> getLogById(@PathVariable UUID id) {
         Optional<Log> log = logService.getLogById(id);
         if (log.isPresent()) {
             return ResponseEntity.ok(log.get());
@@ -82,7 +82,7 @@ public class LogController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<?> updateLogStatus(@PathVariable Long id, @RequestBody LogStatus status) {
+    public ResponseEntity<?> updateLogStatus(@PathVariable UUID id, @RequestBody LogStatus status) {
         try {
             LogCommand cmd = new UpdateStatusCommand(logService, id, status);
             LogCommandInvoker cmdInvoker= new LogCommandInvoker();
@@ -97,7 +97,7 @@ public class LogController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLog(@PathVariable Long id, @RequestBody Log updatedLog) {
+    public ResponseEntity<?> updateLog(@PathVariable UUID id, @RequestBody Log updatedLog) {
         try {
             Log log = logService.updateLog(id, updatedLog);
             return ResponseEntity.ok(log);
@@ -111,7 +111,7 @@ public class LogController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteLog(@PathVariable Long id) {
+    public ResponseEntity<?> deleteLog(@PathVariable UUID id) {
         try {
             logService.deleteLog(id);
             return ResponseEntity.noContent().build();

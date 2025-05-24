@@ -6,6 +6,8 @@ import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,7 +26,7 @@ public class LogCommandInvokerTest {
     @Test
     void testInvokerWithUpdateStatusCommand() {
         // Arrange
-        Long logId = 1L;
+        UUID logId = UUID.randomUUID();
         LogStatus newStatus = LogStatus.DITERIMA;
 
         Log expectedLog = new Log.Builder()

@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public interface LogRepository extends JpaRepository<Log, Long> {
+public interface LogRepository extends JpaRepository<Log, UUID> {
     List<Log> findByStatus(LogStatus status);
     List<Log> findByTanggalLogBetweenAndUser_Id(LocalDate start, LocalDate end, UUID userId);
     List<Log> findByPendaftaran_pendaftaranId(UUID pendaftaranId);

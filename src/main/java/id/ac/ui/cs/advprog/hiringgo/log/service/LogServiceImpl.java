@@ -78,7 +78,7 @@ public class LogServiceImpl implements LogService {
 
 
     @Override
-    public Log updateStatus(Long id, LogStatus status) {
+    public Log updateStatus(UUID id, LogStatus status) {
         Log log = logRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Log tidak ditemukan"));
         log.setStatus(status);
@@ -95,7 +95,7 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public Optional<Log> getLogById(Long id) {
+    public Optional<Log> getLogById(UUID id) {
         return logRepository.findById(id);
     }
 
@@ -105,7 +105,7 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public Log updateLog(Long id, Log updatedLog) {
+    public Log updateLog(UUID id, Log updatedLog) {
         validateLogTime(updatedLog);
 
         Log existing = logRepository.findById(id)
@@ -123,7 +123,7 @@ public class LogServiceImpl implements LogService {
 
     @Async
     @Override
-    public void deleteLog(Long id) {
+    public void deleteLog(UUID id) {
         logRepository.deleteById(id);
     }
 
