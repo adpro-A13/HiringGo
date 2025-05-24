@@ -1,53 +1,37 @@
 package id.ac.ui.cs.advprog.hiringgo.dashboard.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Admin;
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
-import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.AdminDashboardResponse;
 import id.ac.ui.cs.advprog.hiringgo.dashboard.dto.DashboardResponse;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
+import id.ac.ui.cs.advprog.hiringgo.dashboard.service.calculation.AdminStatisticsService;
+import id.ac.ui.cs.advprog.hiringgo.dashboard.service.feature.AdminFeatureProvider;
+import id.ac.ui.cs.advprog.hiringgo.dashboard.service.validation.AdminValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.concurrent.CompletableFuture;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.stream.StreamSupport;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AdminDashboardServiceImpl extends AbstractDashboardService {
 
-    private final UserRepository userRepository;
-    private final MataKuliahRepository mataKuliahRepository;
-    private final LowonganRepository lowonganRepository;
+    private final AdminValidationService validationService;
+    private final AdminStatisticsService statisticsService;
+    private final AdminFeatureProvider featureProvider;
 
     @Autowired
     public AdminDashboardServiceImpl(
-            UserRepository userRepository,
-            MataKuliahRepository mataKuliahRepository,
-            LowonganRepository lowonganRepository) {
-        this.userRepository = userRepository;
-        this.mataKuliahRepository = mataKuliahRepository;
-        this.lowonganRepository = lowonganRepository;
+            AdminValidationService validationService,
+            AdminStatisticsService statisticsService,
+            AdminFeatureProvider featureProvider) {
+        this.validationService = validationService;
+        this.statisticsService = statisticsService;
+        this.featureProvider = featureProvider;
     }
 
     @Override
     protected void validateUser(UUID userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new NoSuchElementException("User tidak ditemukan dengan ID: " + userId);
-        }
-
-        boolean isAdmin = userRepository.findById(userId)
-                .filter(Admin.class::isInstance)
-                .isPresent();
-
-        if (!isAdmin) {
-            throw new IllegalArgumentException("User dengan ID: " + userId + " bukan admin");
-        }
+        validationService.validateAdmin(userId);
     }
 
     @Override
@@ -57,48 +41,22 @@ public class AdminDashboardServiceImpl extends AbstractDashboardService {
 
     @Override
     protected void populateCommonData(UUID userId, DashboardResponse response) {
-        // Ambil dan cast ke Admin
-        Admin admin = userRepository.findById(userId)
-                .filter(Admin.class::isInstance)
-                .map(Admin.class::cast)
-                .orElseThrow(() -> new NoSuchElementException("Admin tidak ditemukan dengan ID: " + userId));
+        Admin admin = validationService.getAdminById(userId);
 
         response.setUserRole("ADMIN");
         response.setUsername(admin.getUsername());
-        response.setFullName(admin.getUsername()); // Using username as fullName for Admin
-
-        // Definisikan fitur yang tersedia untuk Admin
-        Map<String, String> features = new HashMap<>();
-        features.put("manajemenAkun", "/api/admin/accounts");
-        features.put("manajemenMataKuliah", "/api/admin/matakuliah");
-        features.put("manajemenLowongan", "/api/admin/lowongan");
-        features.put("profile", "/api/profile");
-        response.setAvailableFeatures(features);
+        response.setFullName(admin.getUsername());
+        response.setAvailableFeatures(featureProvider.getAvailableFeatures());
     }
 
     @Override
     protected void populateRoleSpecificData(UUID userId, DashboardResponse baseResponse) {
         AdminDashboardResponse response = (AdminDashboardResponse) baseResponse;
 
-        CompletableFuture<Integer> dosenCountFuture = CompletableFuture.supplyAsync(() ->
-                (int) StreamSupport.stream(userRepository.findAll().spliterator(), false)
-                        .filter(Dosen.class::isInstance)
-                        .count()
-        );
-
-        CompletableFuture<Integer> mahasiswaCountFuture = CompletableFuture.supplyAsync(() ->
-                (int) StreamSupport.stream(userRepository.findAll().spliterator(), false)
-                        .filter(Mahasiswa.class::isInstance)
-                        .count()
-        );
-
-        CompletableFuture<Integer> courseCountFuture = CompletableFuture.supplyAsync(() ->
-                (int) mataKuliahRepository.count()
-        );
-
-        CompletableFuture<Integer> lowonganCountFuture = CompletableFuture.supplyAsync(() ->
-                (int) lowonganRepository.count()
-        );
+        CompletableFuture<Integer> dosenCountFuture = statisticsService.countDosenAsync();
+        CompletableFuture<Integer> mahasiswaCountFuture = statisticsService.countMahasiswaAsync();
+        CompletableFuture<Integer> courseCountFuture = statisticsService.countCoursesAsync();
+        CompletableFuture<Integer> lowonganCountFuture = statisticsService.countLowonganAsync();
 
         response.setDosenCount(dosenCountFuture.join());
         response.setMahasiswaCount(mahasiswaCountFuture.join());
