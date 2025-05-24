@@ -85,7 +85,7 @@ jobs:
               $IMAGE
             
             # Health check
-            sleep 10
+            sleep 20
             if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
               echo "Deployment successful!"
               echo $IMAGE_TAG | sudo tee /opt/advshop/.current_version
@@ -162,8 +162,8 @@ jobs:
               $ROLLBACK_IMAGE
             
             # Health check
-            sleep 10
-            if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+            sleep 20
+            if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
               echo "Rollback successful!"
               echo $ROLLBACK_VERSION | sudo tee /opt/advshop/.current_version
               echo "$(date): Rolled back to $ROLLBACK_VERSION" | sudo tee -a /opt/advshop/.deployment_history
