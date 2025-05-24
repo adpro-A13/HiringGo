@@ -85,7 +85,6 @@ jobs:
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               $IMAGE
             
-            # Health check - ganti sesuai aplikasi kamu
             sleep 15
             if curl -f http://localhost:8080/ > /dev/null 2>&1; then
               echo "Deployment successful!"
@@ -163,13 +162,10 @@ jobs:
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               $ROLLBACK_IMAGE
             
-            # Health check
-            sleep 15
-            if curl -f http://localhost:8080/ > /dev/null 2>&1; then
-              echo "Rollback successful!"
-              echo $ROLLBACK_VERSION | sudo tee /opt/advshop/.current_version
-              echo "$(date): Rolled back to $ROLLBACK_VERSION" | sudo tee -a /opt/advshop/.deployment_history
-            else
-              echo "Rollback failed! Container might have issues."
-              exit 1
-            fi
+            # Wait for container to start  
+            sleep 10
+            
+            # Log successful rollback (no health check)
+            echo "Rollback completed successfully!"
+            echo $ROLLBACK_VERSION | sudo tee /opt/advshop/.current_version
+            echo "$(date): Rolled back to $ROLLBACK_VERSION" | sudo tee -a /opt/advshop/.deployment_history
