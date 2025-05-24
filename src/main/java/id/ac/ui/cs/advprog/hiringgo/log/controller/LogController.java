@@ -7,6 +7,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,7 +45,7 @@ public class LogController {
         return ResponseEntity.ok(logs);
     }
 
-    @GetMapping("/mata-kuliah/{kode}")
+    @GetMapping("/listLog/{kode}")
     public ResponseEntity<List<Log>> getLogsByPendaftaran(@PathVariable String kode) {
         List<Log> logs = logService.getLogsByPendaftaran(kode);
         return ResponseEntity.ok(logs);
@@ -120,4 +121,11 @@ public class LogController {
             return ResponseEntity.status(500).body("Error deleting log");
         }
     }
+
+    @GetMapping("/listLowongan/{kandidatId}")
+    public ResponseEntity<List<Pendaftaran>> getLowonganYangDiterima(@PathVariable UUID kandidatId) {
+        List<Pendaftaran> pendaftaran = logService.getLowonganYangDiterima(kandidatId);
+        return ResponseEntity.ok(pendaftaran);
+    }
+
 }

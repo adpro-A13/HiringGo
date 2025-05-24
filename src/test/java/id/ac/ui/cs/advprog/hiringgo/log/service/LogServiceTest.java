@@ -8,6 +8,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
@@ -433,5 +434,30 @@ public class LogServiceTest {
         // Act & Assert
         assertThrows(RuntimeException.class, () -> logService.deleteLog(id));
         verify(logRepository).deleteById(id);
+    }
+
+    @Test
+    void testGetLowonganYangDiterima() {
+        UUID kandidatId = UUID.randomUUID();
+
+        Pendaftaran diterima1 = mock(Pendaftaran.class);
+        Pendaftaran diterima2 = mock(Pendaftaran.class);
+        Pendaftaran ditolak = mock(Pendaftaran.class);
+
+        when(diterima1.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
+        when(diterima2.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
+        when(ditolak.getStatus()).thenReturn(StatusPendaftaran.DITOLAK);
+
+        List<Pendaftaran> semuaPendaftaran = List.of(diterima1, diterima2, ditolak);
+        when(pendaftaranRepository.findByKandidatId(kandidatId)).thenReturn(semuaPendaftaran);
+
+        List<Pendaftaran> hasil = logService.getLowonganYangDiterima(kandidatId);
+
+        assertEquals(2, hasil.size());
+        assertTrue(hasil.contains(diterima1));
+        assertTrue(hasil.contains(diterima2));
+        assertFalse(hasil.contains(ditolak));
+
+        verify(pendaftaranRepository).findByKandidatId(kandidatId);
     }
 }

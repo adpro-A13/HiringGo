@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import org.springframework.stereotype.Service;
@@ -124,5 +125,14 @@ public class LogServiceImpl implements LogService {
     @Override
     public void deleteLog(Long id) {
         logRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Pendaftaran> getLowonganYangDiterima(UUID kandidatId) {
+        List<Pendaftaran> semuaPendaftaran = pendaftaranRepository.findByKandidatId(kandidatId);
+
+        return semuaPendaftaran.stream()
+                .filter(pendaftaran -> pendaftaran.getStatus() == StatusPendaftaran.DITERIMA)
+                .toList();
     }
 }
