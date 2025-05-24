@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,5 +65,28 @@ public class DashboardExceptionHandler {
         response.put("timestamp", System.currentTimeMillis());
         response.put("error_type", ex.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthorizationDenied(AuthorizationDeniedException ex, WebRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Anda tidak memiliki akses ke dashboard ini");
+        response.put("module", "dashboard");
+        response.put("status", "FORBIDDEN");
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("required_role", extractRequiredRole(request));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    private String extractRequiredRole(WebRequest request) {
+        String requestURI = request.getDescription(false);
+        if (requestURI.contains("/mahasiswa")) {
+            return "MAHASISWA";
+        } else if (requestURI.contains("/dosen")) {
+            return "DOSEN";
+        } else if (requestURI.contains("/admin")) {
+            return "ADMIN";
+        }
+        return "UNKNOWN";
     }
 }
