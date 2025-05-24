@@ -1,26 +1,22 @@
-# Stage 1: Build the jar using Gradle
-FROM gradle:8.6-jdk21 as build
+FROM docker.io/library/eclipse-temurin:21-jdk-alpine AS builder
 
-WORKDIR /app
+WORKDIR /src/advshop
 COPY . .
+RUN ./gradlew clean bootJar
 
-# Build jar file and clean cache
-RUN chmod +x ./gradlew && \
-    ./gradlew clean && \
-    ./gradlew bootJar --no-daemon && \
-    rm -rf /home/gradle/.gradle/caches
+FROM docker.io/library/eclipse-temurin:21-jre-alpine AS runner
 
+ARG USER_NAME=advshop
+ARG USER_UID=1000
+ARG USER_GID=${USER_UID}
 
-# Stage 2: Run the app
-FROM eclipse-temurin:21-jdk-alpine AS runtime
-WORKDIR /app
+RUN addgroup -g ${USER_GID} ${USER_NAME} \
+    && adduser -h /opt/advshop -D -u ${USER_UID} -G ${USER_NAME} ${USER_NAME}
 
-# Copy the jar file from the build stage
-COPY --from=build /app/build/libs/*.jar /app/app.jar
+USER ${USER_NAME}
+WORKDIR /opt/advshop
+COPY --from=builder --chown=${USER_UID}:${USER_GID} /src/advshop/build/libs/*.jar app.jar
 
-
-# Expose the default Spring Boot port
 EXPOSE 8080
-
-# Command to run the jar file
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java"]
+CMD ["-jar", "app.jar"]
