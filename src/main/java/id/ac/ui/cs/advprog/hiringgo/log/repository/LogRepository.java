@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface LogRepository extends JpaRepository<Log, Long> {
     List<Log> findByStatus(LogStatus status);
-    List<Log> findByTanggalLogBetween(LocalDate start, LocalDate end);
+    List<Log> findByTanggalLogBetweenAndUser_Id(LocalDate start, LocalDate end, UUID userId);
     List<Log> findByMataKuliah_Kode(String kodeMataKulliah);
     List<Log> findByUserId(UUID userId);
 

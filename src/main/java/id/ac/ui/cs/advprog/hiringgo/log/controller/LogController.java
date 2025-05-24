@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RequestMapping("/api/logs")
 @RestController
@@ -72,11 +73,11 @@ public class LogController {
     }
 
     @GetMapping("/month")
-    public ResponseEntity<List<Log>> getLogsByMonth(
+    public CompletableFuture<ResponseEntity<List<Log>>> getLogsByMonth(
+            @RequestParam UUID id,
             @RequestParam int bulan,
             @RequestParam int tahun) {
-        List<Log> logs = logService.getLogsByMonth(bulan, tahun);
-        return ResponseEntity.ok(logs);
+        return logService.getLogsByMonth(bulan, tahun, id).thenApply(ResponseEntity::ok);
     }
 
     @PatchMapping("/{id}/status")
