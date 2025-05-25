@@ -5,7 +5,6 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class FilterBySemester implements LowonganFilterStrategy {
@@ -21,7 +20,7 @@ public class FilterBySemester implements LowonganFilterStrategy {
 
         return lowonganList.stream()
                 .filter(lowongan -> lowongan.getSemester() == semester)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

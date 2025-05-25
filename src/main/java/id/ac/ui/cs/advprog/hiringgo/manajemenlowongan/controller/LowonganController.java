@@ -1,11 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
@@ -13,7 +8,6 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterServ
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,31 +16,28 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @PreAuthorize("hasAuthority('DOSEN')")
 @RequestMapping("/api/lowongan")
 public class LowonganController {
 
-    @Autowired
     private LowonganService lowonganService;
-
     private final LowonganMapper lowonganMapper;
-    @Autowired
     private PendaftaranService pendaftaranService;
-
-    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper, PendaftaranService pendaftaranService) {
+    private LowonganSortService lowonganSortService;
+    private LowonganFilterService lowonganFilterService;
+    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper,
+                              PendaftaranService pendaftaranService, LowonganSortService lowonganSortService,
+                              LowonganFilterService lowonganFilterService) {
         this.lowonganService = lowonganService;
         this.lowonganMapper = lowonganMapper;
         this.pendaftaranService = pendaftaranService;
+        this.lowonganSortService = lowonganSortService;
+        this.lowonganFilterService = lowonganFilterService;
     }
 
-    @Autowired
-    private LowonganSortService lowonganSortService;
 
-    @Autowired
-    private LowonganFilterService lowonganFilterService;
 
     @GetMapping
     public ResponseEntity<List<LowonganDTO>> getAllLowongan(
@@ -70,7 +61,7 @@ public class LowonganController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {
+    public ResponseEntity<Object> getLowonganById(@PathVariable UUID id) {
         try {
             Lowongan lowongan = lowonganService.findById(id);
             LowonganDTO response = lowonganMapper.toDto(lowongan);
@@ -78,7 +69,7 @@ public class LowonganController {
             List<UUID> idDaftarPendaftaran = pendaftaranService.getByLowongan(lowongan.getLowonganId())
                     .stream()
                     .map(Pendaftaran::getPendaftaranId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             response.setIdDaftarPendaftaran(idDaftarPendaftaran);
 
@@ -90,7 +81,7 @@ public class LowonganController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createLowongan(@RequestBody LowonganDTO lowonganDTO) {
+    public ResponseEntity<Object> createLowongan(@RequestBody LowonganDTO lowonganDTO) {
         try {
             Lowongan lowonganEntity = lowonganMapper.toEntity(lowonganDTO);
             Lowongan created = lowonganService.createLowongan(lowonganEntity);
@@ -105,7 +96,7 @@ public class LowonganController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteLowongan(@PathVariable UUID id) {
+    public ResponseEntity<Object> deleteLowongan(@PathVariable UUID id) {
         try {
             lowonganService.deleteLowonganById(id);
             return ResponseEntity.ok().build();
@@ -116,7 +107,7 @@ public class LowonganController {
     }
 
     @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
-    public ResponseEntity<?> terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+    public ResponseEntity<Object> terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
             lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
             return ResponseEntity.ok("Pendaftar berhasil diterima");
@@ -127,7 +118,7 @@ public class LowonganController {
     }
 
     @PostMapping("/{lowonganId}/tolak/{pendaftaranId}")
-    public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+    public ResponseEntity<Object> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
         try {
             lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
             return ResponseEntity.ok("Pendaftar berhasil ditolak");
@@ -138,7 +129,7 @@ public class LowonganController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLowongan(@PathVariable UUID id, @RequestBody LowonganDTO updatedLowonganDTO) {
+    public ResponseEntity<Object> updateLowongan(@PathVariable UUID id, @RequestBody LowonganDTO updatedLowonganDTO) {
         if (updatedLowonganDTO.getLowonganId() == null || !id.equals(updatedLowonganDTO.getLowonganId())) {
             return ResponseEntity.badRequest().body("ID di URL dan body tidak cocok atau ID kosong");
         }

@@ -21,31 +21,26 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class LowonganServiceImpl implements LowonganService {
-
+    private static final String LOWONGAN_NOT_FOUND_MSG = "Lowongan tidak ditemukan";
     private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
-    private final LowonganFilterService filterService;
-    private final LowonganSortService sortService;
     ApplicationEventPublisher eventPublisher;
 
     @Autowired
     public LowonganServiceImpl(LowonganRepository lowonganRepository, PendaftaranRepository pendaftaranRepository,
-                               LowonganFilterService filterService, LowonganSortService sortService, ApplicationEventPublisher eventPublisher) {
+                                ApplicationEventPublisher eventPublisher) {
         this.lowonganRepository = lowonganRepository;
         this.pendaftaranRepository = pendaftaranRepository;
-        this.filterService = filterService;
-        this.sortService = sortService;
         this.eventPublisher = eventPublisher;
     }
 
     @Override
     public Lowongan findById(UUID id) {
         return lowonganRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lowongan tidak ditemukan"));
+                .orElseThrow(() -> new RuntimeException(LOWONGAN_NOT_FOUND_MSG));
     }
 
     @Override
@@ -61,52 +56,7 @@ public class LowonganServiceImpl implements LowonganService {
                 .filter(low -> low.getMataKuliah().getDosenPengampu()
                         .stream()
                         .anyMatch(d -> d.getUsername().equals(username)))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Lowongan> filterLowongan(String strategyName, String filterValue, List<Lowongan> lowonganList) {
-        return filterService.filter(lowonganList, strategyName, filterValue);
-    }
-
-
-    public List<Lowongan> getSortedLowongan(String sortKey) {
-        List<Lowongan> list = lowonganRepository.findAll();
-        return sortService.sort(list, sortKey);
-    }
-
-
-    @Override
-    public Lowongan createLowongan(Lowongan lowongan) {
-        Optional<Lowongan> existing = lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
-                lowongan.getMataKuliah(),
-                lowongan.getSemester(),
-                lowongan.getTahunAjaran()
-        );
-
-        if (existing.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lowongan dengan kombinasi tersebut sudah ada!");
-        }
-
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("Logged in username: " + username + "tes");
-
-        if (isNotAuthorizedDosenPengampu(lowongan, username)) {
-            throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
-        }
-        // Set default values
-        lowongan.setJumlahAsdosDiterima(0);
-        lowongan.setJumlahAsdosPendaftar(0);
-
-        return lowonganRepository.save(lowongan);
-    }
-
-
-
-    private void ensureQuotaAvailable(Lowongan lowongan) {
-        if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
-            throw new IllegalStateException("Kuota lowongan sudah penuh!");
-        }
+                .toList();
     }
 
     @Override
@@ -120,7 +70,7 @@ public class LowonganServiceImpl implements LowonganService {
     @Override
     public void deleteLowonganById(UUID lowonganId) {
         Lowongan lowongan = lowonganRepository.findById(lowonganId)
-                .orElseThrow(() -> new RuntimeException("Lowongan tidak ditemukan"));
+                .orElseThrow(() -> new RuntimeException(LOWONGAN_NOT_FOUND_MSG));
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (isNotAuthorizedDosenPengampu(lowongan, username)) {
             throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
@@ -143,6 +93,35 @@ public class LowonganServiceImpl implements LowonganService {
 
         prosesPenerimaan(pendaftaran, lowongan);
         kirimNotifikasi(pendaftaran, lowongan);
+    }
+
+    @Override
+    public Lowongan createLowongan(Lowongan lowongan) {
+        Optional<Lowongan> existing = lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                lowongan.getMataKuliah(),
+                lowongan.getSemester(),
+                lowongan.getTahunAjaran()
+        );
+
+        if (existing.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lowongan dengan kombinasi tersebut sudah ada!");
+        }
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (isNotAuthorizedDosenPengampu(lowongan, username)) {
+            throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
+        }
+        // Set default values
+        lowongan.setJumlahAsdosDiterima(0);
+        lowongan.setJumlahAsdosPendaftar(0);
+
+        return lowonganRepository.save(lowongan);
+    }
+
+    private void ensureQuotaAvailable(Lowongan lowongan) {
+        if (lowongan.getJumlahAsdosPendaftar() >= lowongan.getJumlahAsdosDibutuhkan()) {
+            throw new IllegalStateException("Kuota lowongan sudah penuh!");
+        }
     }
 
     private void validasiStatusDanKapasitas(Pendaftaran pendaftaran, Lowongan lowongan) {
@@ -225,14 +204,14 @@ public class LowonganServiceImpl implements LowonganService {
                 .orElseThrow(() -> new IllegalArgumentException("Pendaftaran tidak ditemukan"));
 
         Lowongan lowongan = lowonganRepository.findById(lowonganId)
-                .orElseThrow(() -> new IllegalArgumentException("Lowongan tidak ditemukan"));
+                .orElseThrow(() -> new IllegalArgumentException(LOWONGAN_NOT_FOUND_MSG));
 
         if (!pendaftaran.getLowongan().getLowonganId().equals(lowonganId)) {
             throw new IllegalArgumentException("Pendaftaran tidak sesuai dengan lowongan");
         }
 
-        if (!lowongan.getMataKuliah().getDosenPengampu().stream()
-                .anyMatch(d -> d.getUsername().equals(username))) {
+        if (lowongan.getMataKuliah().getDosenPengampu().stream()
+                .noneMatch(d -> d.getUsername().equals(username))) {
             throw new AccessDeniedException("Anda bukan dosen pengampu mata kuliah ini.");
         }
 
