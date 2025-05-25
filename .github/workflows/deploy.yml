@@ -80,6 +80,8 @@ jobs:
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e PASSWORD_ADMIN="${{ secrets.PASSWORD_ADMIN }}"
+
               $IMAGE
             
             # Health check dengan timeout yang cukup untuk Spring Boot
@@ -138,6 +140,8 @@ jobs:
                   -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
                   -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
                   -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+                  -e PASSWORD_ADMIN="${{ secrets.PASSWORD_ADMIN }}"
+
                   $PREV_IMAGE
                 echo "Rolled back to $PREV_VERSION"
               else
@@ -193,6 +197,8 @@ jobs:
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
               -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e PASSWORD_ADMIN="${{ secrets.PASSWORD_ADMIN }}"
+
               $ROLLBACK_IMAGE
             
             # Wait for container to start  

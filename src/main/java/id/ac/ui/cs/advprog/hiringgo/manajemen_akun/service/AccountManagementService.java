@@ -276,7 +276,6 @@ public class AccountManagementService {
         } catch (Exception e) {
             System.err.println("Error during user role update: " + e.getMessage());
             System.err.println("User ID: " + currentId + ", New Role: " + newRole);
-            e.printStackTrace();
             throw e;
         }
     }
