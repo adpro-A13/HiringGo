@@ -216,4 +216,37 @@ class ApplicationStatusServiceTest {
         verify(pendaftaranRepository, times(1)).findByKandidatIdAndLowonganLowonganId(mahasiswaId, lowonganId);
         verifyNoMoreInteractions(pendaftaranRepository);
     }
+
+    @Test
+    void testBuildStatusDataWithEmptyList() {
+        // Arrange
+        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(mahasiswaId, lowonganId))
+                .thenReturn(Collections.emptyList());
+
+        // Act
+        Map<String, Object> result = applicationStatusService.getApplicationStatus(lowonganId, mahasiswa);
+
+        // Assert
+        assertEquals(2, result.size()); // Should contain hasApplied and status
+        assertFalse((Boolean) result.get("hasApplied"));
+        assertEquals("BELUM_DAFTAR", result.get("status"));
+        assertFalse(result.containsKey("pendaftaranId")); // Should not contain pendaftaranId
+    }
+
+    @Test
+    void testBuildStatusDataWithNonEmptyList() {
+        // Arrange
+        List<Pendaftaran> pendaftaranList = Arrays.asList(pendaftaran);
+        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(mahasiswaId, lowonganId))
+                .thenReturn(pendaftaranList);
+
+        // Act
+        Map<String, Object> result = applicationStatusService.getApplicationStatus(lowonganId, mahasiswa);
+
+        // Assert
+        assertEquals(3, result.size()); // Should contain hasApplied, status, and pendaftaranId
+        assertTrue((Boolean) result.get("hasApplied"));
+        assertEquals("BELUM_DIPROSES", result.get("status"));
+        assertEquals(pendaftaran.getPendaftaranId(), result.get("pendaftaranId"));
+    }
 }
