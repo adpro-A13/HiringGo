@@ -336,30 +336,16 @@ public class LogServiceTest {
     }
 
     @Test
-    void testGetLogsByPendaftaran() {
-        // Arrange
-        UUID kode = UUID.randomUUID();
-        Log log1 = new Log.Builder()
-                .id(UUID.randomUUID())
-                .judul("MK Log 1")
-                .build();
-        Log log2 = new Log.Builder()
-                .id(UUID.randomUUID())
-                .judul("MK Log 2")
-                .build();
+    void testGetLogsByDosenMataKuliah() {
+        UUID dosenId = UUID.randomUUID();
+        List<Log> mockLogs = List.of(new Log());
 
-        List<Log> expectedLogs = Arrays.asList(log1, log2);
+        when(logRepository.findLogsByDosenMataKuliah(dosenId)).thenReturn(mockLogs);
 
-        when(logRepository.findByPendaftaran_pendaftaranId(kode)).thenReturn(expectedLogs);
+        List<Log> result = logService.getLogsByDosenMataKuliah(dosenId);
 
-        // Act
-        List<Log> actualLogs = logService.getLogsByPendaftaran(String.valueOf(kode));
-
-        // Assert
-        assertEquals(2, actualLogs.size());
-        assertEquals("MK Log 1", actualLogs.get(0).getJudul());
-        assertEquals("MK Log 2", actualLogs.get(1).getJudul());
-        verify(logRepository).findByPendaftaran_pendaftaranId(UUID.fromString(String.valueOf(kode)));
+        assertEquals(1, result.size());
+        verify(logRepository, times(1)).findLogsByDosenMataKuliah(dosenId);
     }
 
     @Test

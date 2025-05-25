@@ -22,12 +22,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -95,13 +93,17 @@ class LogControllerTest {
     }
 
     @Test
-    void getLogsByPendaftaran_shouldReturnLogsList() throws Exception {
-        String kodePendaftaran = "CS-001";
-        when(logService.getLogsByPendaftaran(kodePendaftaran)).thenReturn(Collections.singletonList(sampleLog));
+    void testGetLogsByDosenMataKuliah() throws Exception {
+        UUID dosenId = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/logs/listLog/{kode}", kodePendaftaran))
+        Log log = new Log();
+        List<Log> logs = List.of(log);
+
+        when(logService.getLogsByDosenMataKuliah(dosenId)).thenReturn(logs);
+
+        mockMvc.perform(get("/api/logs/dosen/" + dosenId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].judul").value("Test Log"));
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test
