@@ -40,7 +40,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
     implementation ("io.github.cdimascio:dotenv-java:3.2.0")
-
+    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    implementation ("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation ("org.springframework.security:spring-security-test")
 
