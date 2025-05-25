@@ -10,6 +10,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganReposit
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.notifikasi.event.NotifikasiEvent;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,8 +34,6 @@ class LowonganServiceImplTest {
 
     @Mock
     private LowonganRepository lowonganRepository;
-    @Mock
-    private LowonganFilterService filterService;
     @Mock
     private PendaftaranRepository pendaftaranRepository;
     @InjectMocks
@@ -94,14 +93,16 @@ class LowonganServiceImplTest {
     void testFindByIdNotFound() {
         when(lowonganRepository.findById(id1)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(
-                RuntimeException.class,
+        EntityNotFoundException ex = assertThrows(
+                EntityNotFoundException.class,
                 () -> lowonganService.findById(id1)
         );
-        assertEquals("404 NOT_FOUND \"Lowongan tidak ditemukan\"", ex.getMessage());
+        assertEquals("Lowongan tidak ditemukan", ex.getMessage());
 
         verifyNoInteractions(validator);
     }
+
+
 
 
     @Test
@@ -154,9 +155,10 @@ class LowonganServiceImplTest {
                 newLowongan.getTahunAjaran())
         ).thenReturn(Optional.of(existingLowongan));
 
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             lowonganService.createLowongan(newLowongan);
         });
+
 
         verify(lowonganRepository).findByMataKuliahAndSemesterAndTahunAjaran(
                 newLowongan.getMataKuliah(),
@@ -255,7 +257,7 @@ class LowonganServiceImplTest {
             lowonganService.deleteLowonganById(id1);
         });
 
-        assertEquals("404 NOT_FOUND \"Lowongan tidak ditemukan\"", exception.getMessage());
+        assertEquals("Lowongan tidak ditemukan", exception.getMessage());
 
         verify(lowonganRepository).findById(id1);
         verify(lowonganRepository, never()).deleteById(any());

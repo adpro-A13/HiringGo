@@ -8,9 +8,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.util.Pair;
-import org.springframework.http.HttpStatus;
+
+import jakarta.persistence.EntityNotFoundException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -70,7 +70,7 @@ public class LowonganServiceValidator {
 
     public Lowongan getAuthorizedLowongan(UUID lowonganId) {
         Lowongan existing = lowonganRepository.findById(lowonganId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, LOWONGAN_NOT_FOUND_MSG));
+                .orElseThrow(() -> new EntityNotFoundException(LOWONGAN_NOT_FOUND_MSG));
 
         String currentUsername = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getName();
@@ -96,8 +96,7 @@ public class LowonganServiceValidator {
                 );
 
         if (existing.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lowongan dengan kombinasi yang sama sudah ada.");
+            throw new IllegalArgumentException("Lowongan dengan kombinasi yang sama sudah ada.");
         }
     }
-
 }

@@ -7,11 +7,13 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
 import id.ac.ui.cs.advprog.hiringgo.notifikasi.event.NotifikasiEvent;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,7 +35,7 @@ public class LowonganServiceImpl implements LowonganService {
     @Override
     public Lowongan findById(UUID id) {
         return lowonganRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lowongan tidak ditemukan"));
+                .orElseThrow(() -> new EntityNotFoundException("Lowongan tidak ditemukan"));
     }
 
     @Override
@@ -62,7 +64,7 @@ public class LowonganServiceImpl implements LowonganService {
         Lowongan lowongan = findById(lowonganId);
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (validator.isNotAuthorizedDosenPengampu(lowongan, username)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Anda bukan pengampu mata kuliah ini.");
+            throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
         }
         boolean adaPendaftaran = !pendaftaranRepository.findByLowonganLowonganId(lowonganId).isEmpty();
         if (adaPendaftaran) {
@@ -95,11 +97,11 @@ public class LowonganServiceImpl implements LowonganService {
                         lowongan.getTahunAjaran()
                 );
         if (existing.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, CONFLICT_MSG);
+            throw new IllegalStateException(CONFLICT_MSG);
         }
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         if (validator.isNotAuthorizedDosenPengampu(lowongan, username)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Anda bukan pengampu mata kuliah ini.");
+            throw new AccessDeniedException("Anda bukan pengampu mata kuliah ini.");
         }
         lowongan.setJumlahAsdosDiterima(0);
         lowongan.setJumlahAsdosPendaftar(0);
