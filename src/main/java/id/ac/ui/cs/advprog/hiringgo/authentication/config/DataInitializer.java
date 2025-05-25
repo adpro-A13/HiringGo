@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.UUID;
+
 @Configuration
 public class DataInitializer {
     
@@ -34,7 +36,7 @@ public class DataInitializer {
                     "admin@hiringgo.com",
                     passwordEncoder.encode("admin123")
                 );
-                
+                admin.setId(UUID.randomUUID());
                 userRepository.save(admin);
                 
                 logger.info("Default admin created with email: admin@hiringgo.com and password: admin123");

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,6 +34,7 @@ public class NotificationRepositoryTest {
     public void testFindByMahasiswa() {
         Mahasiswa mahasiswa = new Mahasiswa("tes@gmail.com", "password", "Budi", "1906391234");
         mataKuliah = new MataKuliah("IF101", "Pemrograman", "Dasar Pemrograman");
+        mahasiswa.setId(UUID.randomUUID());
         mahasiswa = userRepository.save(mahasiswa);
         mataKuliah = mataKuliahRepository.save(mataKuliah);
         Notifikasi notif1 = new Notifikasi(
@@ -70,6 +72,7 @@ public class NotificationRepositoryTest {
     public void testFindByMahasiswaAndIsReadFalse() {
         Mahasiswa mahasiswa = new Mahasiswa("tes@gmail.com", "password", "Budi", "1906391234");
         mataKuliah = new MataKuliah("IF101", "Pemrograman", "Dasar Pemrograman");
+        mahasiswa.setId(UUID.randomUUID());
         mahasiswa = userRepository.save(mahasiswa);
         mataKuliah = mataKuliahRepository.save(mataKuliah);
         Notifikasi notif1 = new Notifikasi(
