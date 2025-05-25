@@ -14,8 +14,6 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepo
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -429,14 +427,6 @@ public class LogServiceTest {
     @Test
     void testGetLowonganYangDiterima() {
         UUID kandidatId = UUID.randomUUID();
-
-        Mahasiswa mahasiswa = new Mahasiswa();
-        mahasiswa.setId(kandidatId);
-        mahasiswa.setUsername("testMahasiswa");
-
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(mahasiswa, null, mahasiswa.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         Pendaftaran diterima1 = mock(Pendaftaran.class);
         Pendaftaran diterima2 = mock(Pendaftaran.class);

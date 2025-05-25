@@ -281,6 +281,7 @@ class LogControllerTest {
 
     @Test
     void getLowonganYangDiterima_shouldReturnListPendaftaran() throws Exception {
+        UUID kandidatId = UUID.randomUUID();
         UUID pendaftaranId = UUID.randomUUID();
 
         Pendaftaran pendaftaran = new Pendaftaran();
@@ -290,7 +291,7 @@ class LogControllerTest {
         when(logService.getLowonganYangDiterima())
                 .thenReturn(Collections.singletonList(pendaftaran));
 
-        mockMvc.perform(get("/api/logs/listLowongan"))
+        mockMvc.perform(get("/api/logs/listLowongan/")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].pendaftaranId").value(pendaftaranId.toString()))
                 .andExpect(jsonPath("$[0].status").value("DITERIMA"));

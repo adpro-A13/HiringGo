@@ -128,9 +128,9 @@ public class LogController {
         }
     }
 
-    @GetMapping("/listLowongan/{kandidatId}")
-    public ResponseEntity<List<Pendaftaran>> getLowonganYangDiterima(@PathVariable UUID kandidatId) {
-        List<Pendaftaran> pendaftaran = logService.getLowonganYangDiterima(kandidatId);
+    @GetMapping("/listLowongan")
+    public ResponseEntity<List<Pendaftaran>> getLowonganYangDiterima() {
+        List<Pendaftaran> pendaftaran = logService.getLowonganYangDiterima();
         return ResponseEntity.ok(pendaftaran);
     }
 

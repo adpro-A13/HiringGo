@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.log.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
@@ -7,6 +8,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
@@ -128,11 +130,22 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public List<Pendaftaran> getLowonganYangDiterima(UUID kandidatId) {
+    public List<Pendaftaran> getLowonganYangDiterima() {
+        UUID kandidatId = getLoggedInUserId();
         List<Pendaftaran> semuaPendaftaran = pendaftaranRepository.findByKandidatId(kandidatId);
 
         return semuaPendaftaran.stream()
                 .filter(pendaftaran -> pendaftaran.getStatus() == StatusPendaftaran.DITERIMA)
                 .toList();
+    }
+
+    private UUID getLoggedInUserId() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof Mahasiswa) {
+            return ((Mahasiswa) principal).getId();
+        }
+
+        throw new RuntimeException("User not authenticated or user data unavailable");
     }
 }

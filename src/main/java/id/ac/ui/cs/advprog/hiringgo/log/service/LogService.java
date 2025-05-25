@@ -24,5 +24,5 @@ public interface LogService {
     Log updateLog(UUID id, Log updatedLog);
 
     void deleteLog(UUID id);
-    List<Pendaftaran> getLowonganYangDiterima(UUID kandidatId);
+    List<Pendaftaran> getLowonganYangDiterima();
 }
