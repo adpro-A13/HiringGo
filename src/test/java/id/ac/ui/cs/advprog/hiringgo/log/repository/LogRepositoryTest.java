@@ -97,6 +97,7 @@ class LogRepositoryTest {
 
         UUID pendaftaranId = UUID.randomUUID();
         Mahasiswa kandidat = new Mahasiswa("test@example.com", "password", "Test User", "12345678");
+        kandidat.setId(UUID.randomUUID());
         entityManager.persist(kandidat);
         BigDecimal ipk = new BigDecimal("3.75");
         int sks = 120;
