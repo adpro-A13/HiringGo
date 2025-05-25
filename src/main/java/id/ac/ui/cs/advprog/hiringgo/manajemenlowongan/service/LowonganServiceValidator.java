@@ -35,7 +35,7 @@ public class LowonganServiceValidator {
         }
     }
 
-    public Pair<Pendaftaran, Lowongan> validasiPendaftaranDanLowongan(UUID lowonganId,
+    public Pair<Pendaftaran, Lowongan> validatePendaftaranAndLowongan(UUID lowonganId,
                                                                       UUID pendaftaranId,
                                                                       String username) {
         Pendaftaran pendaftaran = pendaftaranRepository.findById(pendaftaranId)
@@ -56,7 +56,7 @@ public class LowonganServiceValidator {
         return Pair.of(pendaftaran, lowongan);
     }
 
-    public void validasiStatusDanKapasitas(Pendaftaran pendaftaran, Lowongan lowongan) {
+    public void validateStatusAndCapacity(Pendaftaran pendaftaran, Lowongan lowongan) {
         if (pendaftaran.getStatus() == StatusPendaftaran.DITERIMA ||
                 pendaftaran.getStatus() == StatusPendaftaran.DITOLAK) {
             throw new IllegalStateException("Pendaftar ini sudah " +

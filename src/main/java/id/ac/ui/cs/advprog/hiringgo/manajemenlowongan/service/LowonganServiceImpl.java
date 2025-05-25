@@ -76,11 +76,11 @@ public class LowonganServiceImpl implements LowonganService {
     public void terimaPendaftar(UUID lowonganId, UUID pendaftaranId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Pair<Pendaftaran, Lowongan> result = validator.validasiPendaftaranDanLowongan(lowonganId, pendaftaranId, username);
+        Pair<Pendaftaran, Lowongan> result = validator.validatePendaftaranAndLowongan(lowonganId, pendaftaranId, username);
         Pendaftaran pendaftaran = result.getFirst();
         Lowongan lowongan = result.getSecond();
 
-        validator.validasiStatusDanKapasitas(pendaftaran, lowongan);
+        validator.validateStatusAndCapacity(pendaftaran, lowongan);
 
         prosesPenerimaan(pendaftaran, lowongan);
         kirimNotifikasi(pendaftaran, lowongan);
@@ -111,11 +111,11 @@ public class LowonganServiceImpl implements LowonganService {
     public void tolakPendaftar(UUID lowonganId, UUID pendaftaranId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Pair<Pendaftaran, Lowongan> result = validator.validasiPendaftaranDanLowongan(lowonganId, pendaftaranId, username);
+        Pair<Pendaftaran, Lowongan> result = validator.validatePendaftaranAndLowongan(lowonganId, pendaftaranId, username);
         Pendaftaran pendaftaran = result.getFirst();
         Lowongan lowongan = result.getSecond();
 
-        validator.validasiStatusDanKapasitas(pendaftaran, lowongan);
+        validator.validateStatusAndCapacity(pendaftaran, lowongan);
 
         pendaftaran.setStatus(StatusPendaftaran.DITOLAK);
         pendaftaranRepository.save(pendaftaran);

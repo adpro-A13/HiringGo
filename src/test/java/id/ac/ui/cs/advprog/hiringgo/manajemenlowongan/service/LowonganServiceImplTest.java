@@ -264,7 +264,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTerimaPendaftarThrowsIfPendaftaranNotFound() {
-        when(validator.validasiPendaftaranDanLowongan( id2, id1, "dosen@example.com"
+        when(validator.validatePendaftaranAndLowongan( id2, id1, "dosen@example.com"
         )).thenThrow(new IllegalArgumentException("Pendaftaran tidak ditemukan"));
 
         IllegalArgumentException exception = assertThrows(
@@ -273,14 +273,14 @@ class LowonganServiceImplTest {
         );
         assertEquals("Pendaftaran tidak ditemukan", exception.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id2, id1, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id2, id1, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
 
     @Test
     void testTolakPendaftarThrowsIfNotFound() {
-        when(validator.validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
                 .thenThrow(new IllegalArgumentException("Pendaftaran tidak ditemukan"));
 
         IllegalArgumentException exception = assertThrows(
@@ -289,7 +289,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Pendaftaran tidak ditemukan", exception.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -305,7 +305,7 @@ class LowonganServiceImplTest {
         LowonganServiceImpl spyService = Mockito.spy(lowonganService);
         Mockito.doReturn(Pair.of(pendaftaran, lowongan))
                 .when(validator)
-                .validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+                .validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
         Mockito.doReturn(lowongan).when(validator).getAuthorizedLowongan(id1);
 
         when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -339,10 +339,10 @@ class LowonganServiceImplTest {
         Lowongan lowongan = createLowongan(id1, mk, 1, 1);
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        when(validator.validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
                 .thenReturn(Pair.of(pendaftaran, lowongan));
         doThrow(new IllegalStateException("Lowongan sudah penuh"))
-                .when(validator).validasiStatusDanKapasitas(pendaftaran, lowongan);
+                .when(validator).validateStatusAndCapacity(pendaftaran, lowongan);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
             lowonganService.terimaPendaftar(id1, id2);
@@ -359,7 +359,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTerimaPendaftarPendaftaranNotFound() {
-        when(validator.validasiPendaftaranDanLowongan(id2, id1, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id2, id1, "dosen@example.com"))
                 .thenThrow(new IllegalArgumentException("Pendaftaran tidak ditemukan"));
 
         IllegalArgumentException ex = assertThrows(
@@ -368,7 +368,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Pendaftaran tidak ditemukan", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id2, id1, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id2, id1, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -376,7 +376,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTerimaPendaftarLowonganNotFound() {
-        when(validator.validasiPendaftaranDanLowongan( id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan( id1, id2, "dosen@example.com"))
                 .thenThrow(new IllegalArgumentException("Lowongan tidak ditemukan"));
 
         IllegalArgumentException ex = assertThrows(
@@ -385,7 +385,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Lowongan tidak ditemukan", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -393,7 +393,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTerimaPendaftarIdMismatch() {
-        when(validator.validasiPendaftaranDanLowongan( id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan( id1, id2, "dosen@example.com"))
                 .thenThrow(new IllegalArgumentException("Pendaftaran tidak sesuai dengan lowongan"));
 
         IllegalArgumentException ex = assertThrows(
@@ -402,7 +402,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Pendaftaran tidak sesuai dengan lowongan", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -414,10 +414,10 @@ class LowonganServiceImplTest {
         Lowongan lowongan = createLowongan(id1, mk, 1, 1);
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        when(validator.validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
                 .thenReturn(Pair.of(pendaftaran, lowongan));
         doThrow(new IllegalStateException("Lowongan sudah penuh"))
-                .when(validator).validasiStatusDanKapasitas(pendaftaran, lowongan);
+                .when(validator).validateStatusAndCapacity(pendaftaran, lowongan);
 
         IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
@@ -425,8 +425,8 @@ class LowonganServiceImplTest {
         );
         assertEquals("Lowongan sudah penuh", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
-        verify(validator).validasiStatusDanKapasitas(pendaftaran, lowongan);
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validateStatusAndCapacity(pendaftaran, lowongan);
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -435,7 +435,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTolakPendaftarPendaftaranNotFound() {
-        when(validator.validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
                 .thenThrow(new IllegalArgumentException("Pendaftaran tidak ditemukan"));
 
         IllegalArgumentException ex = assertThrows(
@@ -444,7 +444,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Pendaftaran tidak ditemukan", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -453,7 +453,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTolakPendaftarLowonganNotFound() {
-        when(validator.validasiPendaftaranDanLowongan(id1, id2,"dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id1, id2,"dosen@example.com"))
                 .thenThrow(new IllegalArgumentException("Lowongan tidak ditemukan"));
 
         IllegalArgumentException ex = assertThrows(
@@ -462,7 +462,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Lowongan tidak ditemukan", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -470,7 +470,7 @@ class LowonganServiceImplTest {
 
     @Test
     void testTolakPendaftarIdMismatch() {
-        when(validator.validasiPendaftaranDanLowongan( id2, id1, "dosen@example.com"
+        when(validator.validatePendaftaranAndLowongan( id2, id1, "dosen@example.com"
         )).thenThrow(new IllegalArgumentException("Pendaftaran tidak sesuai dengan lowongan"));
 
         IllegalArgumentException ex = assertThrows(
@@ -479,7 +479,7 @@ class LowonganServiceImplTest {
         );
         assertEquals("Pendaftaran tidak sesuai dengan lowongan", ex.getMessage());
 
-        verify(validator).validasiPendaftaranDanLowongan(id2, id1, "dosen@example.com");
+        verify(validator).validatePendaftaranAndLowongan(id2, id1, "dosen@example.com");
         verifyNoInteractions(pendaftaranRepository, lowonganRepository, eventPublisher);
     }
 
@@ -490,9 +490,9 @@ class LowonganServiceImplTest {
         Lowongan lowongan = createLowongan(id1, mataKuliah, 2, 1);
         Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
 
-        when(validator.validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com"))
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
                 .thenReturn(Pair.of(pendaftaran, lowongan));
-        doNothing().when(validator).validasiStatusDanKapasitas(pendaftaran, lowongan);
+        doNothing().when(validator).validateStatusAndCapacity(pendaftaran, lowongan);
         when(pendaftaranRepository.save(any(Pendaftaran.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
@@ -500,8 +500,8 @@ class LowonganServiceImplTest {
         lowonganService.tolakPendaftar(id1, id2);
 
         assertEquals(StatusPendaftaran.DITOLAK, pendaftaran.getStatus());
-        verify(validator).validasiPendaftaranDanLowongan(id1, id2, "dosen@example.com");
-        verify(validator).validasiStatusDanKapasitas(pendaftaran, lowongan);
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validateStatusAndCapacity(pendaftaran, lowongan);
         verify(pendaftaranRepository).save(pendaftaran);
         // Karena eventPublisher adalah mock, publishEvent() hanya no-op:
         verify(eventPublisher, never()).publishEvent(any());
