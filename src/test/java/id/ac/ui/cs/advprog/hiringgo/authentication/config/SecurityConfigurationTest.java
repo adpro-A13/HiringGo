@@ -84,7 +84,7 @@ class SecurityConfigurationTest {
         CorsConfiguration corsConfig = corsConfigSource.getCorsConfiguration(request);
         
         assertNotNull(corsConfig);
-        
+
         assertEquals(2, corsConfig.getAllowedOrigins().size());
         assertEquals("http://localhost:8005", corsConfig.getAllowedOrigins().get(0));
         

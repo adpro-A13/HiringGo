@@ -20,6 +20,7 @@ java {
     }
 }
 
+
 repositories {
     mavenCentral()
 }
@@ -43,8 +44,6 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     testImplementation ("org.springframework.security:spring-security-test")
 
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -72,6 +71,7 @@ dependencies {
     testImplementation("com.h2database:h2:2.2.224")
     testCompileOnly("org.projectlombok:lombok:1.18.30")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+
 }
 
 
