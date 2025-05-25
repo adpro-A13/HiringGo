@@ -71,14 +71,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
-                    sendErrorResponse(response, "Token is no longer valid", "invalid_token", HttpServletResponse.SC_UNAUTHORIZED);
+                    sendErrorResponse(response, "Invalid or expired token", "invalid_token", HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }
             }
 
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
-            sendErrorResponse(response, "Invalid or expired token: " + exception.getMessage(), "invalid_token", HttpServletResponse.SC_UNAUTHORIZED);
+            sendErrorResponse(response, "Invalid or expired token", "invalid_token", HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
     

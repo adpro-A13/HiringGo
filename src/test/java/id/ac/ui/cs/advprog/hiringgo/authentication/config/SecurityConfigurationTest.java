@@ -45,7 +45,6 @@ class SecurityConfigurationTest {
 
     @Test
     void securityFilterChain_ShouldConfigureSecurityCorrectly() throws Exception {
-        // Arrange
         DefaultSecurityFilterChain mockFilterChain = mock(DefaultSecurityFilterChain.class);
 
         when(httpSecurity.cors(any())).thenReturn(httpSecurity);

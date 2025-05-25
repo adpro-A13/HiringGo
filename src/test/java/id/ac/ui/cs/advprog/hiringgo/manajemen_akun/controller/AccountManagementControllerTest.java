@@ -1,7 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemen_akun.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.common.dto.GlobalResponseDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
-import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.EditUserDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
@@ -34,8 +35,8 @@ class AccountManagementControllerTest {
     private List<UserResponseDto> testUsersList;
     private DosenDto testDosenDto;
     private AdminDto testAdminDto;
-    private MahasiswaDto testMahasiswaDto;
-    private ChangeRoleDto testChangeRoleDto;
+    private MahasiswaDto testMahasiswaDto;    
+    private EditUserDto testEditUserDto;
     private final String TEST_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
 
     @BeforeEach
@@ -68,23 +69,25 @@ class AccountManagementControllerTest {
 
         testMahasiswaDto = new MahasiswaDto();
         testMahasiswaDto.setEmail("mahasiswa@example.com");
-        testMahasiswaDto.setPassword("password");
+        testMahasiswaDto.setPassword("password");        
         testMahasiswaDto.setFullName("New Mahasiswa");
         testMahasiswaDto.setNim("13518000");
 
-        testChangeRoleDto = new ChangeRoleDto();
-        testChangeRoleDto.setNewRole("ADMIN");
-    }
+        testEditUserDto = new EditUserDto();
+        testEditUserDto.setNewRole("ADMIN");
+    }    
 
     @Test
     void getAllUsers_shouldReturnUsersList() {
         when(accountManagementService.getAllUsers()).thenReturn(testUsersList);
 
-        ResponseEntity<List<UserResponseDto>> response = accountManagementController.getAllUsers();
+        ResponseEntity<GlobalResponseDto<List<UserResponseDto>>> response = accountManagementController.getAllUsers();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(testUsersList, response.getBody());
-        assertEquals(2, response.getBody().size());
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.OK.value(), response.getBody().getStatusCode());
+        assertEquals(testUsersList, response.getBody().getData());
+        assertEquals("Users retrieved successfully", response.getBody().getMessage());
         verify(accountManagementService).getAllUsers();
     }
 
@@ -92,10 +95,13 @@ class AccountManagementControllerTest {
     void getUserById_withValidId_shouldReturnUser() {
         when(accountManagementService.getUserById(TEST_USER_ID)).thenReturn(testUserResponse);
 
-        ResponseEntity<?> response = accountManagementController.getUserById(TEST_USER_ID);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.getUserById(TEST_USER_ID);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(testUserResponse, response.getBody());
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.OK.value(), response.getBody().getStatusCode());
+        assertEquals(testUserResponse, response.getBody().getData());
+        assertEquals("User retrieved successfully", response.getBody().getMessage());
         verify(accountManagementService).getUserById(TEST_USER_ID);
     }
 
@@ -104,10 +110,12 @@ class AccountManagementControllerTest {
         when(accountManagementService.getUserById(anyString()))
                 .thenThrow(new IllegalArgumentException("User not found"));
 
-        ResponseEntity<?> response = accountManagementController.getUserById("non-existent-id");
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.getUserById("non-existent-id");
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertEquals("User not found", response.getBody());
+        assertEquals(false, response.getBody().isSuccess());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatusCode());
+        assertEquals("User not found", response.getBody().getMessage());
         verify(accountManagementService).getUserById("non-existent-id");
     }
 
@@ -115,10 +123,13 @@ class AccountManagementControllerTest {
     void createDosenAccount_withValidData_shouldReturnCreatedUser() {
         when(accountManagementService.createDosenAccount(any(DosenDto.class))).thenReturn(testUserResponse);
 
-        ResponseEntity<?> response = accountManagementController.createDosenAccount(testDosenDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.createDosenAccount(testDosenDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(testUserResponse, response.getBody());
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.CREATED.value(), response.getBody().getStatusCode());
+        assertEquals(testUserResponse, response.getBody().getData());
+        assertEquals("Dosen account created successfully", response.getBody().getMessage());
         verify(accountManagementService).createDosenAccount(testDosenDto);
     }
 
@@ -128,10 +139,12 @@ class AccountManagementControllerTest {
         when(accountManagementService.createDosenAccount(any(DosenDto.class)))
                 .thenThrow(new IllegalArgumentException(errorMessage));
 
-        ResponseEntity<?> response = accountManagementController.createDosenAccount(testDosenDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.createDosenAccount(testDosenDto);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(errorMessage, response.getBody());
+        assertEquals(false, response.getBody().isSuccess());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatusCode());
+        assertEquals(errorMessage, response.getBody().getMessage());
         verify(accountManagementService).createDosenAccount(testDosenDto);
     }
 
@@ -144,10 +157,13 @@ class AccountManagementControllerTest {
         
         when(accountManagementService.createAdminAccount(any(AdminDto.class))).thenReturn(adminResponse);
 
-        ResponseEntity<?> response = accountManagementController.createAdminAccount(testAdminDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.createAdminAccount(testAdminDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(adminResponse, response.getBody());
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.CREATED.value(), response.getBody().getStatusCode());
+        assertEquals(adminResponse, response.getBody().getData());
+        assertEquals("Admin account created successfully", response.getBody().getMessage());
         verify(accountManagementService).createAdminAccount(testAdminDto);
     }
 
@@ -157,10 +173,12 @@ class AccountManagementControllerTest {
         when(accountManagementService.createAdminAccount(any(AdminDto.class)))
                 .thenThrow(new IllegalArgumentException(errorMessage));
 
-        ResponseEntity<?> response = accountManagementController.createAdminAccount(testAdminDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.createAdminAccount(testAdminDto);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(errorMessage, response.getBody());
+        assertEquals(false, response.getBody().isSuccess());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatusCode());
+        assertEquals(errorMessage, response.getBody().getMessage());
         verify(accountManagementService).createAdminAccount(testAdminDto);
     }
 
@@ -168,10 +186,13 @@ class AccountManagementControllerTest {
     void createMahasiswaAccount_withValidData_shouldReturnCreatedUser() {
         when(accountManagementService.createMahasiswaAccount(any(MahasiswaDto.class))).thenReturn(testUserResponse);
 
-        ResponseEntity<?> response = accountManagementController.createMahasiswaAccount(testMahasiswaDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.createMahasiswaAccount(testMahasiswaDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(testUserResponse, response.getBody());
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.CREATED.value(), response.getBody().getStatusCode());
+        assertEquals(testUserResponse, response.getBody().getData());
+        assertEquals("Mahasiswa account created successfully", response.getBody().getMessage());
         verify(accountManagementService).createMahasiswaAccount(testMahasiswaDto);
     }
 
@@ -181,50 +202,57 @@ class AccountManagementControllerTest {
         when(accountManagementService.createMahasiswaAccount(any(MahasiswaDto.class)))
                 .thenThrow(new IllegalArgumentException(errorMessage));
 
-        ResponseEntity<?> response = accountManagementController.createMahasiswaAccount(testMahasiswaDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.createMahasiswaAccount(testMahasiswaDto);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(errorMessage, response.getBody());
+        assertEquals(false, response.getBody().isSuccess());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatusCode());
+        assertEquals(errorMessage, response.getBody().getMessage());
         verify(accountManagementService).createMahasiswaAccount(testMahasiswaDto);
-    }
+    }    
 
     @Test
-    void changeUserRole_withValidData_shouldReturnUpdatedUser() {
+    void editUser_withValidData_shouldReturnUpdatedUser() {
         UserResponseDto updatedUser = new UserResponseDto();
         updatedUser.setId(TEST_USER_ID);
         updatedUser.setEmail("test@example.com");
         updatedUser.setRole("ADMIN");
         
-        when(accountManagementService.changeUserRole(TEST_USER_ID, testChangeRoleDto)).thenReturn(updatedUser);
+        when(accountManagementService.editUser(TEST_USER_ID, testEditUserDto)).thenReturn(updatedUser);
 
-        ResponseEntity<?> response = accountManagementController.changeUserRole(TEST_USER_ID, testChangeRoleDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.editUser(TEST_USER_ID, testEditUserDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(updatedUser, response.getBody());
-        assertEquals("ADMIN", ((UserResponseDto) response.getBody()).getRole());
-        verify(accountManagementService).changeUserRole(TEST_USER_ID, testChangeRoleDto);
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.OK.value(), response.getBody().getStatusCode());
+        assertEquals(updatedUser, response.getBody().getData());
+        assertEquals("User updated successfully", response.getBody().getMessage());
+        verify(accountManagementService).editUser(TEST_USER_ID, testEditUserDto);
     }
 
     @Test
-    void changeUserRole_withInvalidData_shouldReturnBadRequest() {
+    void editUser_withInvalidData_shouldReturnBadRequest() {
         String errorMessage = "Invalid role";
-        when(accountManagementService.changeUserRole(anyString(), any(ChangeRoleDto.class)))
+        when(accountManagementService.editUser(anyString(), any(EditUserDto.class)))
                 .thenThrow(new IllegalArgumentException(errorMessage));
 
-        ResponseEntity<?> response = accountManagementController.changeUserRole(TEST_USER_ID, testChangeRoleDto);
+        ResponseEntity<GlobalResponseDto<UserResponseDto>> response = accountManagementController.editUser(TEST_USER_ID, testEditUserDto);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(errorMessage, response.getBody());
-        verify(accountManagementService).changeUserRole(TEST_USER_ID, testChangeRoleDto);
-    }
-
-    @Test
+        assertEquals(false, response.getBody().isSuccess());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatusCode());
+        assertEquals(errorMessage, response.getBody().getMessage());
+        verify(accountManagementService).editUser(TEST_USER_ID, testEditUserDto);
+    }    @Test
     void deleteUser_withValidId_shouldReturnNoContent() {
         doNothing().when(accountManagementService).deleteUser(TEST_USER_ID);
 
-        ResponseEntity<?> response = accountManagementController.deleteUser(TEST_USER_ID);
+        ResponseEntity<GlobalResponseDto<Void>> response = accountManagementController.deleteUser(TEST_USER_ID);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(true, response.getBody().isSuccess());
+        assertEquals(HttpStatus.NO_CONTENT.value(), response.getBody().getStatusCode());
+        assertEquals("User deleted successfully", response.getBody().getMessage());
         verify(accountManagementService).deleteUser(TEST_USER_ID);
     }
 
@@ -234,10 +262,12 @@ class AccountManagementControllerTest {
         doThrow(new IllegalArgumentException(errorMessage))
                 .when(accountManagementService).deleteUser(anyString());
 
-        ResponseEntity<?> response = accountManagementController.deleteUser("invalid-id");
+        ResponseEntity<GlobalResponseDto<Void>> response = accountManagementController.deleteUser("invalid-id");
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(errorMessage, response.getBody());
+        assertEquals(false, response.getBody().isSuccess());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getBody().getStatusCode());
+        assertEquals(errorMessage, response.getBody().getMessage());
         verify(accountManagementService).deleteUser("invalid-id");
     }
 }
