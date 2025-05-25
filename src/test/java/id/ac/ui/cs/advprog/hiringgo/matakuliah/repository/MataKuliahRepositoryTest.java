@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.hiringgo.matakuliah.repository;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -36,7 +35,7 @@ class MataKuliahRepositoryTest {
 
         mataKuliahRepository.save(matkul);
 
-        MataKuliah found = mataKuliahRepository.findById(matkul.getKode()).orElse(null);
+        MataKuliah found = mataKuliahRepository.findByKode(matkul.getKode()).orElse(null);
         assertNotNull(found);
         assertEquals(matkul.getKode(), found.getKode());
         assertEquals(matkul.getNama(), found.getNama());
@@ -65,7 +64,7 @@ class MataKuliahRepositoryTest {
                 .addDosenPengampu(dosenB);
         mataKuliahRepository.save(updatedMatkul);
 
-        MataKuliah found = mataKuliahRepository.findById(matkul.getKode()).orElse(null);
+        MataKuliah found = mataKuliahRepository.findByKode(matkul.getKode()).orElse(null);
         assertNotNull(found);
         assertEquals("Mata Kuliah baru", found.getDeskripsi());
         assertEquals(1, found.getDosenPengampu().size());
@@ -76,10 +75,10 @@ class MataKuliahRepositoryTest {
         MataKuliah matkul = new MataKuliah("CSCM602023 - 01.00.12.01-2020", "Pemrograman Lanjut", "Membahas Java & Spring Boot" );
 
         mataKuliahRepository.save(matkul);
-        assertTrue(mataKuliahRepository.findById(matkul.getKode()).isPresent());
+        assertTrue(mataKuliahRepository.findByKode(matkul.getKode()).isPresent());
 
         mataKuliahRepository.deleteById(matkul.getKode());
-        assertFalse(mataKuliahRepository.findById(matkul.getKode()).isPresent());
+        assertFalse(mataKuliahRepository.findByKode(matkul.getKode()).isPresent());
     }
 
     @Test
@@ -114,5 +113,26 @@ class MataKuliahRepositoryTest {
 
         List<MataKuliah> all = mataKuliahRepository.findAll();
         assertEquals(2, all.size());
+    }
+
+    @Test
+    void testFindByDosenPengampu(){
+        Dosen dosen = new Dosen("dosen@u.id", "pass", "dosen", "124");
+        entityManager.persist(dosen);
+
+        MataKuliah matkul = new MataKuliah("CS101", "Algoritma", "Dasar");
+        matkul.addDosenPengampu(dosen);
+        entityManager.persist(matkul);
+
+        MataKuliah matkul2 = new MataKuliah("CS002", "Jaringan", "Belajar TCP/IP");
+        matkul2.addDosenPengampu(dosen);
+        entityManager.persist(matkul2);
+
+        entityManager.flush();
+
+        List<MataKuliah> result = mataKuliahRepository.findByDosenPengampu(dosen);
+
+        assertEquals(2, result.size());
+        assertEquals("CS101", result.get(0).getKode());
     }
 }
