@@ -45,7 +45,6 @@ class SecurityConfigurationTest {
 
     @Test
     void securityFilterChain_ShouldConfigureSecurityCorrectly() throws Exception {
-        // Arrange
         DefaultSecurityFilterChain mockFilterChain = mock(DefaultSecurityFilterChain.class);
 
         when(httpSecurity.cors(any())).thenReturn(httpSecurity);
@@ -85,7 +84,7 @@ class SecurityConfigurationTest {
         CorsConfiguration corsConfig = corsConfigSource.getCorsConfiguration(request);
         
         assertNotNull(corsConfig);
-        
+
         assertEquals(2, corsConfig.getAllowedOrigins().size());
         assertEquals("http://localhost:8005", corsConfig.getAllowedOrigins().get(0));
         

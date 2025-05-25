@@ -63,6 +63,7 @@ public class DosenStatisticsService {
                             .sum();
                 }
             } catch (Exception e) {
+                //logger handling
             }
         }
 

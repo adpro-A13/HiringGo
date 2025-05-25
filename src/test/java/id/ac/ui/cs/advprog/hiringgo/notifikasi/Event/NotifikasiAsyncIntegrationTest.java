@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -36,6 +37,7 @@ public class NotifikasiAsyncIntegrationTest {
     void testAsyncNotifikasiListenerShouldRunInBackground() throws Exception {
         Mahasiswa mahasiswa = new Mahasiswa("mahasiswa@example.com", "mahasiswa123",
                 "am cooked", "123456789");
+        mahasiswa.setId(UUID.randomUUID());
         userRepository.save(mahasiswa);
         MataKuliah mataKuliah = new MataKuliah("CS1234", "Advprog", "aku lelah");
         mataKuliahRepository.save(mataKuliah);
