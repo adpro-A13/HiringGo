@@ -227,4 +227,37 @@ class LowonganServiceValidatorTest {
                 .thenReturn(Optional.empty());
         assertDoesNotThrow(() -> validator.validateLowonganCombinationIsUnique(lowongan));
     }
+
+    @Test
+    void testValidateStatusAndCapacity_pendaftaranDitolak_throwsIllegalState() {
+        // Test case for DITOLAK status
+        pendaftaran.setStatus(StatusPendaftaran.DITOLAK);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> validator.validateStatusAndCapacity(pendaftaran, lowongan));
+        assertEquals("Pendaftar ini sudah ditolak", ex.getMessage());
+    }
+
+    @Test
+    void testValidateStatusAndCapacity_validStatus_noException() {
+        // Test case for valid status (BELUM_DIPROSES) with available capacity
+        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
+        lowongan.setJumlahAsdosDiterima(1);
+        lowongan.setJumlahAsdosDibutuhkan(2);
+
+        // Should not throw any exception
+        assertDoesNotThrow(() -> validator.validateStatusAndCapacity(pendaftaran, lowongan));
+    }
+
+    @Test
+    void testValidateStatusAndCapacity_exactCapacity_throwsIllegalState() {
+        // Test case where capacity is exactly equal (edge case)
+        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
+        lowongan.setJumlahAsdosDiterima(2);
+        lowongan.setJumlahAsdosDibutuhkan(2);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> validator.validateStatusAndCapacity(pendaftaran, lowongan));
+        assertEquals("Lowongan sudah penuh", ex.getMessage());
+    }
 }
