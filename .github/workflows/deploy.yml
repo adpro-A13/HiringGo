@@ -1,35 +1,204 @@
-name: Deploy to Fargate
+name: Deploy & Rollback
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - rollback
+      rollback_version:
+        description: 'Version to rollback to (leave empty for previous version)'
+        required: false
+        type: string
 
 jobs:
   deploy:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+      - name: Set image tag (commit SHA)
+        id: vars
+        run: echo "IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build and push Docker image
         run: |
-          ./gradlew bootBuildImage --imageName=hiringgo
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-          docker tag hiringgo:latest ${{ secrets.ECR_REGISTRY }}/hiringgo:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/hiringgo:latest
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ env.IMAGE_TAG }} .
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ env.IMAGE_TAG }}
+          
+          # Update latest tag
+          docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ env.IMAGE_TAG }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
 
-      - name: Deploy to ECS
-        run: |
-          aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER_NAME }} --service ${{ secrets.ECS_SERVICE_NAME }} --force-new-deployment
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            IMAGE_TAG=${{ env.IMAGE_TAG }}
+            IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:$IMAGE_TAG
+            
+            # Create deployment directory if not exists
+            sudo mkdir -p /opt/advshop
+            
+            # Backup current version before deploy
+            if [ -f /opt/advshop/.current_version ]; then
+              sudo cp /opt/advshop/.current_version /opt/advshop/.previous_version
+            fi
+            
+            # Stop and remove old container
+            docker rm -f web_server || true
+            
+            # Login to Docker Hub
+            docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+            
+            # Pull new image
+            docker pull $IMAGE
+            
+            # Run new container
+            docker run -d --name=web_server -p 8080:8080 \
+              -e DB_URL="${{ secrets.DB_URL }}" \
+              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              $IMAGE
+            
+            # Health check dengan timeout yang cukup untuk Spring Boot
+            echo "Waiting for Spring Boot application to start (this may take 30+ seconds)..."
+            RETRY_COUNT=0
+            MAX_RETRIES=2
+            HEALTH_CHECK_PASSED=false
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              sleep 80
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES"
+            
+              # Cek apakah container masih running
+              if ! docker ps | grep -q web_server; then
+                echo "Container stopped running! Check logs:"
+                docker logs web_server || true
+                break
+              fi
+            
+              # Health check ke Spring Boot Actuator endpoint atau root
+              if curl -f -s --connect-timeout 15 --max-time 45 http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                echo "Health check passed via /actuator/health!"
+                HEALTH_CHECK_PASSED=true
+                break
+              elif curl -f -s --connect-timeout 15 --max-time 45 http://localhost:8080/ > /dev/null 2>&1; then
+                echo "Health check passed via root endpoint!"
+                HEALTH_CHECK_PASSED=true
+                break
+              else
+                echo "Health check failed, retrying in 60 seconds..."
+              fi
+            done
+            
+            if [ "$HEALTH_CHECK_PASSED" = true ]; then
+              echo "Deployment successful!"
+              # Add restart policy after successful health check
+              docker update --restart=unless-stopped web_server
+              echo $IMAGE_TAG | sudo tee /opt/advshop/.current_version
+              echo "$(date): Deployed $IMAGE_TAG" | sudo tee -a /opt/advshop/.deployment_history
+            else
+              echo "Health check failed! Rolling back..."
+              echo "Container logs:"
+              docker logs web_server || true
+              docker rm -f web_server || true
+            
+              # Rollback to previous version if exists
+              if [ -f /opt/advshop/.previous_version ]; then
+                PREV_VERSION=$(sudo cat /opt/advshop/.previous_version)
+                PREV_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:$PREV_VERSION
+                echo "Rolling back to $PREV_VERSION"
+                docker pull $PREV_IMAGE
+                docker run -d --name=web_server -p 8080:8080 \
+                  --restart=unless-stopped \
+                  -e DB_URL="${{ secrets.DB_URL }}" \
+                  -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+                  -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+                  -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+                  $PREV_IMAGE
+                echo "Rolled back to $PREV_VERSION"
+              else
+                echo "No previous version available for rollback"
+              fi
+              exit 1
+            fi
+
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Rollback on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Determine rollback version
+            if [ -n "${{ github.event.inputs.rollback_version }}" ]; then
+              ROLLBACK_VERSION="${{ github.event.inputs.rollback_version }}"
+            elif [ -f /opt/advshop/.previous_version ]; then
+              ROLLBACK_VERSION=$(sudo cat /opt/advshop/.previous_version)
+            else
+              echo "No rollback version specified and no previous version found!"
+              exit 1
+            fi
+            
+            ROLLBACK_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:$ROLLBACK_VERSION
+            
+            echo "Rolling back to version: $ROLLBACK_VERSION"
+            
+            # Backup current version
+            if [ -f /opt/advshop/.current_version ]; then
+              sudo cp /opt/advshop/.current_version /opt/advshop/.rollback_backup
+            fi
+            
+            # Stop current container
+            docker rm -f web_server || true
+            
+            # Login to Docker Hub
+            docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+            
+            # Pull rollback image
+            docker pull $ROLLBACK_IMAGE
+            
+            # Run rollback container
+            docker run -d --name=web_server -p 8080:8080 \
+              --restart=unless-stopped \
+              -e DB_URL="${{ secrets.DB_URL }}" \
+              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              $ROLLBACK_IMAGE
+            
+            # Wait for container to start  
+            sleep 20
+            
+            # Log successful rollback
+            echo "Rollback completed successfully!"
+            echo $ROLLBACK_VERSION | sudo tee /opt/advshop/.current_version
+            echo "$(date): Rolled back to $ROLLBACK_VERSION" | sudo tee -a /opt/advshop/.deployment_history

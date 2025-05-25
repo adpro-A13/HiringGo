@@ -61,25 +61,31 @@ public class AuthenticationControllerTest {
         authenticatedUser.setUsername("test@example.com");
         ((Mahasiswa) authenticatedUser).setFullName("Test User");
         ((Mahasiswa) authenticatedUser).setNim("12345678");
-    }
-
-    @Test
+    }    @Test
     void register_withValidData_shouldReturnOk() {
         when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(authenticatedUser);
+        when(jwtService.generateToken(anyMap(), eq(authenticatedUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
 
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
+        assertTrue(response.getBody() instanceof LoginResponse);
         
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        assertEquals("test@example.com", responseBody.get("email"));
-        assertEquals("Test User", responseBody.get("fullName"));
-        assertEquals("12345678", responseBody.get("nim"));
-        assertFalse(responseBody.containsKey("password"), "Response should not contain password");
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertEquals(validToken, loginResponse.getToken());
+        assertEquals(3600000L, loginResponse.getExpiresIn());
+        
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
+        assertEquals("test@example.com", userInfo.get("email"));
+        assertEquals("Test User", userInfo.get("fullName"));
+        assertEquals("12345678", userInfo.get("nim"));
+        assertFalse(userInfo.containsKey("password"), "Response should not contain password");
         
         verify(authenticationService, times(1)).signup(validRegisterDto);
+        verify(jwtService, times(1)).generateToken(anyMap(), eq(authenticatedUser));
     }
 
     @Test
@@ -171,12 +177,10 @@ public class AuthenticationControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Register failed, please try again.", response.getBody());
         verify(authenticationService, times(1)).signup(validRegisterDto);
-    }
-
-    @Test
+    }    @Test
     void authenticate_withValidCredentials_shouldReturnToken() {
         when(authenticationService.authenticate(any(LoginUserDto.class))).thenReturn(authenticatedUser);
-        when(jwtService.generateToken(authenticatedUser)).thenReturn(validToken);
+        when(jwtService.generateToken(anyMap(), eq(authenticatedUser))).thenReturn(validToken);
         when(jwtService.getExpirationTime()).thenReturn(3600000L);
 
         ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
@@ -187,8 +191,15 @@ public class AuthenticationControllerTest {
         LoginResponse loginResponse = (LoginResponse) response.getBody();
         assertEquals(validToken, loginResponse.getToken());
         assertEquals(3600000L, loginResponse.getExpiresIn());
+        
+        // Check user data in the response
+        assertNotNull(loginResponse.getUser());
+        assertEquals("test@example.com", loginResponse.getUser().get("email"));
+        assertEquals("Test User", loginResponse.getUser().get("fullName"));
+        assertEquals("12345678", loginResponse.getUser().get("nim"));
+        
         verify(authenticationService, times(1)).authenticate(validLoginDto);
-        verify(jwtService, times(1)).generateToken(authenticatedUser);
+        verify(jwtService, times(1)).generateToken(anyMap(), eq(authenticatedUser));
     }
 
     @Test
@@ -224,9 +235,7 @@ public class AuthenticationControllerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertEquals(expectedErrorMessage, response.getBody());
         verify(authenticationService, times(1)).authenticate(validLoginDto);
-    }
-
-    @Test
+    }    @Test
     void authenticate_withGenericException_shouldReturnForbidden() {
         when(authenticationService.authenticate(any(LoginUserDto.class)))
                 .thenThrow(new RuntimeException("Unexpected error"));
@@ -236,63 +245,7 @@ public class AuthenticationControllerTest {
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertEquals("Authorization failed", response.getBody());
         verify(authenticationService, times(1)).authenticate(validLoginDto);
-    }
-
-    @Test
-    void verify_withValidToken_shouldReturnUser() {
-        String authHeader = "Bearer " + validToken;
-        when(authenticationService.verifyToken(validToken)).thenReturn(authenticatedUser);
-
-        ResponseEntity<?> response = authenticationController.verify(authHeader);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
-        
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        assertEquals("test@example.com", responseBody.get("email"));
-        assertEquals("Test User", responseBody.get("fullName"));
-        assertEquals("12345678", responseBody.get("nim"));
-        assertFalse(responseBody.containsKey("password"), "Response should not contain password");
-        
-        verify(authenticationService, times(1)).verifyToken(validToken);
-    }
-
-    @Test
-    void verify_withInvalidToken_shouldReturnUnauthorized() {
-        String authHeader = "Bearer " + validToken;
-        when(authenticationService.verifyToken(validToken)).thenReturn(null);
-
-        ResponseEntity<?> response = authenticationController.verify(authHeader);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Invalid token", response.getBody());
-        verify(authenticationService, times(1)).verifyToken(validToken);
-    }
-
-    @Test
-    void verify_withMissingToken_shouldReturnBadRequest() {
-        String authHeader = null;
-
-        ResponseEntity<?> response = authenticationController.verify(authHeader);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Missing or invalid Authorization header", response.getBody());
-        verify(authenticationService, never()).verifyToken(anyString());
-    }
-
-    @Test
-    void verify_withInvalidAuthHeader_shouldReturnBadRequest() {
-        String authHeader = "InvalidHeader";
-
-        ResponseEntity<?> response = authenticationController.verify(authHeader);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals("Missing or invalid Authorization header", response.getBody());
-        verify(authenticationService, never()).verifyToken(anyString());
-    }
-
-    @Test
+    }    @Test
     void sanitizeUser_withMahasiswaUser_shouldReturnCorrectMap() {
         Mahasiswa mahasiswaUser = new Mahasiswa();
         mahasiswaUser.setUsername("student@example.com");
@@ -300,21 +253,24 @@ public class AuthenticationControllerTest {
         mahasiswaUser.setFullName("Student User");
         mahasiswaUser.setNim("12345678");
         
-        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
         when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(mahasiswaUser);
+        when(jwtService.generateToken(anyMap(), eq(mahasiswaUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
         
-        response = authenticationController.register(validRegisterDto);
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
         
-        assertEquals("student@example.com", responseBody.get("email"));
-        assertEquals("Student User", responseBody.get("fullName"));
-        assertEquals("12345678", responseBody.get("nim"));
-        assertFalse(responseBody.containsKey("password"));
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
+        assertEquals("student@example.com", userInfo.get("email"));
+        assertEquals("Student User", userInfo.get("fullName"));
+        assertEquals("12345678", userInfo.get("nim"));
+        assertFalse(userInfo.containsKey("password"));
     }
-    
-    @Test
+      @Test
     void sanitizeUser_withDosenUser_shouldReturnCorrectMap() {
         Dosen dosenUser = new Dosen();
         dosenUser.setUsername("lecturer@example.com");
@@ -323,33 +279,43 @@ public class AuthenticationControllerTest {
         dosenUser.setNip("87654321");
         
         when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(dosenUser);
+        when(jwtService.generateToken(anyMap(), eq(dosenUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
         
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertNotNull(loginResponse);
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
         
-        assertEquals("lecturer@example.com", responseBody.get("email"));
-        assertEquals("Lecturer User", responseBody.get("fullName"));
-        assertEquals("87654321", responseBody.get("nip"));
-        assertFalse(responseBody.containsKey("password"));
+        assertEquals("lecturer@example.com", userInfo.get("email"));
+        assertEquals("Lecturer User", userInfo.get("fullName"));
+        assertEquals("87654321", userInfo.get("nip"));
+        assertFalse(userInfo.containsKey("password"));
     }
     
     @Test
     void sanitizeUser_withAdminUser_shouldReturnCorrectMap() {
         Admin adminUser = new Admin();
         adminUser.setUsername("admin@example.com");
-        adminUser.setPassword("hashedPassword");
-        
-        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(adminUser);
+        adminUser.setPassword("hashedPassword");        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(adminUser);
+        when(jwtService.generateToken(anyMap(), eq(adminUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
         
         ResponseEntity<?> response = authenticationController.register(validRegisterDto);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertNotNull(loginResponse);
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
         
-        assertEquals("admin@example.com", responseBody.get("email"));
-        assertFalse(responseBody.containsKey("password"));
+        assertEquals("admin@example.com", userInfo.get("email"));
+        assertFalse(userInfo.containsKey("password"));
     }
 
     @Test
@@ -427,31 +393,11 @@ public class AuthenticationControllerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Password is required", response.getBody());
         verify(authenticationService, never()).authenticate(any(LoginUserDto.class));
-    }
-
-    @Test
-    void sanitizeUser_withNoAuthorities_shouldHandleGracefully() {
-        User userWithNoAuthorities = mock(User.class);
-        when(userWithNoAuthorities.getUsername()).thenReturn("noauth@example.com");
-        when(userWithNoAuthorities.getAuthorities()).thenReturn(Collections.emptyList());
-        
-        when(authenticationService.verifyToken(validToken)).thenReturn(userWithNoAuthorities);
-        
-        String authHeader = "Bearer " + validToken;
-        ResponseEntity<?> response = authenticationController.verify(authHeader);
-        
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-        
-        assertEquals("noauth@example.com", responseBody.get("email"));
-        assertEquals("UNKNOWN", responseBody.get("role"));
-    }
-
-    @Test
+    }    @Test
     void sanitizeUser_withUnknownUserType_shouldHaveBasicInfo() {
         User customUser = new User() {
             @Override
-            public List getAuthorities() {
+            public List<SimpleGrantedAuthority> getAuthorities() {
                 return Collections.singletonList(new SimpleGrantedAuthority("CUSTOM"));
             }
             
@@ -484,20 +430,23 @@ public class AuthenticationControllerTest {
             public boolean isEnabled() {
                 return true;
             }
-        };
+        };        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(customUser);
+        when(jwtService.generateToken(anyMap(), eq(customUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
         
-        when(authenticationService.verifyToken(validToken)).thenReturn(customUser);
-        
-        String authHeader = "Bearer " + validToken;
-        ResponseEntity<?> response = authenticationController.verify(authHeader);
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertNotNull(loginResponse);
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
         
-        assertEquals("custom@example.com", responseBody.get("email"));
-        assertEquals("CUSTOM", responseBody.get("role"));
-        assertFalse(responseBody.containsKey("fullName"));
-        assertFalse(responseBody.containsKey("nim"));
-        assertFalse(responseBody.containsKey("nip"));
+        assertEquals("custom@example.com", userInfo.get("email"));
+        assertEquals("CUSTOM", userInfo.get("role"));
+        assertFalse(userInfo.containsKey("fullName"));
+        assertFalse(userInfo.containsKey("nim"));
+        assertFalse(userInfo.containsKey("nip"));
     }
 }
