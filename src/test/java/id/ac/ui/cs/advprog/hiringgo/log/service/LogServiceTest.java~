@@ -466,7 +466,7 @@ public class LogServiceTest {
 
         assertFalse(hasil.stream()
                 .anyMatch(dto -> dto.getLowongan().equals(ditolak.getLowongan())));
-
+        
         for (LowonganWithPendaftaranDTO dto : hasil) {
             for (Pendaftaran p : dto.getPendaftaranUser()) {
                 assertEquals(StatusPendaftaran.DITERIMA, p.getStatus());

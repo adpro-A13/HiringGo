@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.hiringgo.log.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
-import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
@@ -153,12 +152,17 @@ class LogControllerTest {
         when(logService.getLogsByMonth(any(Integer.class), any(Integer.class), any(UUID.class)))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(sampleLog)));
 
-        mockMvc.perform(get("/api/logs/month")
+        MvcResult mvcResult = mockMvc.perform(get("/api/logs/month")
                         .param("id", String.valueOf(userId))
                         .param("bulan", String.valueOf(LocalDate.now().getMonthValue()))
                         .param("tahun", String.valueOf(LocalDate.now().getYear())))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
+
     }
 
     @Test
@@ -278,23 +282,18 @@ class LogControllerTest {
     }
 
     @Test
-    void getLowonganYangDiterima_shouldReturnListLowonganWithPendaftaran() throws Exception {
+    void getLowonganYangDiterima_shouldReturnListLowongan() throws Exception {
         UUID lowonganId = UUID.randomUUID();
 
         Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(lowonganId);
 
-        List<Pendaftaran> daftarPendaftaran = Collections.emptyList(); // atau mock sesuai kebutuhan
-
-        LowonganWithPendaftaranDTO dto = new LowonganWithPendaftaranDTO(lowongan, daftarPendaftaran);
-
         when(logService.getLowonganYangDiterima())
-                .thenReturn(Collections.singletonList(dto));
+                .thenReturn(Collections.singletonList(lowongan));
 
         mockMvc.perform(get("/api/logs/listLowongan"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].lowongan.lowonganId").value(lowonganId.toString()))
-                .andExpect(jsonPath("$[0].pendaftaranUser").isArray());
+                .andExpect(jsonPath("$[0].lowonganId").value(lowonganId.toString()));
     }
 
 }
