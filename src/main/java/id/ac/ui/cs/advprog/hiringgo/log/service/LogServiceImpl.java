@@ -123,6 +123,8 @@ public class LogServiceImpl implements LogService {
         existing.setTanggalLog(updatedLog.getTanggalLog());
         existing.setWaktuMulai(updatedLog.getWaktuMulai());
         existing.setWaktuSelesai(updatedLog.getWaktuSelesai());
+        existing.setKeterangan(updatedLog.getKeterangan());
+        existing.setPesanUntukDosen(updatedLog.getPesanUntukDosen());
         // status tidak diubah di sini
 
         return logRepository.save(existing);
