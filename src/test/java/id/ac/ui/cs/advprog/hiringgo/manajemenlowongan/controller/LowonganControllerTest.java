@@ -12,6 +12,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -192,7 +193,9 @@ class LowonganControllerTest {
     @DisplayName("DELETE /api/lowongan/{id} - Not Found")
     void testDeleteLowonganNotFound() throws Exception {
 
-        doThrow(new RuntimeException("Data tidak ditemukan")).when(lowonganService).deleteLowonganById(id);
+        doThrow(new EntityNotFoundException("Lowongan dengan ID " + id + " tidak ditemukan"))
+                .when(lowonganService).deleteLowonganById(id);
+
 
         mockMvc.perform(delete("/api/lowongan/{id}", id))
                 .andExpect(status().isNotFound())

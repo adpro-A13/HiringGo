@@ -8,6 +8,7 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterServ
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -100,11 +101,15 @@ public class LowonganController {
         try {
             lowonganService.deleteLowonganById(id);
             return ResponseEntity.ok().build();
-        } catch (Exception e) {
+        } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lowongan dengan ID " + id + " tidak ditemukan");
+                    .body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
         }
     }
+
 
     @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
     public ResponseEntity<Object> terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
