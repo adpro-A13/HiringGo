@@ -82,14 +82,14 @@ jobs:
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               $IMAGE
             
-            # Health check dengan timeout yang reasonable
-            echo "Waiting for application to start..."
+            # Health check dengan timeout yang cukup untuk Spring Boot
+            echo "Waiting for Spring Boot application to start (this may take 30+ seconds)..."
             RETRY_COUNT=0
-            MAX_RETRIES=6
+            MAX_RETRIES=2
             HEALTH_CHECK_PASSED=false
             
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-              sleep 15
+              sleep 80
               RETRY_COUNT=$((RETRY_COUNT + 1))
               echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES"
             
@@ -100,13 +100,17 @@ jobs:
                 break
               fi
             
-              # Simple health check ke root endpoint
-              if curl -f -s --connect-timeout 10 --max-time 30 http://localhost:8080/ > /dev/null 2>&1; then
-                echo "Health check passed!"
+              # Health check ke Spring Boot Actuator endpoint atau root
+              if curl -f -s --connect-timeout 15 --max-time 45 http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                echo "Health check passed via /actuator/health!"
+                HEALTH_CHECK_PASSED=true
+                break
+              elif curl -f -s --connect-timeout 15 --max-time 45 http://localhost:8080/ > /dev/null 2>&1; then
+                echo "Health check passed via root endpoint!"
                 HEALTH_CHECK_PASSED=true
                 break
               else
-                echo "Health check failed, retrying..."
+                echo "Health check failed, retrying in 60 seconds..."
               fi
             done
             
