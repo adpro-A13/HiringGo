@@ -36,6 +36,7 @@ sonar {
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation") // Add this for Bean Validation
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api:3.1.0")
     implementation ("io.github.cdimascio:dotenv-java:3.2.0")

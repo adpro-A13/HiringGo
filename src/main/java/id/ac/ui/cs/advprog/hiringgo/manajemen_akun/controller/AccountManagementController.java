@@ -1,7 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemen_akun.controller;
 
+import id.ac.ui.cs.advprog.hiringgo.common.dto.GlobalResponseDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.AdminDto;
-import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.ChangeRoleDto;
+import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.EditUserDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.MahasiswaDto;
 import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.UserResponseDto;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -25,68 +27,82 @@ public class AccountManagementController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+    public ResponseEntity<GlobalResponseDto<List<UserResponseDto>>> getAllUsers() {
         List<UserResponseDto> users = accountManagementService.getAllUsers();
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(GlobalResponseDto.success(users, "Users retrieved successfully"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable String id) {
+    public ResponseEntity<GlobalResponseDto<UserResponseDto>> getUserById(@PathVariable String id) {
         try {
             UserResponseDto user = accountManagementService.getUserById(id);
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(GlobalResponseDto.success(user, "User retrieved successfully"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(GlobalResponseDto.notFound(e.getMessage()));
         }
     }
 
     @PostMapping("/dosen")
-    public ResponseEntity<?> createDosenAccount(@RequestBody DosenDto dosenDto) {
+    public ResponseEntity<GlobalResponseDto<UserResponseDto>> createDosenAccount(@RequestBody DosenDto dosenDto) {
         try {
             UserResponseDto createdUser = accountManagementService.createDosenAccount(dosenDto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(GlobalResponseDto.success(createdUser, "Dosen account created successfully", HttpStatus.CREATED));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(GlobalResponseDto.badRequest(e.getMessage()));
         }
     }
 
     @PostMapping("/admin")
-    public ResponseEntity<?> createAdminAccount(@RequestBody AdminDto adminDto) {
+    public ResponseEntity<GlobalResponseDto<UserResponseDto>> createAdminAccount(@RequestBody AdminDto adminDto) {
         try {
             UserResponseDto createdUser = accountManagementService.createAdminAccount(adminDto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(GlobalResponseDto.success(createdUser, "Admin account created successfully", HttpStatus.CREATED));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(GlobalResponseDto.badRequest(e.getMessage()));
         }
     }
 
     @PostMapping("/mahasiswa")
-    public ResponseEntity<?> createMahasiswaAccount(@RequestBody MahasiswaDto mahasiswaDto) {
+    public ResponseEntity<GlobalResponseDto<UserResponseDto>> createMahasiswaAccount(@RequestBody MahasiswaDto mahasiswaDto) {
         try {
             UserResponseDto createdUser = accountManagementService.createMahasiswaAccount(mahasiswaDto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(GlobalResponseDto.success(createdUser, "Mahasiswa account created successfully", HttpStatus.CREATED));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(GlobalResponseDto.badRequest(e.getMessage()));
         }
     }
-
-    @PutMapping("/{id}/role")
-    public ResponseEntity<?> changeUserRole(@PathVariable String id, @RequestBody ChangeRoleDto changeRoleDto) {
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<GlobalResponseDto<UserResponseDto>> editUser(@PathVariable String id, @RequestBody EditUserDto editUserDto) {
         try {
-            UserResponseDto updatedUser = accountManagementService.changeUserRole(id, changeRoleDto);
-            return ResponseEntity.ok(updatedUser);
+            UserResponseDto updatedUser = accountManagementService.editUser(id, editUserDto);
+            return ResponseEntity.ok(GlobalResponseDto.success(updatedUser, "User updated successfully"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(GlobalResponseDto.badRequest(e.getMessage()));
         }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable String id) {
+    }    @DeleteMapping("/{id}")
+    public ResponseEntity<GlobalResponseDto<Void>> deleteUser(@PathVariable String id) {
         try {
             accountManagementService.deleteUser(id);
-            return ResponseEntity.noContent().build();
+            GlobalResponseDto<Void> response = GlobalResponseDto.<Void>builder()
+                    .success(true)
+                    .statusCode(HttpStatus.NO_CONTENT.value())
+                    .message("User deleted successfully")
+                    .data(null)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(GlobalResponseDto.badRequest(e.getMessage()));
         }
     }
 }

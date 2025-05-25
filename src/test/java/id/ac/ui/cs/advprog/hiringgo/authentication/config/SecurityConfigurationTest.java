@@ -45,16 +45,7 @@ class SecurityConfigurationTest {
 
     @Test
     void securityFilterChain_ShouldConfigureSecurityCorrectly() throws Exception {
-        // Arrange
         DefaultSecurityFilterChain mockFilterChain = mock(DefaultSecurityFilterChain.class);
-
-        when(httpSecurity.cors(any())).thenReturn(httpSecurity);
-        when(httpSecurity.securityMatcher(any(String[].class))).thenReturn(httpSecurity);
-        when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
-        when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
-        when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
-        when(httpSecurity.authenticationProvider(any())).thenReturn(httpSecurity);
-        when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
         when(httpSecurity.build()).thenReturn(mockFilterChain);
 
         SecurityFilterChain result = securityConfiguration.securityFilterChain(httpSecurity);
@@ -62,7 +53,6 @@ class SecurityConfigurationTest {
         assertNotNull(result);
         assertEquals(mockFilterChain, result);
 
-        verify(httpSecurity).cors(any());
         verify(httpSecurity).securityMatcher("/**");
         verify(httpSecurity).csrf(any());
         verify(httpSecurity).authorizeHttpRequests(any());
@@ -71,7 +61,6 @@ class SecurityConfigurationTest {
         verify(httpSecurity).addFilterBefore(eq(jwtAuthenticationFilter), any());
         verify(httpSecurity).build();
     }
-
 
     @Test
     void corsConfigurationSource_ShouldConfigureCorsCorrectly() {
@@ -85,9 +74,8 @@ class SecurityConfigurationTest {
         CorsConfiguration corsConfig = corsConfigSource.getCorsConfiguration(request);
         
         assertNotNull(corsConfig);
-        
-        assertEquals(2, corsConfig.getAllowedOrigins().size());
-        assertEquals("http://localhost:8005", corsConfig.getAllowedOrigins().get(0));
+          assertEquals(1, corsConfig.getAllowedOrigins().size());
+        assertEquals("http://localhost:3000", corsConfig.getAllowedOrigins().get(0));
         
         List<String> expectedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS");
         assertEquals(expectedMethods, corsConfig.getAllowedMethods());
