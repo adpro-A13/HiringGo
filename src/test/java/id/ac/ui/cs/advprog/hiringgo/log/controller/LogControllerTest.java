@@ -167,7 +167,7 @@ class LogControllerTest {
 
         // Mock the command pattern behavior
         when(logService.updateStatus(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"),
-                eq(LogStatus.DITERIMA))).thenReturn(updatedLog);
+                LogStatus.DITERIMA)).thenReturn(updatedLog);
 
         mockMvc.perform(patch("/api/logs/{id}/status", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
                         .contentType(MediaType.APPLICATION_JSON)
