@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.hiringgo.matakuliah.repository;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;

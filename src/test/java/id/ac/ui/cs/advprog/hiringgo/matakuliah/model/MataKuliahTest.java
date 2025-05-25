@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.hiringgo.matakuliah.model;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -135,8 +134,8 @@ class MataKuliahTest {
         assertEquals(mk1.hashCode(), mk2.hashCode());
         assertNotEquals(mk1, mk3);
         assertNotEquals(mk1.hashCode(), mk3.hashCode());
-        assertNotEquals(mk1, null);
-        assertNotEquals(mk1, "mk1");
+        assertNotEquals(null, mk1);
+        assertNotEquals("mk1", mk1);
     }
 
     @Test

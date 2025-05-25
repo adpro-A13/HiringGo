@@ -8,9 +8,7 @@ import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.DosenEmailNotFoundExcep
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class MataKuliahMapper {
@@ -47,7 +45,7 @@ public class MataKuliahMapper {
 
         List<String> dosenEmails = entity.getDosenPengampu().stream()
                 .map(Dosen::getUsername)
-                .collect(Collectors.toList());
+                .toList();
 
         dto.setDosenPengampuEmails(dosenEmails);
 
@@ -57,6 +55,6 @@ public class MataKuliahMapper {
     public List<MataKuliahDTO> toDtoList(List<MataKuliah> entities) {
         return entities.stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

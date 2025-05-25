@@ -5,12 +5,9 @@ import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahAlreadyExistE
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 public class MataKuliahServiceImpl implements MataKuliahService {
@@ -49,12 +46,6 @@ public class MataKuliahServiceImpl implements MataKuliahService {
         }
         return mataKuliahRepository.findByDosenPengampu(dosen);
     }
-
-//    @Async("taskExecutor")
-//    @Override
-//    public CompletableFuture<List<MataKuliah>> findAll() {
-//        return CompletableFuture.completedFuture(mataKuliahRepository.findAll());
-//    }
 
     @Override
     public List<MataKuliah> findAll() {

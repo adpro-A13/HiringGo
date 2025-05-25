@@ -11,7 +11,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -77,7 +76,6 @@ class MataKuliahServiceTest {
 
     @Test
     void testUpdateMataKuliah() {
-        MataKuliah original = new MataKuliah("CS003", "Pemrograman", "Spring Boot");
 
         when(mataKuliahRepository.existsById("CS003")).thenReturn(true);
         when(mataKuliahRepository.save(any(MataKuliah.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -127,7 +125,7 @@ class MataKuliahServiceTest {
     }
 
     @Test
-    void testFindAllMataKuliah() throws Exception {
+    void testFindAllMataKuliah() {
         MataKuliah m1 = new MataKuliah("CS001", "Dasar", "desc");
         MataKuliah m2 = new MataKuliah("CS002", "Lanjut", "desc");
 

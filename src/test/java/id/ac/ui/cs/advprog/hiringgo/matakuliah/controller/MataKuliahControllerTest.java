@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -45,7 +44,7 @@ class MataKuliahControllerTest {
         dto2.setKode("CS102"); dto2.setNama("Lanjut"); dto2.setDeskripsi("Desc"); dto2.setDosenPengampuEmails(List.of());
         List<MataKuliahDTO> dtos = List.of(dto1, dto2);
 
-        when(mataKuliahService.findAll()).thenReturn(CompletableFuture.completedFuture(entities));
+        when(mataKuliahService.findAll()).thenReturn(entities);
         when(mataKuliahMapper.toDtoList(entities)).thenReturn(dtos);
 
         ResponseEntity<List<MataKuliahDTO>> resp = mataKuliahController.getAllMataKuliah();
