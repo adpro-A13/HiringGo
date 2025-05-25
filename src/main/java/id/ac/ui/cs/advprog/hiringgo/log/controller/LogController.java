@@ -4,9 +4,11 @@ import id.ac.ui.cs.advprog.hiringgo.log.command.LogCommand;
 import id.ac.ui.cs.advprog.hiringgo.log.command.LogCommandInvoker;
 import id.ac.ui.cs.advprog.hiringgo.log.command.UpdateStatusCommand;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -129,9 +131,9 @@ public class LogController {
     }
 
     @GetMapping("/listLowongan")
-    public ResponseEntity<List<Pendaftaran>> getLowonganYangDiterima() {
-        List<Pendaftaran> pendaftaran = logService.getLowonganYangDiterima();
-        return ResponseEntity.ok(pendaftaran);
+    public ResponseEntity<List<LowonganWithPendaftaranDTO>> getLowonganYangDiterima() {
+        List<LowonganWithPendaftaranDTO> lowongan = logService.getLowonganYangDiterima();
+        return ResponseEntity.ok(lowongan);
     }
 
 }

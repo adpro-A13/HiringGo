@@ -4,6 +4,7 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
@@ -14,6 +15,8 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepo
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -428,23 +431,48 @@ public class LogServiceTest {
     void testGetLowonganYangDiterima() {
         UUID kandidatId = UUID.randomUUID();
 
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(kandidatId);
+        mahasiswa.setUsername("testMahasiswa");
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(mahasiswa, null, mahasiswa.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         Pendaftaran diterima1 = mock(Pendaftaran.class);
         Pendaftaran diterima2 = mock(Pendaftaran.class);
         Pendaftaran ditolak = mock(Pendaftaran.class);
+
+        Lowongan lowongan1 = mock(Lowongan.class);
+        Lowongan lowongan2 = mock(Lowongan.class);
 
         when(diterima1.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
         when(diterima2.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
         when(ditolak.getStatus()).thenReturn(StatusPendaftaran.DITOLAK);
 
+        when(diterima1.getLowongan()).thenReturn(lowongan1);
+        when(diterima2.getLowongan()).thenReturn(lowongan2);
+        when(ditolak.getLowongan()).thenReturn(mock(Lowongan.class)); // opsional
+
         List<Pendaftaran> semuaPendaftaran = List.of(diterima1, diterima2, ditolak);
         when(pendaftaranRepository.findByKandidatId(kandidatId)).thenReturn(semuaPendaftaran);
 
-        List<Pendaftaran> hasil = logService.getLowonganYangDiterima();
+        List<LowonganWithPendaftaranDTO> hasil = logService.getLowonganYangDiterima();
 
         assertEquals(2, hasil.size());
-        assertTrue(hasil.contains(diterima1));
-        assertTrue(hasil.contains(diterima2));
-        assertFalse(hasil.contains(ditolak));
+
+        assertTrue(hasil.stream().anyMatch(dto -> dto.getLowongan().equals(lowongan1)));
+        assertTrue(hasil.stream().anyMatch(dto -> dto.getLowongan().equals(lowongan2)));
+
+        assertFalse(hasil.stream()
+                .anyMatch(dto -> dto.getLowongan().equals(ditolak.getLowongan())));
+        
+        for (LowonganWithPendaftaranDTO dto : hasil) {
+            for (Pendaftaran p : dto.getPendaftaranUser()) {
+                assertEquals(StatusPendaftaran.DITERIMA, p.getStatus());
+                assertEquals(dto.getLowongan(), p.getLowongan());
+            }
+        }
 
         verify(pendaftaranRepository).findByKandidatId(kandidatId);
     }

@@ -3,11 +3,14 @@ package id.ac.ui.cs.advprog.hiringgo.log.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -280,19 +283,23 @@ class LogControllerTest {
     }
 
     @Test
-    void getLowonganYangDiterima_shouldReturnListPendaftaran() throws Exception {
-        UUID pendaftaranId = UUID.randomUUID();
+    void getLowonganYangDiterima_shouldReturnListLowonganWithPendaftaran() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
 
-        Pendaftaran pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(pendaftaranId);
-        pendaftaran.setStatus(StatusPendaftaran.DITERIMA);
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(lowonganId);
+
+        List<Pendaftaran> daftarPendaftaran = Collections.emptyList(); // atau mock sesuai kebutuhan
+
+        LowonganWithPendaftaranDTO dto = new LowonganWithPendaftaranDTO(lowongan, daftarPendaftaran);
 
         when(logService.getLowonganYangDiterima())
-                .thenReturn(Collections.singletonList(pendaftaran));
+                .thenReturn(Collections.singletonList(dto));
 
         mockMvc.perform(get("/api/logs/listLowongan"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].pendaftaranId").value(pendaftaranId.toString()))
-                .andExpect(jsonPath("$[0].status").value("DITERIMA"));
+                .andExpect(jsonPath("$[0].lowongan.lowonganId").value(lowonganId.toString()))
+                .andExpect(jsonPath("$[0].pendaftaranUser").isArray());
     }
+
 }
