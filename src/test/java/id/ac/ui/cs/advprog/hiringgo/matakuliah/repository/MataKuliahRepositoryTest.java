@@ -125,6 +125,7 @@ class MataKuliahRepositoryTest {
     @Test
     void testFindByDosenPengampu(){
         Dosen dosen = new Dosen("dosen@u.id", "pass", "dosen", "124");
+        dosen.setId(UUID.randomUUID());
         entityManager.persist(dosen);
 
         MataKuliah matkul = new MataKuliah("CS101", "Algoritma", "Dasar");

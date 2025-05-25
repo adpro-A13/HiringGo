@@ -70,6 +70,7 @@ class LogRepositoryTest {
 
         // Simpan entitas yang relevan (dosen, mata kuliah, lowongan, pendaftaran, log)
         Dosen dosen = new Dosen("professor@example.com", "password", "Prof. Name", "12345");
+        dosen.setId(UUID.randomUUID());
         entityManager.persist(dosen);
         entityManager.flush();
         UUID dosenId = dosen.getId();
