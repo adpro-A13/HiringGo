@@ -34,7 +34,7 @@ sonar {
 }
 
 dependencies {
-    implementation('org.springframework.boot:spring-boot-starter-actuator')
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
