@@ -1,13 +1,27 @@
-name: Debug Deploy
+name: Deploy & Rollback
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - rollback
+      rollback_version:
+        description: 'Version to rollback to (leave empty for previous version)'
+        required: false
+        type: string
 
 jobs:
-  debug-deploy:
+  deploy:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
     runs-on: ubuntu-latest
 
     steps:
@@ -28,8 +42,12 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ env.IMAGE_TAG }} .
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ env.IMAGE_TAG }}
+          
+          # Update latest tag
+          docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:${{ env.IMAGE_TAG }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
 
-      - name: Debug Deploy to EC2
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -39,8 +57,13 @@ jobs:
             IMAGE_TAG=${{ env.IMAGE_TAG }}
             IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:$IMAGE_TAG
             
-            echo "=== DEBUGGING DEPLOYMENT ==="
-            echo "Image: $IMAGE"
+            # Create deployment directory if not exists
+            sudo mkdir -p /opt/advshop
+            
+            # Backup current version before deploy
+            if [ -f /opt/advshop/.current_version ]; then
+              sudo cp /opt/advshop/.current_version /opt/advshop/.previous_version
+            fi
             
             # Stop and remove old container
             docker rm -f web_server || true
@@ -48,11 +71,10 @@ jobs:
             # Login to Docker Hub
             docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
             
-            # Pull image
+            # Pull new image
             docker pull $IMAGE
             
-            # Run container
-            echo "Starting container..."
+            # Run new container
             docker run -d --name=web_server -p 8080:8080 \
               -e DB_URL="${{ secrets.DB_URL }}" \
               -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
@@ -60,41 +82,119 @@ jobs:
               -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
               $IMAGE
             
-            # Wait a bit
-            sleep 15
+            # Health check dengan timeout yang reasonable
+            echo "Waiting for application to start..."
+            RETRY_COUNT=0
+            MAX_RETRIES=6
+            HEALTH_CHECK_PASSED=false
             
-            echo "=== CONTAINER STATUS ==="
-            docker ps -a | grep web_server || echo "No container found"
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              sleep 15
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES"
             
-            echo "=== CONTAINER LOGS ==="
-            docker logs web_server || echo "Cannot get logs"
+              # Cek apakah container masih running
+              if ! docker ps | grep -q web_server; then
+                echo "Container stopped running! Check logs:"
+                docker logs web_server || true
+                break
+              fi
             
-            echo "=== PORT CHECK ==="
-            netstat -tulpn | grep :8080 || echo "Port 8080 not listening"
+              # Simple health check ke root endpoint
+              if curl -f -s --connect-timeout 10 --max-time 30 http://localhost:8080/ > /dev/null 2>&1; then
+                echo "Health check passed!"
+                HEALTH_CHECK_PASSED=true
+                break
+              else
+                echo "Health check failed, retrying..."
+              fi
+            done
             
-            echo "=== PROCESS CHECK ==="
-            docker exec web_server ps aux || echo "Cannot check processes"
+            if [ "$HEALTH_CHECK_PASSED" = true ]; then
+              echo "Deployment successful!"
+              # Add restart policy after successful health check
+              docker update --restart=unless-stopped web_server
+              echo $IMAGE_TAG | sudo tee /opt/advshop/.current_version
+              echo "$(date): Deployed $IMAGE_TAG" | sudo tee -a /opt/advshop/.deployment_history
+            else
+              echo "Health check failed! Rolling back..."
+              echo "Container logs:"
+              docker logs web_server || true
+              docker rm -f web_server || true
             
-            echo "=== CURL TESTS ==="
-            # Test berbagai endpoint
-            echo "Testing root endpoint:"
-            curl -v http://localhost:8080/ || echo "Root endpoint failed"
+              # Rollback to previous version if exists
+              if [ -f /opt/advshop/.previous_version ]; then
+                PREV_VERSION=$(sudo cat /opt/advshop/.previous_version)
+                PREV_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:$PREV_VERSION
+                echo "Rolling back to $PREV_VERSION"
+                docker pull $PREV_IMAGE
+                docker run -d --name=web_server -p 8080:8080 \
+                  --restart=unless-stopped \
+                  -e DB_URL="${{ secrets.DB_URL }}" \
+                  -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+                  -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+                  -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+                  $PREV_IMAGE
+                echo "Rolled back to $PREV_VERSION"
+              else
+                echo "No previous version available for rollback"
+              fi
+              exit 1
+            fi
+
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Rollback on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Determine rollback version
+            if [ -n "${{ github.event.inputs.rollback_version }}" ]; then
+              ROLLBACK_VERSION="${{ github.event.inputs.rollback_version }}"
+            elif [ -f /opt/advshop/.previous_version ]; then
+              ROLLBACK_VERSION=$(sudo cat /opt/advshop/.previous_version)
+            else
+              echo "No rollback version specified and no previous version found!"
+              exit 1
+            fi
             
-            echo "Testing with timeout:"
-            timeout 10 curl -f http://localhost:8080/ || echo "Timeout curl failed"
+            ROLLBACK_IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:$ROLLBACK_VERSION
             
-            echo "Testing from inside container:"
-            docker exec web_server curl -f http://localhost:8080/ || echo "Internal curl failed"
+            echo "Rolling back to version: $ROLLBACK_VERSION"
             
-            echo "Testing different endpoints:"
-            curl -f http://localhost:8080/health || echo "/health endpoint failed"
-            curl -f http://localhost:8080/api || echo "/api endpoint failed"
-            curl -f http://localhost:8080/status || echo "/status endpoint failed"
+            # Backup current version
+            if [ -f /opt/advshop/.current_version ]; then
+              sudo cp /opt/advshop/.current_version /opt/advshop/.rollback_backup
+            fi
             
-            echo "=== NETWORK CHECK ==="
-            docker exec web_server netstat -tulpn || echo "Cannot check container ports"
+            # Stop current container
+            docker rm -f web_server || true
             
-            echo "=== ENVIRONMENT CHECK ==="
-            docker exec web_server env | grep -E "(DB_|JWT_)" || echo "Cannot check environment"
+            # Login to Docker Hub
+            docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
             
-            echo "=== END DEBUG ==="
+            # Pull rollback image
+            docker pull $ROLLBACK_IMAGE
+            
+            # Run rollback container
+            docker run -d --name=web_server -p 8080:8080 \
+              --restart=unless-stopped \
+              -e DB_URL="${{ secrets.DB_URL }}" \
+              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              $ROLLBACK_IMAGE
+            
+            # Wait for container to start  
+            sleep 20
+            
+            # Log successful rollback
+            echo "Rollback completed successfully!"
+            echo $ROLLBACK_VERSION | sudo tee /opt/advshop/.current_version
+            echo "$(date): Rolled back to $ROLLBACK_VERSION" | sudo tee -a /opt/advshop/.deployment_history
