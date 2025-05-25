@@ -1,20 +1,27 @@
 package id.ac.ui.cs.advprog.hiringgo.log.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
+
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Async;
 
@@ -67,8 +74,8 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public List<Log> getLogsByPendaftaran(String kode) {
-        return logRepository.findByPendaftaran_pendaftaranId(UUID.fromString(kode));
+    public List<Log> getLogsByDosenMataKuliah(UUID dosenId) {
+        return logRepository.findLogsByDosenMataKuliah(dosenId);
     }
 
     @Override
@@ -78,7 +85,7 @@ public class LogServiceImpl implements LogService {
 
 
     @Override
-    public Log updateStatus(Long id, LogStatus status) {
+    public Log updateStatus(UUID id, LogStatus status) {
         Log log = logRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Log tidak ditemukan"));
         log.setStatus(status);
@@ -95,7 +102,7 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public Optional<Log> getLogById(Long id) {
+    public Optional<Log> getLogById(UUID id) {
         return logRepository.findById(id);
     }
 
@@ -105,7 +112,7 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public Log updateLog(Long id, Log updatedLog) {
+    public Log updateLog(UUID id, Log updatedLog) {
         validateLogTime(updatedLog);
 
         Log existing = logRepository.findById(id)
@@ -116,23 +123,43 @@ public class LogServiceImpl implements LogService {
         existing.setTanggalLog(updatedLog.getTanggalLog());
         existing.setWaktuMulai(updatedLog.getWaktuMulai());
         existing.setWaktuSelesai(updatedLog.getWaktuSelesai());
-        // status tidak diubah di sini
+        existing.setKeterangan(updatedLog.getKeterangan());
+        existing.setPesanUntukDosen(updatedLog.getPesanUntukDosen());
 
         return logRepository.save(existing);
     }
 
     @Async
     @Override
-    public void deleteLog(Long id) {
+    public void deleteLog(UUID id) {
         logRepository.deleteById(id);
     }
 
     @Override
-    public List<Pendaftaran> getLowonganYangDiterima(UUID kandidatId) {
+    public List<LowonganWithPendaftaranDTO> getLowonganYangDiterima() {
+        UUID kandidatId = getLoggedInUserId();
         List<Pendaftaran> semuaPendaftaran = pendaftaranRepository.findByKandidatId(kandidatId);
 
-        return semuaPendaftaran.stream()
-                .filter(pendaftaran -> pendaftaran.getStatus() == StatusPendaftaran.DITERIMA)
+        List<Pendaftaran> diterima = semuaPendaftaran.stream()
+                .filter(p -> p.getStatus() == StatusPendaftaran.DITERIMA)
                 .toList();
+
+        Map<Lowongan, List<Pendaftaran>> mapLowonganToPendaftaran = diterima.stream()
+                .collect(Collectors.groupingBy(Pendaftaran::getLowongan));
+
+        return mapLowonganToPendaftaran.entrySet().stream()
+                .map(entry -> new LowonganWithPendaftaranDTO(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+
+    private UUID getLoggedInUserId() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (principal instanceof Mahasiswa) {
+            return ((Mahasiswa) principal).getId();
+        }
+
+        throw new RuntimeException("User not authenticated or user data unavailable");
     }
 }
