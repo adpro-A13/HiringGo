@@ -11,7 +11,6 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,11 +79,16 @@ public class LogController {
     }
 
     @GetMapping("/month")
-    public CompletableFuture<ResponseEntity<List<Log>>> getLogsByMonth(
+    public ResponseEntity<List<Log>> getLogsByMonth(
             @RequestParam UUID id,
             @RequestParam int bulan,
             @RequestParam int tahun) {
-        return logService.getLogsByMonth(bulan, tahun, id).thenApply(ResponseEntity::ok);
+        try {
+            List<Log> logs = logService.getLogsByMonth(bulan, tahun, id).get();
+            return ResponseEntity.ok(logs);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
     }
 
     @PatchMapping("/{id}/status")

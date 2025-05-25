@@ -150,17 +150,12 @@ class LogControllerTest {
         when(logService.getLogsByMonth(any(Integer.class), any(Integer.class), any(UUID.class)))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(sampleLog)));
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/logs/month")
+        mockMvc.perform(get("/api/logs/month")
                         .param("id", String.valueOf(userId))
                         .param("bulan", String.valueOf(LocalDate.now().getMonthValue()))
                         .param("tahun", String.valueOf(LocalDate.now().getYear())))
-                .andExpect(request().asyncStarted())
-                .andReturn();
-
-        mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
-
     }
 
     @Test
