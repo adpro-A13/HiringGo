@@ -2,7 +2,6 @@ package id.ac.ui.cs.advprog.hiringgo.log.repository;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
@@ -10,11 +9,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,7 +23,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-public class LogRepositoryTest {
+class LogRepositoryTest {
 
     @Autowired
     private LogRepository logRepository;
@@ -35,7 +32,7 @@ public class LogRepositoryTest {
     private EntityManager entityManager;
 
     @Test
-    public void testSaveAndFindById() {
+    void testSaveAndFindById() {
         Log log = new Log.Builder()
                 .judul("Asistensi")
                 .kategori(LogKategori.ASISTENSI)
@@ -53,7 +50,7 @@ public class LogRepositoryTest {
     }
 
     @Test
-    public void testFindByStatus() {
+    void testFindByStatus() {
         Log log = new Log.Builder()
                 .judul("Koreksi")
                 .kategori(LogKategori.MENGOREKSI)

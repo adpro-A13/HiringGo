@@ -12,7 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LogCommandInvokerTest {
+class LogCommandInvokerTest {
 
     private LogCommandInvoker invoker;
     private LogService mockLogService;

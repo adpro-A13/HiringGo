@@ -11,7 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LogCommandTest {
+class LogCommandTest {
 
     @Test
     void testUpdateStatusCommand() {

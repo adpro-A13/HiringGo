@@ -8,15 +8,13 @@ import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+
 
 @RequestMapping("/api/logs")
 @RestController
@@ -88,7 +86,10 @@ public class LogController {
         try {
             List<Log> logs = logService.getLogsByMonth(bulan, tahun, id).get();
             return ResponseEntity.ok(logs);
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return ResponseEntity.status(500).body(null);
+        }catch (Exception e) {
             return ResponseEntity.status(500).body(null);
         }
     }

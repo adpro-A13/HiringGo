@@ -8,8 +8,6 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,10 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.propertyeditors.UUIDEditor;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
@@ -170,7 +166,7 @@ class LogControllerTest {
                 .build();
 
         // Mock the command pattern behavior
-        when(logService.updateStatus(eq(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")),
+        when(logService.updateStatus(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"),
                 eq(LogStatus.DITERIMA))).thenReturn(updatedLog);
 
         mockMvc.perform(patch("/api/logs/{id}/status", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))

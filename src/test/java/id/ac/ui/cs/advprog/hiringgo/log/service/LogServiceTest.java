@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class LogServiceTest {
+class LogServiceTest {
 
     private LogRepository logRepository;
     private PendaftaranRepository pendaftaranRepository;
