@@ -1,6 +1,5 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.dto;
 
-import id.ac.ui.cs.advprog.hiringgo.manajemen_akun.dto.DosenDto;
 import lombok.*;
 import java.util.*;
 
