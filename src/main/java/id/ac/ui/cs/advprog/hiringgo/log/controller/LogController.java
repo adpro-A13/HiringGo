@@ -45,10 +45,16 @@ public class LogController {
         return ResponseEntity.ok(logs);
     }
 
-    @GetMapping("/listLog/{kode}")
-    public ResponseEntity<List<Log>> getLogsByPendaftaran(@PathVariable String kode) {
-        List<Log> logs = logService.getLogsByPendaftaran(kode);
-        return ResponseEntity.ok(logs);
+    @GetMapping("/dosen/{dosenId}")
+    public ResponseEntity<?> getLogsByDosenMataKuliah(@PathVariable UUID dosenId) {
+        try {
+            List<Log> logs = logService.getLogsByDosenMataKuliah(dosenId);
+            return ResponseEntity.ok(logs);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving logs for dosen");
+        }
     }
 
     @GetMapping("/user/{id}")

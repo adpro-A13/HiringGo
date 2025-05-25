@@ -67,8 +67,8 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public List<Log> getLogsByPendaftaran(String kode) {
-        return logRepository.findByPendaftaran_pendaftaranId(UUID.fromString(kode));
+    public List<Log> getLogsByDosenMataKuliah(UUID dosenId) {
+        return logRepository.findLogsByDosenMataKuliah(dosenId);
     }
 
     @Override

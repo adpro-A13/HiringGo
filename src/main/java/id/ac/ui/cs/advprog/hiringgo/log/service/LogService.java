@@ -17,7 +17,7 @@ public interface LogService {
     List<Log> getAllLogs();
     List<Log> getLogsByStatus(LogStatus status);
     CompletableFuture<List<Log>> getLogsByMonth(int bulan, int tahun, UUID id);
-    List<Log> getLogsByPendaftaran(String kode);
+    List<Log> getLogsByDosenMataKuliah(UUID dosenId);
     List<Log> getLogsByUser(UUID idUser);
 
     Log updateStatus(UUID id, LogStatus status);
