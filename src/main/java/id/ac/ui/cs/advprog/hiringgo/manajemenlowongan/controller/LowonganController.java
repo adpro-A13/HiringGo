@@ -52,12 +52,10 @@ public class LowonganController {
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
         if (filterStrategy != null && filterValue != null) {
-            logger.info("Applying filter - strategy: {}, value: {}", filterStrategy, filterValue);
             lowonganList = lowonganFilterService.filter(lowonganList, filterStrategy, filterValue);
         }
 
         if (sortStrategy != null && !sortStrategy.isEmpty()) {
-            logger.info("Applying sort - strategy: {}", sortStrategy);
             lowonganList = lowonganSortService.sort(lowonganList, sortStrategy);
         }
 
