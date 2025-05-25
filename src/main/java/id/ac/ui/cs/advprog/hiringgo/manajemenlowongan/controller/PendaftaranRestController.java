@@ -1,164 +1,108 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
-import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
-import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.ApplicationProcessingService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.ApplicationStatusService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.AuthenticationValidatorService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.ResponseBuilderService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.validation.DaftarFormBusinessValidator;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
-import java.math.BigDecimal;
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/lowongandaftar")
+@RequiredArgsConstructor
 @PreAuthorize("hasAuthority('MAHASISWA')")
 public class PendaftaranRestController {
 
     private final LowonganService lowonganService;
-    private final PendaftaranService pendaftaranService;
-    private final UserRepository userRepository;
-    private final PendaftaranRepository pendaftaranRepository;
+    private final ApplicationProcessingService applicationProcessingService;
+    private final ApplicationStatusService applicationStatusService;
+    private final AuthenticationValidatorService authenticationValidatorService;
+    private final ResponseBuilderService responseBuilderService;
     private final LowonganMapper lowonganMapper;
-
-    @Autowired
-    public PendaftaranRestController(
-            LowonganService lowonganService,
-            PendaftaranService pendaftaranService,
-            JwtService jwtService,
-            UserRepository userRepository,
-            PendaftaranRepository pendaftaranRepository,
-            LowonganMapper lowonganMapper
-    ) {
-        this.lowonganService = lowonganService;
-        this.pendaftaranService = pendaftaranService;
-        this.userRepository = userRepository;
-        this.pendaftaranRepository = pendaftaranRepository;
-        this.lowonganMapper = lowonganMapper;
-    }
+    private final DaftarFormBusinessValidator daftarFormBusinessValidator;
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getLowonganDetail(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> getLowonganDetail(@PathVariable UUID id) {
         try {
             Lowongan lowongan = lowonganService.findById(id);
-            LowonganDetailResponse response = new LowonganDetailResponse(lowongan);
-            return ResponseEntity.ok(response);
+            LowonganDetailResponse lowonganDetailResponse = new LowonganDetailResponse(lowongan);
+            return responseBuilderService.buildSuccessResponse(
+                    "Lowongan detail retrieved successfully",
+                    "lowongan",
+                    lowonganDetailResponse
+            );
         } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lowongan tidak ditemukan");
+            throw new IllegalArgumentException("Lowongan tidak ditemukan dengan ID: " + id);
         }
     }
 
     @PostMapping("/{id}/daftar")
-    public ResponseEntity<Object> daftar(
+    public ResponseEntity<Map<String, Object>> daftar(
             @PathVariable UUID id,
-            @Valid @RequestBody DaftarForm form,
+            @Valid @RequestBody DaftarForm daftarForm,
             Principal principal) {
-
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Anda harus login terlebih dahulu");
-        }
-
         try {
-            String email = principal.getName();
-            Mahasiswa kandidat = (Mahasiswa) userRepository.findByEmail(email)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
+            daftarFormBusinessValidator.validateBusinessRules(daftarForm);
 
-            List<Pendaftaran> pendaftaranList = pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                    kandidat.getId(), id);
-
-            if (!pendaftaranList.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Anda sudah mendaftar untuk lowongan ini");
-            }
-
-            Pendaftaran pendaftaran = pendaftaranService.daftar(
-                    id,
-                    kandidat,
-                    BigDecimal.valueOf(form.getIpk()),
-                    form.getSks()
-            );
-
-            DaftarResponse response = new DaftarResponse(true, "Berhasil mendaftar asisten dosen", pendaftaran);
-            return ResponseEntity.ok(response);
-
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("User tidak ditemukan: " + e.getMessage());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lowongan tidak ditemukan");
+            Mahasiswa currentUser = authenticationValidatorService.validateAndGetCurrentUser(principal);
+            var pendaftaran = applicationProcessingService.processApplication(id, daftarForm, currentUser);
+            return responseBuilderService.buildRegistrationResponse(pendaftaran);
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(e.getMessage());
+            throw e;
+        } catch (NoSuchElementException e) {
+            throw new IllegalArgumentException("Lowongan tidak ditemukan dengan ID: " + id);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Terjadi kesalahan: " + e.getMessage());
+            throw new RuntimeException("Terjadi kesalahan saat memproses pendaftaran: " + e.getMessage());
         }
     }
 
     @GetMapping("/{id}/status")
-    public ResponseEntity<Object> getLowonganApplyStatus(@PathVariable UUID id, Principal principal) {
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Anda harus login terlebih dahulu");
-        }
-
+    public ResponseEntity<Map<String, Object>> getLowonganApplyStatus(@PathVariable UUID id, Principal principal) {
         try {
-            String email = principal.getName();
-            Mahasiswa mahasiswa = (Mahasiswa) userRepository.findByEmail(email)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found: " + email));
-
-            List<Pendaftaran> pendaftaranList = pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                    mahasiswa.getId(), id);
-
-            if (pendaftaranList.isEmpty()) {
-                return ResponseEntity.ok(Map.of(
-                        "hasApplied", false,
-                        "status", "BELUM_DAFTAR"
-                ));
-            }
-
-            Pendaftaran pendaftaran = pendaftaranList.get(0);
-            return ResponseEntity.ok(Map.of(
-                    "hasApplied", true,
-                    "status", pendaftaran.getStatus().toString(),
-                    "pendaftaranId", pendaftaran.getPendaftaranId()
-            ));
-
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("User tidak ditemukan: " + e.getMessage());
+            Mahasiswa currentUser = authenticationValidatorService.validateAndGetCurrentUser(principal);
+            Map<String, Object> statusData = applicationStatusService.getApplicationStatus(id, currentUser);
+            return responseBuilderService.buildSuccessResponse(
+                    "Status pendaftaran retrieved successfully",
+                    "application_status",
+                    statusData
+            );
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Terjadi kesalahan: " + e.getMessage());
+            throw new RuntimeException("Terjadi kesalahan saat mengambil status pendaftaran: " + e.getMessage());
         }
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<LowonganDTO>> getAllLowonganForMahasiswa() {
-        List<Lowongan> lowonganList = lowonganService.findAll();
-        List<LowonganDTO> lowonganDTOList = lowonganMapper.toDtoList(lowonganList);
-        return ResponseEntity.ok(lowonganDTOList);
+    public ResponseEntity<Map<String, Object>> getAllLowonganForMahasiswa() {
+        try {
+            List<Lowongan> lowonganList = lowonganService.findAll();
+            List<LowonganDTO> lowonganDTOList = lowonganMapper.toDtoList(lowonganList);
+            return responseBuilderService.buildListResponse(
+                    "Lowongan list retrieved successfully",
+                    lowonganDTOList
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Terjadi kesalahan saat mengambil daftar lowongan: " + e.getMessage());
+        }
     }
 }
