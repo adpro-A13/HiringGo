@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -106,6 +107,16 @@ class LogControllerTest {
     }
 
     @Test
+    void getLogsByDosenMataKuliah_shouldReturn403_whenRuntimeExceptionThrown() throws Exception {
+        UUID dosenId = UUID.randomUUID();
+        when(logService.getLogsByDosenMataKuliah(dosenId)).thenThrow(new RuntimeException("Unauthorized"));
+
+        mockMvc.perform(get("/api/logs/dosen/" + dosenId))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Unauthorized"));
+    }
+
+    @Test
     void getLogsByUser_shouldReturnLogsList() throws Exception {
         UUID userId = UUID.randomUUID();
         when(logService.getLogsByUser(userId)).thenReturn(Collections.singletonList(sampleLog));
@@ -156,6 +167,35 @@ class LogControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].judul").value("Test Log"));
     }
+
+    @Test
+    void getLogsByMonth_shouldReturn500_whenInterruptedExceptionThrown() throws Exception {
+        UUID id = UUID.randomUUID();
+        CompletableFuture<List<Log>> future = CompletableFuture.failedFuture(new InterruptedException("Interrupted"));
+
+        when(logService.getLogsByMonth(anyInt(), anyInt(), eq(id)))
+                .thenReturn(future);
+
+        mockMvc.perform(get("/api/logs/month")
+                        .param("id", id.toString())
+                        .param("bulan", "5")
+                        .param("tahun", "2025"))
+                .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void getLogsByMonth_shouldReturn500_whenGeneralExceptionThrown() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(logService.getLogsByMonth(anyInt(), anyInt(), eq(id)))
+                .thenThrow(new RuntimeException("Unexpected"));
+
+        mockMvc.perform(get("/api/logs/month")
+                        .param("id", id.toString())
+                        .param("bulan", "5")
+                        .param("tahun", "2025"))
+                .andExpect(status().isInternalServerError());
+    }
+
 
     @Test
     void updateLogStatus_shouldReturnUpdatedLog() throws Exception {
