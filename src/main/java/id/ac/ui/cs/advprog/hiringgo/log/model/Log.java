@@ -21,8 +21,8 @@ import java.util.UUID;
 public class Log {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "pendaftaran_id")
@@ -61,7 +61,7 @@ public class Log {
     }
 
     public static class Builder {
-        private Long id;
+        private UUID id;
         private Pendaftaran pendaftaran;
         private User user;
         private String judul;
@@ -73,7 +73,7 @@ public class Log {
         private String pesanUntukDosen;
         private LogStatus status = LogStatus.MENUNGGU;
 
-        public Builder id(Long id) {
+        public Builder id(UUID id) {
             this.id = id;
             return this;
         }

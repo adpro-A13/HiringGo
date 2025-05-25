@@ -370,4 +370,3 @@ classDiagram
 
 ##### Code Diagram (Mata Kuliah)
 ![image](https://github.com/user-attachments/assets/ac616b6a-2617-4404-8a71-a46b4b1c6dbd)
-

@@ -7,11 +7,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-
 
 @Repository
 public interface MataKuliahRepository extends JpaRepository<MataKuliah, String> {
     Optional<MataKuliah> findByKode(String kode);
-    List<MataKuliah> findByDosenPengampu(Dosen dosenPengampu);
+    List<MataKuliah> findByDosenPengampu(Dosen dosen);
 }
