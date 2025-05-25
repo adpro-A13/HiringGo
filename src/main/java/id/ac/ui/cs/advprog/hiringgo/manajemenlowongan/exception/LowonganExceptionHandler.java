@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice(basePackages = "id.ac.ui.cs.advprog.hiringgo.manajemenlowongan")
-public class GlobalExceptionHandler {
+public class LowonganExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Object> handleNotFound(EntityNotFoundException ex) {
