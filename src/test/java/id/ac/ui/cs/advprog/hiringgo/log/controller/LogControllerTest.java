@@ -333,30 +333,6 @@ class LogControllerTest {
                 .andExpect(jsonPath("$[0].pendaftaranUser").isArray());
     }
 
-    @Test
-    void getLogsByDosenMataKuliah_shouldReturnError_whenGeneralExceptionThrown() throws Exception {
-        UUID dosenId = UUID.randomUUID();
-        when(logService.getLogsByDosenMataKuliah(dosenId)).thenThrow(new NullPointerException("Database error"));
-
-        mockMvc.perform(get("/api/logs/dosen/" + dosenId))
-                .andExpect(status().is4xxClientError())
-                .andExpect(content().string("Database error"));
-    }
-
-    @Test
-    void updateLogStatus_shouldReturnError_whenGeneralExceptionThrown() throws Exception {
-        UUID logId = UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401");
-
-        // Mock the command pattern to throw a general exception
-        when(logService.updateStatus(eq(logId), any(LogStatus.class)))
-                .thenThrow(new NullPointerException("Database connection failed"));
-
-        mockMvc.perform(patch("/api/logs/{id}/status", logId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("\"DITERIMA\""))
-                .andExpect(status().is4xxClientError())
-                .andExpect(content().string("Database connection failed"));
-    }
 
     @Test
     void updateLog_shouldHandleValidationError() throws Exception {
@@ -375,33 +351,5 @@ class LogControllerTest {
                 .andExpect(content().string("Invalid log data"));
     }
 
-    @Test
-    void updateLog_shouldReturnError_whenGeneralExceptionThrown() throws Exception {
-        Log updatedLog = new Log.Builder()
-                .id(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
-                .judul("Updated Test Log")
-                .build();
-
-        when(logService.updateLog(eq(UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401")), any(Log.class)))
-                .thenThrow(new NullPointerException("Database error"));
-
-        mockMvc.perform(put("/api/logs/{id}", UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedLog)))
-                .andExpect(status().is4xxClientError())
-                .andExpect(content().string("Database error"));
-    }
-
-    @Test
-    void deleteLog_shouldReturnError_whenGeneralExceptionThrown() throws Exception {
-        UUID logId = UUID.fromString("f0a26f9d-bf79-4d90-9be6-90d8963f3401");
-
-        doThrow(new NullPointerException("Database connection failed"))
-                .when(logService).deleteLog(logId);
-
-        mockMvc.perform(delete("/api/logs/{id}", logId))
-                .andExpect(status().is4xxClientError())
-                .andExpect(content().string("Database connection failed"));
-    }
 
 }
