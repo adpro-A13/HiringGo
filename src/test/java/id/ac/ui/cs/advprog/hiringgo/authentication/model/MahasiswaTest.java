@@ -71,4 +71,37 @@ public class MahasiswaTest {
         assertEquals(mahasiswa.getId().getClass(), UUID.class);
         assertEquals(mahasiswa.getId(), uuid);
     }
+
+    @Test
+    void testIncrementTokenVersion() {
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setTokenVersion(5);
+
+        mahasiswa.incrementTokenVersion();
+
+        assertEquals(6, mahasiswa.getTokenVersion());
+    }
+
+    @Test
+    void testIncrementTokenVersionFromZero() {
+        Mahasiswa mahasiswa = new Mahasiswa();
+        // tokenVersion defaults to 0
+        assertEquals(0, mahasiswa.getTokenVersion());
+
+        mahasiswa.incrementTokenVersion();
+
+        assertEquals(1, mahasiswa.getTokenVersion());
+    }
+
+    @Test
+    void testMultipleIncrementTokenVersion() {
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setTokenVersion(10);
+
+        mahasiswa.incrementTokenVersion();
+        mahasiswa.incrementTokenVersion();
+        mahasiswa.incrementTokenVersion();
+
+        assertEquals(13, mahasiswa.getTokenVersion());
+    }
 }
