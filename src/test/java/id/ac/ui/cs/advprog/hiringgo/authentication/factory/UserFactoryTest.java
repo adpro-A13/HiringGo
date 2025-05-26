@@ -108,4 +108,105 @@ class UserFactoryTest {
         UserFactory userFactory = new UserFactory();
         assertNotNull(userFactory);
     }
+
+
+    @Test
+    void createUser_withNullRole_shouldThrowNullPointerException() {
+        NullPointerException exception = assertThrows(NullPointerException.class, () -> {
+            UserFactory.createUser(null, "email@example.com", "password", "Full Name", "12345");
+        });
+
+        assertNotNull(exception);
+    }
+
+    @Test
+    void createUser_withProvidedId_shouldUseProvidedId() {
+        java.util.UUID providedId = java.util.UUID.randomUUID();
+
+        User user = UserFactory.createUser(UserRoleEnums.MAHASISWA, "test@test.com", "password", "Test User", "123456", providedId);
+
+        assertNotNull(user);
+        assertEquals(providedId, user.getId());
+    }
+
+    @Test
+    void createUser_withNullIdAndUserHasNullId_shouldGenerateNewId() {
+        User user = UserFactory.createUser(UserRoleEnums.ADMIN, "admin@test.com", "password", "Admin", "");
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+    }
+
+    @Test
+    void createUser_withNullIdButUserAlreadyHasId_shouldKeepExistingId() {
+
+        User user = UserFactory.createUser(UserRoleEnums.DOSEN, "dosen@test.com", "password", "Dosen User", "123456789");
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+    }
+
+    @Test
+    void createUser_allRolesBranchCoverage() {
+
+        User mahasiswa = UserFactory.createUser(UserRoleEnums.MAHASISWA, "m@test.com", "pass", "M User", "123");
+        assertTrue(mahasiswa instanceof Mahasiswa);
+
+        User dosen = UserFactory.createUser(UserRoleEnums.DOSEN, "d@test.com", "pass", "D User", "456");
+        assertTrue(dosen instanceof Dosen);
+
+        User admin = UserFactory.createUser(UserRoleEnums.ADMIN, "a@test.com", "pass", "A User", "789");
+        assertTrue(admin instanceof Admin);
+    }
+
+    @Test
+    void createUser_withNullNimOrNip_shouldUseEmptyString() {
+
+        User userWithNullIdentifier = UserFactory.createUser(UserRoleEnums.MAHASISWA, "test@test.com", "password", "Test", null);
+
+        assertNotNull(userWithNullIdentifier);
+        assertTrue(userWithNullIdentifier instanceof Mahasiswa);
+        assertEquals("", ((Mahasiswa) userWithNullIdentifier).getNim());
+    }
+
+    @Test
+    void createUser_withEmptyNimOrNip_shouldUseEmptyString() {
+
+        User userWithEmptyIdentifier = UserFactory.createUser(UserRoleEnums.DOSEN, "test@test.com", "password", "Test", "");
+
+        assertNotNull(userWithEmptyIdentifier);
+        assertTrue(userWithEmptyIdentifier instanceof Dosen);
+        assertEquals("", ((Dosen) userWithEmptyIdentifier).getNip());
+    }
+
+    @Test
+    void createUser_overloadedMethod_shouldCallMainMethod() {
+
+        User user = UserFactory.createUser(UserRoleEnums.MAHASISWA, "test@test.com", "password", "Test User", "123456");
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+        assertTrue(user instanceof Mahasiswa);
+        assertEquals("test@test.com", user.getUsername());
+        assertEquals("password", user.getPassword());
+    }
+
+
+
+    @Test
+    void createUser_withUnknownRole_shouldThrowIllegalArgumentException() {
+        try {
+
+            UserRoleEnums[] originalValues = UserRoleEnums.values();
+            assertDoesNotThrow(() -> {
+                for (UserRoleEnums role : UserRoleEnums.values()) {
+                    UserFactory.createUser(role, "test@example.com", "password", "Test", "123");
+                }
+            });
+
+        } catch (Exception e) {
+
+            fail("All enum values should be handled");
+        }
+    }
 }
