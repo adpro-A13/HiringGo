@@ -142,4 +142,16 @@ class MataKuliahServiceTest {
         mataKuliahService.deleteByKode("CS001");
         verify(mataKuliahRepository).deleteById("CS001");
     }
+
+    @Test
+    void testFindByDosenPengampu_withNullDosen_shouldThrowException() {
+        MataKuliahNotFoundException ex = assertThrows(
+                MataKuliahNotFoundException.class,
+                () -> mataKuliahService.findByDosenPengampu(null)
+        );
+
+        assertEquals("Dosen tidak ditemukan", ex.getMessage());
+
+        verify(mataKuliahRepository, never()).findByDosenPengampu(any());
+    }
 }
