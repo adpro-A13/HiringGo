@@ -400,5 +400,197 @@ class LowonganControllerTest {
                 .andExpect(jsonPath("$.message", is("Operasi tidak valid")));
     }
 
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter strategy dan value - Success")
+    void testGetAllLowonganWithFilterStrategyAndValue() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+        List<Lowongan> filteredList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganFilterService.filter(originalList, "semester", "GENAP")).thenReturn(filteredList);
+        when(lowonganMapper.toDtoList(filteredList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterStrategy", "semester")
+                        .param("filterValue", "GENAP")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        verify(lowonganFilterService).filter(originalList, "semester", "GENAP");
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan sort strategy - Success")
+    void testGetAllLowonganWithSortStrategy() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+        List<Lowongan> sortedList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganSortService.sort(originalList, "tahunAjaran")).thenReturn(sortedList);
+        when(lowonganMapper.toDtoList(sortedList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("sortStrategy", "tahunAjaran")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        verify(lowonganSortService).sort(originalList, "tahunAjaran");
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter dan sort strategy - Success")
+    void testGetAllLowonganWithFilterAndSort() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+        List<Lowongan> filteredList = List.of(lowongan);
+        List<Lowongan> sortedList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganFilterService.filter(originalList, "status", "DIBUKA")).thenReturn(filteredList);
+        when(lowonganSortService.sort(filteredList, "tahunAjaran")).thenReturn(sortedList);
+        when(lowonganMapper.toDtoList(sortedList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterStrategy", "status")
+                        .param("filterValue", "DIBUKA")
+                        .param("sortStrategy", "tahunAjaran")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        verify(lowonganFilterService).filter(originalList, "status", "DIBUKA");
+        verify(lowonganSortService).sort(filteredList, "tahunAjaran");
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter strategy tanpa value - No Filter Applied")
+    void testGetAllLowonganWithFilterStrategyOnly() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterStrategy", "semester")
+                        // No filterValue parameter
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify filter service is not called when filterValue is null
+        verifyNoInteractions(lowonganFilterService);
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter value tanpa strategy - No Filter Applied")
+    void testGetAllLowonganWithFilterValueOnly() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterValue", "GENAP")
+                        // No filterStrategy parameter
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify filter service is not called when filterStrategy is null
+        verifyNoInteractions(lowonganFilterService);
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan empty sort strategy - No Sort Applied")
+    void testGetAllLowonganWithEmptySortStrategy() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("sortStrategy", "") // Empty string
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify sort service is not called when sortStrategy is empty
+        verifyNoInteractions(lowonganSortService);
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan null sort strategy - No Sort Applied")
+    void testGetAllLowonganWithNullSortStrategy() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        // No sortStrategy parameter (null)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify sort service is not called when sortStrategy is null
+        verifyNoInteractions(lowonganSortService);
+    }
 
 }

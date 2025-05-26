@@ -8,7 +8,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterServ
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
-import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +24,7 @@ import java.util.UUID;
 @PreAuthorize("hasAuthority('DOSEN')")
 @RequestMapping("/api/lowongan")
 public class LowonganController {
-
+    private static final Logger logger = LoggerFactory.getLogger(LowonganController.class);
     private LowonganService lowonganService;
     private final LowonganMapper lowonganMapper;
     private PendaftaranService pendaftaranService;
@@ -45,6 +47,8 @@ public class LowonganController {
             @RequestParam(required = false) String sortStrategy
     ) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.info("GET /api/lowongan by user: {}", username);
+
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
         if (filterStrategy != null && filterValue != null) {
@@ -56,8 +60,10 @@ public class LowonganController {
         }
 
         List<LowonganDTO> responses = lowonganMapper.toDtoList(lowonganList);
+        logger.info("Returning {} lowongan(s)", responses.size());
         return ResponseEntity.ok(responses);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<LowonganDTO> getLowonganById(@PathVariable UUID id) {
@@ -74,14 +80,19 @@ public class LowonganController {
 
     @PostMapping
     public ResponseEntity<LowonganDTO> createLowongan(@RequestBody LowonganDTO dto) {
+        logger.info("Creating new lowongan: {}", dto.getNamaMataKuliah());
         Lowongan created = lowonganService.createLowongan(lowonganMapper.toEntity(dto));
+        logger.info("Created lowongan with ID: {}", created.getLowonganId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(lowonganMapper.toDto(created));
     }
 
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLowongan(@PathVariable UUID id) {
+        logger.info("Request DELETE /api/lowongan/{}", id);
         lowonganService.deleteLowonganById(id);
+        logger.info("Lowongan with ID {} deleted", id);
         return ResponseEntity.ok().build();
     }
 
@@ -90,13 +101,17 @@ public class LowonganController {
             @PathVariable UUID lowonganId,
             @PathVariable UUID pendaftaranId
     ) {
+        logger.info("Request POST /api/lowongan/{}/terima/{}", lowonganId, pendaftaranId);
         lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+        logger.info("Pendaftar {} diterima untuk lowongan {}", pendaftaranId, lowonganId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{lowonganId}/tolak/{pendaftaranId}")
     public ResponseEntity<Object> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+        logger.info("Request POST /api/lowongan/{}/tolak/{}", lowonganId, pendaftaranId);
         lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+        logger.info("Pendaftar {} ditolak untuk lowongan {}", pendaftaranId, lowonganId);
         return ResponseEntity.ok().build();
     }
 
@@ -105,10 +120,13 @@ public class LowonganController {
             @PathVariable UUID id,
             @RequestBody LowonganDTO dto
     ) {
+        logger.info("Request PUT /api/lowongan/{} with body: {}", id, dto);
         if (!id.equals(dto.getLowonganId())) {
+            logger.error("ID mismatch: path ID {} != body ID {}", id, dto.getLowonganId());
             throw new IllegalArgumentException("ID di URL dan body tidak cocok atau ID kosong");
         }
         Lowongan updated = lowonganService.updateLowongan(id, lowonganMapper.toEntity(dto));
+        logger.info("Lowongan with ID {} updated successfully", id);
         return ResponseEntity.ok(lowonganMapper.toDto(updated));
     }
 }
