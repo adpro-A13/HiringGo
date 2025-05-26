@@ -35,7 +35,8 @@ class MataKuliahMapperTest {
 
         Dosen dosen = mock(Dosen.class);
         when(dosen.getNip()).thenReturn("123456");
-        when(userRepository.findByEmail("dosen1@example.com")).thenReturn(Optional.of(dosen));
+        when(dosen.getUsername()).thenReturn("dosen1@example.com");
+        when(userRepository.findAllByEmailIn(dto.getDosenPengampuEmails())).thenReturn(List.of(dosen));
 
         MataKuliah result = mapper.toEntity(dto);
 
@@ -68,10 +69,41 @@ class MataKuliahMapperTest {
         dto.setDosenPengampuEmails(List.of("user@example.com"));
 
         User user = mock(User.class);
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(user.getUsername()).thenReturn("user@example.com");
+        when(userRepository.findAllByEmailIn(dto.getDosenPengampuEmails())).thenReturn(List.of(user));
 
         Exception ex = assertThrows(DosenEmailNotFoundException.class, () -> mapper.toEntity(dto));
-        assertEquals("Pengguna dengan email user@example.com bukan seorang dosen", ex.getMessage());
+        assertEquals("Pengguna dengan email user@example.com bukan DOSEN", ex.getMessage());
+    }
+
+    @Test
+    void testToEntityWithNullDosenList() {
+        MataKuliahDTO dto = new MataKuliahDTO();
+        dto.setKode("CS000");
+        dto.setNama("Test");
+        dto.setDeskripsi("Desc");
+        dto.setDosenPengampuEmails(null);
+
+        MataKuliah mk = mapper.toEntity(dto);
+
+        assertEquals("CS000", mk.getKode());
+        assertTrue(mk.getDosenPengampu().isEmpty());
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void testToEntityWithEmptyDosenList() {
+        MataKuliahDTO dto = new MataKuliahDTO();
+        dto.setKode("CS000");
+        dto.setNama("Test");
+        dto.setDeskripsi("Desc");
+        dto.setDosenPengampuEmails(Collections.emptyList());
+
+        MataKuliah mk = mapper.toEntity(dto);
+
+        assertEquals("CS000", mk.getKode());
+        assertTrue(mk.getDosenPengampu().isEmpty());
+        verifyNoInteractions(userRepository);
     }
 
     @Test
