@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,6 +45,7 @@ public class LogController {
         return ResponseEntity.ok(logs);
     }
 
+    @PreAuthorize("hasAuthority('DOSEN')")
     @GetMapping("/dosen/{dosenId}")
     public ResponseEntity<?> getLogsByDosenMataKuliah(@PathVariable UUID dosenId) {
         try {
@@ -78,6 +80,7 @@ public class LogController {
         return ResponseEntity.ok(logs);
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @GetMapping("/month")
     public ResponseEntity<List<Log>> getLogsByMonth(
             @RequestParam UUID id,
@@ -94,6 +97,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('DOSEN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateLogStatus(@PathVariable UUID id, @RequestBody LogStatus status) {
         try {
