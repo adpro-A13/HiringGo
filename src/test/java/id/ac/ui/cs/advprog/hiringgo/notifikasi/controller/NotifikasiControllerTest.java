@@ -27,6 +27,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class NotifikasiControllerTest {
@@ -111,5 +112,56 @@ public class NotifikasiControllerTest {
                 .andExpect(status().isOk());
 
         verify(notifikasiService, times(1)).markAsRead(notifikasiId);
+    }
+
+
+    @Test
+    void testGetCurrentMahasiswa_whenUserNotFound_shouldThrowRuntimeException() throws Exception {
+        setupAuthentication();
+
+        when(userRepository.findByEmail("mahasiswa@example.com")).thenReturn(Optional.empty());
+
+        try {
+            mockMvc.perform(get("/api/notifikasi")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(result -> {
+                        Exception resolvedException = result.getResolvedException();
+                        assertNotNull(resolvedException);
+                        assertTrue(resolvedException instanceof RuntimeException);
+                        assertEquals("Mahasiswa tidak ditemukan dengan email: mahasiswa@example.com",
+                                resolvedException.getMessage());
+                    });
+        } catch (Exception e) {
+            // Exception is expected, verify it's the right one
+            assertTrue(e.getCause() instanceof RuntimeException);
+            assertTrue(e.getCause().getMessage().contains("Mahasiswa tidak ditemukan dengan email: mahasiswa@example.com"));
+        }
+
+        verify(userRepository).findByEmail("mahasiswa@example.com");
+    }
+
+    @Test
+    void testGetUnreadCount_whenUserNotFound_shouldThrowRuntimeException() throws Exception {
+        setupAuthentication();
+
+        when(userRepository.findByEmail("mahasiswa@example.com")).thenReturn(Optional.empty());
+
+        try {
+            mockMvc.perform(get("/api/notifikasi/unread-count")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(result -> {
+                        Exception resolvedException = result.getResolvedException();
+                        assertNotNull(resolvedException);
+                        assertTrue(resolvedException instanceof RuntimeException);
+                        assertEquals("Mahasiswa tidak ditemukan dengan email: mahasiswa@example.com",
+                                resolvedException.getMessage());
+                    });
+        } catch (Exception e) {
+            // Exception is expected, verify it's the right one
+            assertTrue(e.getCause() instanceof RuntimeException);
+            assertTrue(e.getCause().getMessage().contains("Mahasiswa tidak ditemukan dengan email: mahasiswa@example.com"));
+        }
+
+        verify(userRepository).findByEmail("mahasiswa@example.com");
     }
 }

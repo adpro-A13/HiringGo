@@ -597,4 +597,205 @@ class LowonganServiceImplTest {
         mataKuliah.addDosenPengampu(dosenPengampu);
         return mataKuliah;
     }
+
+    // Add these test methods to the existing LowonganServiceImplTest.java file
+
+    @Test
+    void testCreateLowonganWhenUserNotAuthorized() {
+        // Given
+        Lowongan newLowongan = new Lowongan();
+        newLowongan.setMataKuliah(mataKuliah);
+        newLowongan.setSemester("GANJIL");
+        newLowongan.setTahunAjaran("2023");
+
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran())
+        ).thenReturn(Optional.empty());
+
+        // Mock user not authorized
+        when(validator.isNotAuthorizedDosenPengampu(newLowongan, "dosen@example.com"))
+                .thenReturn(true);
+
+        // When & Then
+        AccessDeniedException ex = assertThrows(
+                AccessDeniedException.class,
+                () -> lowonganService.createLowongan(newLowongan)
+        );
+        assertEquals("Anda bukan pengampu mata kuliah ini.", ex.getMessage());
+
+        verify(lowonganRepository).findByMataKuliahAndSemesterAndTahunAjaran(
+                newLowongan.getMataKuliah(),
+                newLowongan.getSemester(),
+                newLowongan.getTahunAjaran());
+        verify(validator).isNotAuthorizedDosenPengampu(newLowongan, "dosen@example.com");
+        verify(lowonganRepository, never()).save(any());
+    }
+
+    @Test
+    void testDeleteLowonganByIdWhenUserNotAuthorized() {
+        // Given
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id1);
+        lowongan.setMataKuliah(mataKuliah);
+
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+
+        // Mock user not authorized
+        when(validator.isNotAuthorizedDosenPengampu(lowongan, "dosen@example.com"))
+                .thenReturn(true);
+
+        // When & Then
+        AccessDeniedException ex = assertThrows(
+                AccessDeniedException.class,
+                () -> lowonganService.deleteLowonganById(id1)
+        );
+        assertEquals("Anda bukan pengampu mata kuliah ini.", ex.getMessage());
+
+        verify(lowonganRepository).findById(id1);
+        verify(validator).isNotAuthorizedDosenPengampu(lowongan, "dosen@example.com");
+        verify(pendaftaranRepository, never()).findByLowonganLowonganId(any());
+        verify(lowonganRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testDeleteLowonganByIdWhenHasPendaftaran() {
+        // Given
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id1);
+        lowongan.setMataKuliah(mataKuliah);
+
+        Pendaftaran existingPendaftaran = new Pendaftaran();
+        existingPendaftaran.setPendaftaranId(id2);
+
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+        when(validator.isNotAuthorizedDosenPengampu(lowongan, "dosen@example.com"))
+                .thenReturn(false);
+
+        // Mock that there are existing pendaftaran
+        when(pendaftaranRepository.findByLowonganLowonganId(id1))
+                .thenReturn(List.of(existingPendaftaran));
+
+        // When & Then
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> lowonganService.deleteLowonganById(id1)
+        );
+        assertEquals("Lowongan ini tidak dapat dihapus karena masih memiliki pendaftaran.", ex.getMessage());
+
+        verify(lowonganRepository).findById(id1);
+        verify(validator).isNotAuthorizedDosenPengampu(lowongan, "dosen@example.com");
+        verify(pendaftaranRepository).findByLowonganLowonganId(id1);
+        verify(lowonganRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testDeleteLowonganByIdWhenNoPendaftaran() {
+        // Given
+        Lowongan lowongan = new Lowongan();
+        lowongan.setLowonganId(id1);
+        lowongan.setMataKuliah(mataKuliah);
+
+        when(lowonganRepository.findById(id1)).thenReturn(Optional.of(lowongan));
+        when(validator.isNotAuthorizedDosenPengampu(lowongan, "dosen@example.com"))
+                .thenReturn(false);
+
+        // Mock that there are no existing pendaftaran
+        when(pendaftaranRepository.findByLowonganLowonganId(id1))
+                .thenReturn(List.of()); // Empty list
+
+        // When
+        lowonganService.deleteLowonganById(id1);
+
+        // Then
+        verify(lowonganRepository).findById(id1);
+        verify(validator).isNotAuthorizedDosenPengampu(lowongan, "dosen@example.com");
+        verify(pendaftaranRepository).findByLowonganLowonganId(id1);
+        verify(lowonganRepository).deleteById(id1);
+    }
+
+    @Test
+    void testProsesPenerimaanWhenLowonganBecomesFullAfterAcceptance() {
+        // Given
+        MataKuliah mk = createMataKuliah("CS100", "Advpro", "advanced programming", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mk, 2, 1); // Need 2, currently have 1
+        lowongan.setTahunAjaran("2023/2024");
+        lowongan.setSemester(String.valueOf(Semester.GENAP));
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
+
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
+                .thenReturn(Pair.of(pendaftaran, lowongan));
+        doNothing().when(validator).validateStatusAndCapacity(pendaftaran, lowongan);
+
+        when(pendaftaranRepository.save(any(Pendaftaran.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(lowonganRepository.save(any(Lowongan.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        lowonganService.terimaPendaftar(id1, id2);
+
+        // Then - check that lowongan status becomes DITUTUP when quota is full
+        assertEquals(StatusPendaftaran.DITERIMA, pendaftaran.getStatus());
+        assertEquals(2, lowongan.getJumlahAsdosDiterima()); // Should be 2 (1+1)
+        assertEquals(StatusLowongan.DITUTUP, lowongan.getStatusLowongan()); // Should be closed
+
+        verify(pendaftaranRepository).save(pendaftaran);
+        verify(lowonganRepository).save(lowongan);
+        verify(eventPublisher).publishEvent(any(NotifikasiEvent.class));
+    }
+
+    @Test
+    void testProsesPenerimaanWhenLowonganStillHasQuotaAfterAcceptance() {
+        // Given
+        MataKuliah mk = createMataKuliah("CS100", "Advpro", "advanced programming", dosenPengampu);
+        Lowongan lowongan = createLowongan(id1, mk, 3, 1); // Need 3, currently have 1
+        lowongan.setTahunAjaran("2023/2024");
+        lowongan.setSemester(String.valueOf(Semester.GENAP));
+        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.toString()); // Initially open
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
+
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
+                .thenReturn(Pair.of(pendaftaran, lowongan));
+        doNothing().when(validator).validateStatusAndCapacity(pendaftaran, lowongan);
+
+        when(pendaftaranRepository.save(any(Pendaftaran.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(lowonganRepository.save(any(Lowongan.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        lowonganService.terimaPendaftar(id1, id2);
+
+        // Then - check that lowongan status remains DIBUKA when quota is not yet full
+        assertEquals(StatusPendaftaran.DITERIMA, pendaftaran.getStatus());
+        assertEquals(2, lowongan.getJumlahAsdosDiterima()); // Should be 2 (1+1)
+        assertNotEquals(StatusLowongan.DITUTUP, lowongan.getStatusLowongan()); // Should NOT be closed
+
+        verify(pendaftaranRepository).save(pendaftaran);
+        verify(lowonganRepository).save(lowongan);
+        verify(eventPublisher).publishEvent(any(NotifikasiEvent.class));
+    }
+
+    @Test
+    void testTolakPendaftarCallsKirimNotifikasi() {
+        // Given
+        Lowongan lowongan = createLowongan(id1, mataKuliah, 2, 1);
+        Pendaftaran pendaftaran = createPendaftaran(id2, lowongan, StatusPendaftaran.BELUM_DIPROSES);
+
+        when(validator.validatePendaftaranAndLowongan(id1, id2, "dosen@example.com"))
+                .thenReturn(Pair.of(pendaftaran, lowongan));
+        doNothing().when(validator).validateStatusAndCapacity(pendaftaran, lowongan);
+        when(pendaftaranRepository.save(any(Pendaftaran.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        lowonganService.tolakPendaftar(id1, id2);
+
+        assertEquals(StatusPendaftaran.DITOLAK, pendaftaran.getStatus());
+        verify(validator).validatePendaftaranAndLowongan(id1, id2, "dosen@example.com");
+        verify(validator).validateStatusAndCapacity(pendaftaran, lowongan);
+        verify(pendaftaranRepository).save(pendaftaran);
+        verify(eventPublisher).publishEvent(any(NotifikasiEvent.class));
+    }
 }
