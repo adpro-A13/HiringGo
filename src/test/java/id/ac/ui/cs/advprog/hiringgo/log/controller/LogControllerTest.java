@@ -169,18 +169,24 @@ class LogControllerTest {
     }
 
     @Test
-    void getLogsByMonth_shouldReturn500_whenInterruptedExceptionThrown() throws Exception {
+    void getLogsByMonth_shouldReturn500_whenCompletableFutureGetThrowsInterruptedException() throws Exception {
         UUID id = UUID.randomUUID();
-        CompletableFuture<List<Log>> future = CompletableFuture.failedFuture(new InterruptedException("Interrupted"));
+        int bulan = 3;
+        int tahun = 2024;
 
-        when(logService.getLogsByMonth(anyInt(), anyInt(), eq(id)))
-                .thenReturn(future);
+        // Mock the service to return a CompletableFuture that will be interrupted
+        CompletableFuture<List<Log>> mockFuture = mock(CompletableFuture.class);
+        when(mockFuture.get()).thenThrow(new InterruptedException("Execution interrupted"));
+
+        when(logService.getLogsByMonth(bulan, tahun, id))
+                .thenReturn(mockFuture);
 
         mockMvc.perform(get("/api/logs/month")
                         .param("id", id.toString())
-                        .param("bulan", "5")
-                        .param("tahun", "2025"))
-                .andExpect(status().isInternalServerError());
+                        .param("bulan", String.valueOf(bulan))
+                        .param("tahun", String.valueOf(tahun)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(""));
     }
 
     @Test

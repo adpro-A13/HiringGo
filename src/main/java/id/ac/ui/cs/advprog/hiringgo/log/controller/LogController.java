@@ -55,8 +55,6 @@ public class LogController {
             return ResponseEntity.ok(logs);
         } catch (RuntimeException e) {
             return ResponseEntity.status(403).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error retrieving logs for dosen");
         }
     }
 
@@ -113,8 +111,6 @@ public class LogController {
             return ResponseEntity.ok(updatedLog);
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating log status");
         }
     }
 
@@ -128,8 +124,6 @@ public class LogController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating log");
         }
     }
 
@@ -141,8 +135,6 @@ public class LogController {
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error deleting log");
         }
     }
 
