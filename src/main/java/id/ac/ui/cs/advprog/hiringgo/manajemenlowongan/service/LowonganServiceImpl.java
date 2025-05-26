@@ -154,7 +154,7 @@ public class LowonganServiceImpl implements LowonganService {
                 lowongan.getMataKuliah(),
                 lowongan.getTahunAjaran(),
                 lowongan.getSemester(),
-                "DITERIMA"
+                pendaftaran.getStatus().getValue()
         );
         eventPublisher.publishEvent(event);
     }
