@@ -88,7 +88,7 @@ class SecurityConfigurationTest {
         assertEquals(2, corsConfig.getAllowedOrigins().size());
         assertEquals("http://localhost:8005", corsConfig.getAllowedOrigins().get(0));
         
-        List<String> expectedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS");
+        List<String> expectedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH");
         assertEquals(expectedMethods, corsConfig.getAllowedMethods());
         
         List<String> expectedHeaders = List.of("Authorization", "Content-Type");
