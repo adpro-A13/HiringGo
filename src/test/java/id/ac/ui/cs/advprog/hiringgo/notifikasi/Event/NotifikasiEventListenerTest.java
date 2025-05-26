@@ -18,6 +18,8 @@ import static org.mockito.Mockito.times;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 public class NotifikasiEventListenerTest {
@@ -49,5 +51,36 @@ public class NotifikasiEventListenerTest {
         assertEquals(tahunAjaran, savedNotif.getTahunAjaran());
         assertEquals(semester, savedNotif.getSemester());
         assertEquals(status, savedNotif.getStatus());
+    }
+
+
+
+    @Test
+    void testHandleNotifikasiEvent_withThreadInterruption_shouldRestoreInterruptStatus() {
+        Mahasiswa mahasiswa = mock(Mahasiswa.class);
+        MataKuliah mataKuliah = mock(MataKuliah.class);
+        String tahunAjaran = "2024/2025";
+        Semester semester = Semester.GANJIL;
+        String status = "DITERIMA";
+
+        NotifikasiEvent event = new NotifikasiEvent(mahasiswa, mataKuliah, tahunAjaran, semester, status);
+
+        Thread.currentThread().interrupt();
+
+        assertDoesNotThrow(() -> listener.handleNotifikasiEvent(event));
+
+        ArgumentCaptor<Notifikasi> captor = ArgumentCaptor.forClass(Notifikasi.class);
+        verify(notifikasiRepository, times(1)).save(captor.capture());
+
+        Notifikasi savedNotif = captor.getValue();
+        assertEquals(mahasiswa, savedNotif.getMahasiswa());
+        assertEquals(mataKuliah, savedNotif.getMataKuliah());
+        assertEquals(tahunAjaran, savedNotif.getTahunAjaran());
+        assertEquals(semester, savedNotif.getSemester());
+        assertEquals(status, savedNotif.getStatus());
+
+        assertTrue(Thread.currentThread().isInterrupted());
+
+        Thread.interrupted();
     }
 }
