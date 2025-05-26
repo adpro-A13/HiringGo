@@ -1,23 +1,16 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model;
 
-import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LowonganTest {
-    private List<Pendaftaran> daftarPendaftaran;
+class LowonganTest {
     MataKuliah mataKuliah;
     @BeforeEach
     void setUp() {
@@ -26,7 +19,6 @@ public class LowonganTest {
 
     @Test
     void testCreateLowonganSuccess() {
-        MataKuliah mataKuliah = new MataKuliah("CS100", "Advprog", "mata kuliah sigma");
         Lowongan lowongan = new Lowongan(
                 "eb558e9f-1c39-460e-8860-71af6af63bd6",
                 mataKuliah,

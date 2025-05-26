@@ -2,14 +2,18 @@ package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.exception.LowonganExceptionHandler;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,19 +22,15 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -46,13 +46,21 @@ class LowonganControllerTest {
     private UUID id;
     Lowongan lowongan;
     LowonganDTO lowonganDto;
+
     @Mock
     private LowonganService lowonganService;
+
     @Mock
     private PendaftaranService pendaftaranService;
+    @Mock
+    private LowonganSortService lowonganSortService;
+
+    @Mock
+    private LowonganFilterService lowonganFilterService;
 
     @Mock
     private LowonganMapper lowonganMapper;
+
     @InjectMocks
     private LowonganController controller;
 
@@ -60,7 +68,9 @@ class LowonganControllerTest {
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new LowonganExceptionHandler())
+                .build();
         dto = new LowonganDTO();
         id = UUID.randomUUID();
         lowongan = createTestLowongan(id);
@@ -115,12 +125,7 @@ class LowonganControllerTest {
     @Test
     @DisplayName("GET /api/lowongan/{id} - Success")
     void testGetLowonganByIdSuccess() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(id);
-
-        LowonganDTO dto = new LowonganDTO();
         dto.setLowonganId(id);
 
         List<Pendaftaran> daftarPendaftaran = List.of(new Pendaftaran(), new Pendaftaran());
@@ -142,12 +147,14 @@ class LowonganControllerTest {
     @Test
     @DisplayName("GET /api/lowongan/{id} - Not Found")
     void testGetLowonganByIdNotFound() throws Exception {
-        when(lowonganService.findById(id)).thenThrow(new RuntimeException("Not found"));
+        when(lowonganService.findById(id)).thenThrow(new EntityNotFoundException("Lowongan dengan ID tersebut tidak ditemukan"));
 
         mockMvc.perform(get("/api/lowongan/{id}", id))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(containsString("tidak ditemukan")));
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Lowongan dengan ID tersebut tidak ditemukan"));
     }
+
 
     @Test
     @DisplayName("POST /api/lowongan - Success")
@@ -165,19 +172,40 @@ class LowonganControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/lowongan - Failure")
-    void testCreateLowonganFailure() throws Exception {
-        Lowongan inputLowongan = createTestLowongan(null);
+    void whenCreateLowonganAlreadyExists_thenReturn400() throws Exception {
+        // Mock mapper supaya dari DTO apapun jadi lowongan yang kamu mau
+        when(lowonganMapper.toEntity( org.mockito.ArgumentMatchers.any(LowonganDTO.class))).thenReturn(lowongan);
 
-        when(lowonganService.createLowongan(any())).thenThrow(new RuntimeException("Something went wrong"));
+        // Mock service untuk throw exception konflik
+        when(lowonganService.createLowongan( org.mockito.ArgumentMatchers.any(Lowongan.class)))
+                .thenThrow(new IllegalStateException("Lowongan sudah ada."));
 
+        // Kirim dto (bisa minimal, asal valid JSON)
         mockMvc.perform(post("/api/lowongan")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputLowongan)))
+                        .content(objectMapper.writeValueAsString(dto))) // dto bisa hanya ID
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Gagal membuat lowongan: Something went wrong"));
-        ;
+                .andExpect(jsonPath("$.error", is("Invalid State")))
+                .andExpect(jsonPath("$.message", is("Lowongan sudah ada.")));
     }
+
+
+
+    @Test
+    void whenUserNotAuthorized_thenReturn403() throws Exception {
+        when(lowonganMapper.toEntity(org.mockito.ArgumentMatchers.any(LowonganDTO.class))).thenReturn(lowongan);
+        when(lowonganService.createLowongan(any())).thenThrow(new AccessDeniedException("Anda bukan pengampu mata kuliah ini."));
+
+        mockMvc.perform(post("/api/lowongan")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error", is("Forbidden")))
+                .andExpect(jsonPath("$.message", is("Anda bukan pengampu mata kuliah ini.")));
+    }
+
+
+
 
     @Test
     @DisplayName("DELETE /api/lowongan/{id} - Success")
@@ -190,29 +218,45 @@ class LowonganControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/lowongan/{id} - Not Found")
-    void testDeleteLowonganNotFound() throws Exception {
+    void whenUserNotAuthorizedToDelete_thenReturn403() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
 
-        doThrow(new RuntimeException("Data tidak ditemukan")).when(lowonganService).deleteLowonganById(id);
+        doThrow(new AccessDeniedException("Anda bukan pengampu mata kuliah ini."))
+                .when(lowonganService).deleteLowonganById(lowonganId);
 
-        mockMvc.perform(delete("/api/lowongan/{id}", id))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string("Lowongan dengan ID " + id + " tidak ditemukan"));
+        mockMvc.perform(delete("/api/lowongan/" + lowonganId))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error", is("Forbidden")))
+                .andExpect(jsonPath("$.message", is("Anda bukan pengampu mata kuliah ini.")));
+    }
+
+    @Test
+    void whenLowonganHasPendaftaran_thenReturn400() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
+
+        doThrow(new IllegalStateException("Lowongan ini tidak dapat dihapus karena masih memiliki pendaftaran."))
+                .when(lowonganService).deleteLowonganById(lowonganId);
+
+        mockMvc.perform(delete("/api/lowongan/" + lowonganId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Invalid State")))
+                .andExpect(jsonPath("$.message", is("Lowongan ini tidak dapat dihapus karena masih memiliki pendaftaran.")));
     }
 
 
+
     private Lowongan createTestLowongan(UUID id) {
-        Lowongan lowongan = new Lowongan();
         MataKuliah mataKuliah = new MataKuliah("CS100", "AdvProg", "Design Pattern");
-        lowongan.setLowonganId(id);
-        lowongan.setMataKuliah(mataKuliah);
-        lowongan.setSemester(Semester.GENAP.getValue());
-        lowongan.setTahunAjaran("2024");
-        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
-        lowongan.setJumlahAsdosDibutuhkan(2);
-        lowongan.setJumlahAsdosDiterima(0);
-        lowongan.setJumlahAsdosPendaftar(0);
-        return lowongan;
+        Lowongan lowonganTest = new Lowongan();
+        lowonganTest.setLowonganId(id);
+        lowonganTest.setMataKuliah(mataKuliah);
+        lowonganTest.setSemester(Semester.GENAP.getValue());
+        lowonganTest.setTahunAjaran("2024");
+        lowonganTest.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
+        lowonganTest.setJumlahAsdosDibutuhkan(2);
+        lowonganTest.setJumlahAsdosDiterima(0);
+        lowonganTest.setJumlahAsdosPendaftar(0);
+        return lowonganTest;
     }
 
     @Test
@@ -262,31 +306,69 @@ class LowonganControllerTest {
 
 
     @Test
-    @DisplayName("PUT /api/lowongan/{id} - ID mismatch")
-    void testUpdateLowonganIdMismatch() throws Exception {
-        UUID pathId = UUID.randomUUID();
-        UUID bodyId = UUID.randomUUID(); // different ID
-        Lowongan updatedLowongan = createTestLowongan(bodyId);
+    void whenIdMismatch_thenReturn400() throws Exception {
+        UUID urlId = UUID.randomUUID();
+        UUID bodyId = UUID.randomUUID(); // beda dari urlId
 
-        mockMvc.perform(put("/api/lowongan/{id}", pathId)
+        LowonganDTO mismatchDto = new LowonganDTO();
+        mismatchDto.setLowonganId(bodyId); // mismatch id
+
+        mockMvc.perform(put("/api/lowongan/" + urlId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(updatedLowongan)))
+                        .content(objectMapper.writeValueAsString(mismatchDto)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("ID di URL dan body tidak cocok atau ID kosong"));
+                .andExpect(jsonPath("$.error", is("Bad Request")))
+                .andExpect(jsonPath("$.message", is("ID di URL dan body tidak cocok atau ID kosong")));
     }
 
     @Test
-    void testTerimaPendaftarException() throws Exception {
+    void whenNotAuthorizedToUpdate_thenReturn403() throws Exception {
+        UUID id = UUID.randomUUID();
+        dto.setLowonganId(id);
+
+        when(lowonganMapper.toEntity(any())).thenReturn(lowongan);
+        doThrow(new AccessDeniedException("Anda bukan pengampu mata kuliah ini."))
+                .when(lowonganService).updateLowongan(eq(id), any());
+
+        mockMvc.perform(put("/api/lowongan/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error", is("Forbidden")))
+                .andExpect(jsonPath("$.message", is("Anda bukan pengampu mata kuliah ini.")));
+    }
+
+    @Test
+    void whenLowonganCombinationNotUnique_thenReturn400() throws Exception {
+        UUID id = UUID.randomUUID();
+        dto.setLowonganId(id);
+
+        when(lowonganMapper.toEntity(any())).thenReturn(lowongan);
+        doThrow(new IllegalStateException("Lowongan dengan kombinasi ini sudah ada."))
+                .when(lowonganService).updateLowongan(eq(id), any());
+
+        mockMvc.perform(put("/api/lowongan/" + id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("Invalid State")))
+                .andExpect(jsonPath("$.message", is("Lowongan dengan kombinasi ini sudah ada.")));
+    }
+
+    @Test
+    void whenTerimaPendaftarFails_thenReturn404() throws Exception {
         UUID lowonganId = UUID.randomUUID();
         UUID pendaftaranId = UUID.randomUUID();
 
-        doThrow(new IllegalArgumentException("Pendaftaran tidak valid"))
+        doThrow(new EntityNotFoundException("Lowongan atau pendaftaran tidak ditemukan"))
                 .when(lowonganService).terimaPendaftar(lowonganId, pendaftaranId);
 
         mockMvc.perform(post("/api/lowongan/{lowonganId}/terima/{pendaftaranId}", lowonganId, pendaftaranId))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Gagal menerima pendaftar: Pendaftaran tidak valid"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error", is("Not Found")))
+                .andExpect(jsonPath("$.message", is("Lowongan atau pendaftaran tidak ditemukan")));
     }
+
 
     @Test
     void testTolakPendaftarException() throws Exception {
@@ -298,33 +380,217 @@ class LowonganControllerTest {
 
         mockMvc.perform(post("/api/lowongan/{lowonganId}/tolak/{pendaftaranId}", lowonganId, pendaftaranId))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Gagal menolak pendaftar: Pendaftaran tidak valid"));
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Pendaftaran tidak valid"));
     }
+
 
 
     @Test
-    void testUpdateLowonganException() throws Exception {
-        dto.setLowonganId(id);
-        dto.setSemester(String.valueOf(Semester.GANJIL));
-        dto.setTahunAjaran("2023");
-        dto.setJumlahAsdosDibutuhkan(3);
-        dto.setJumlahAsdosPendaftar(1);
-        dto.setJumlahAsdosDiterima(0);
-        dto.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
-        MataKuliah mk = new MataKuliah("CS100", "Advpro", "Advanced Programming");
-        dto.setIdMataKuliah(mk.getKode());
+    void whenTerimaPendaftarThrowsIllegalState_thenReturn400() throws Exception {
+        UUID lowonganId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
 
-        Lowongan dummyLowongan = new Lowongan();
-        dummyLowongan.setLowonganId(id);
+        doThrow(new IllegalStateException("Operasi tidak valid"))
+                .when(lowonganService).terimaPendaftar(lowonganId, pendaftaranId);
 
-        when(lowonganMapper.toEntity(org.mockito.ArgumentMatchers.any(LowonganDTO.class))).thenReturn(dummyLowongan);
-        when(lowonganService.updateLowongan(eq(id), org.mockito.ArgumentMatchers.any(Lowongan.class)))
-                .thenThrow(new RuntimeException("Update gagal"));
-
-        mockMvc.perform(put("/api/lowongan/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+        mockMvc.perform(post("/api/lowongan/{lowonganId}/terima/{pendaftaranId}", lowonganId, pendaftaranId))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Gagal memperbarui lowongan: Update gagal"));
+                .andExpect(jsonPath("$.error", is("Invalid State")))
+                .andExpect(jsonPath("$.message", is("Operasi tidak valid")));
     }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter strategy dan value - Success")
+    void testGetAllLowonganWithFilterStrategyAndValue() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+        List<Lowongan> filteredList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganFilterService.filter(originalList, "semester", "GENAP")).thenReturn(filteredList);
+        when(lowonganMapper.toDtoList(filteredList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterStrategy", "semester")
+                        .param("filterValue", "GENAP")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        verify(lowonganFilterService).filter(originalList, "semester", "GENAP");
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan sort strategy - Success")
+    void testGetAllLowonganWithSortStrategy() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+        List<Lowongan> sortedList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganSortService.sort(originalList, "tahunAjaran")).thenReturn(sortedList);
+        when(lowonganMapper.toDtoList(sortedList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("sortStrategy", "tahunAjaran")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        verify(lowonganSortService).sort(originalList, "tahunAjaran");
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter dan sort strategy - Success")
+    void testGetAllLowonganWithFilterAndSort() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+        List<Lowongan> filteredList = List.of(lowongan);
+        List<Lowongan> sortedList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganFilterService.filter(originalList, "status", "DIBUKA")).thenReturn(filteredList);
+        when(lowonganSortService.sort(filteredList, "tahunAjaran")).thenReturn(sortedList);
+        when(lowonganMapper.toDtoList(sortedList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterStrategy", "status")
+                        .param("filterValue", "DIBUKA")
+                        .param("sortStrategy", "tahunAjaran")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        verify(lowonganFilterService).filter(originalList, "status", "DIBUKA");
+        verify(lowonganSortService).sort(filteredList, "tahunAjaran");
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter strategy tanpa value - No Filter Applied")
+    void testGetAllLowonganWithFilterStrategyOnly() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterStrategy", "semester")
+                        // No filterValue parameter
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify filter service is not called when filterValue is null
+        verifyNoInteractions(lowonganFilterService);
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan filter value tanpa strategy - No Filter Applied")
+    void testGetAllLowonganWithFilterValueOnly() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("filterValue", "GENAP")
+                        // No filterStrategy parameter
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify filter service is not called when filterStrategy is null
+        verifyNoInteractions(lowonganFilterService);
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan empty sort strategy - No Sort Applied")
+    void testGetAllLowonganWithEmptySortStrategy() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        .param("sortStrategy", "") // Empty string
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify sort service is not called when sortStrategy is empty
+        verifyNoInteractions(lowonganSortService);
+    }
+
+    @Test
+    @DisplayName("GET /api/lowongan dengan null sort strategy - No Sort Applied")
+    void testGetAllLowonganWithNullSortStrategy() throws Exception {
+        List<Lowongan> originalList = List.of(lowongan);
+
+        when(lowonganService.findAllByDosenUsername("dosen@example.com")).thenReturn(originalList);
+        when(lowonganMapper.toDtoList(originalList)).thenReturn(List.of(dto));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("dosen@example.com");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        SecurityContextHolder.setContext(securityContext);
+
+        mockMvc.perform(get("/api/lowongan")
+                        // No sortStrategy parameter (null)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].lowonganId", is(id.toString())));
+
+        // Verify sort service is not called when sortStrategy is null
+        verifyNoInteractions(lowonganSortService);
+    }
+
 }

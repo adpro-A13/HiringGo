@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import java.util.concurrent.CompletionException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -228,36 +229,6 @@ class DashboardControllerTest {
 
     // New tests for exception handlers
     @Test
-    void testHandleNotFound() {
-        NoSuchElementException ex = new NoSuchElementException("Element not found");
-        ResponseEntity<Map<String, String>> response = dashboardController.handleNotFound(ex);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Element not found", response.getBody().get("message"));
-    }
-
-    @Test
-    void testHandleBadRequest() {
-        IllegalArgumentException ex = new IllegalArgumentException("Invalid argument");
-        ResponseEntity<Map<String, String>> response = dashboardController.handleBadRequest(ex);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Invalid argument", response.getBody().get("message"));
-    }
-
-    @Test
-    void testHandleGeneralError() {
-        Exception ex = new RuntimeException("Some unexpected error");
-        ResponseEntity<Map<String, String>> response = dashboardController.handleGeneralError(ex);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Terjadi kesalahan server", response.getBody().get("message"));
-    }
-
-    @Test
     void testMahasiswaDashboardWithNoSuchElementException() {
         // Setup
         when(authentication.isAuthenticated()).thenReturn(true);
@@ -269,10 +240,13 @@ class DashboardControllerTest {
         NoSuchElementException ex = new NoSuchElementException("Mahasiswa tidak ditemukan");
         when(mahasiswaDashboardService.getDashboardData(mahasiswaId)).thenThrow(ex);
 
-        // Execute and verify
+        // Execute and verify - exception should propagate to DashboardExceptionHandler
         assertThrows(NoSuchElementException.class, () ->
                 dashboardController.getMahasiswaDashboard(authentication)
         );
+
+        // Verify service was called
+        verify(mahasiswaDashboardService).getDashboardData(mahasiswaId);
     }
 
     @Test
@@ -287,9 +261,33 @@ class DashboardControllerTest {
         IllegalArgumentException ex = new IllegalArgumentException("Invalid dosen ID");
         when(dosenDashboardService.getDashboardData(dosenId)).thenThrow(ex);
 
-        // Execute and verify
+        // Execute and verify - exception should propagate to DashboardExceptionHandler
         assertThrows(IllegalArgumentException.class, () ->
                 dashboardController.getDosenDashboard(authentication)
         );
+
+        // Verify service was called
+        verify(dosenDashboardService).getDashboardData(dosenId);
+    }
+
+    @Test
+    void testAdminDashboardWithCompletionException() {
+        // Setup
+        when(authentication.isAuthenticated()).thenReturn(true);
+        Admin a = mock(Admin.class);
+        when(a.getId()).thenReturn(adminId);
+        when(authentication.getPrincipal()).thenReturn(a);
+
+        // Make the service throw async exception
+        CompletionException ex = new CompletionException("Async error", new RuntimeException("Database error"));
+        when(adminDashboardService.getDashboardData(adminId)).thenThrow(ex);
+
+        // Execute and verify - exception should propagate to DashboardExceptionHandler
+        assertThrows(CompletionException.class, () ->
+                dashboardController.getAdminDashboard(authentication)
+        );
+
+        // Verify service was called
+        verify(adminDashboardService).getDashboardData(adminId);
     }
 }

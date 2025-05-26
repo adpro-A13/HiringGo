@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -9,6 +10,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,10 +80,12 @@ public class JwtServiceTest {
 
     @Test
     void isTokenValid_withValidToken_shouldReturnTrue() {
-        String token = jwtService.generateToken(userDetails);
-        
-        boolean isValid = jwtService.isTokenValid(token, userDetails);
-
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(UUID.randomUUID());
+        mahasiswa.setUsername(testUsername);
+        mahasiswa.setPassword("password");
+        String token = jwtService.generateToken(mahasiswa);
+        boolean isValid = jwtService.isTokenValid(token, mahasiswa);
         assertTrue(isValid);
     }
 

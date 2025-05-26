@@ -1,11 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterBySemester;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.filter.FilterByStatus;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
@@ -13,7 +8,9 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganFilterServ
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganSortService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,31 +19,26 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @PreAuthorize("hasAuthority('DOSEN')")
 @RequestMapping("/api/lowongan")
 public class LowonganController {
-
-    @Autowired
+    private static final Logger logger = LoggerFactory.getLogger(LowonganController.class);
     private LowonganService lowonganService;
-
     private final LowonganMapper lowonganMapper;
-    @Autowired
     private PendaftaranService pendaftaranService;
-
-    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper, PendaftaranService pendaftaranService) {
+    private LowonganSortService lowonganSortService;
+    private LowonganFilterService lowonganFilterService;
+    public LowonganController(LowonganService lowonganService, LowonganMapper lowonganMapper,
+                              PendaftaranService pendaftaranService, LowonganSortService lowonganSortService,
+                              LowonganFilterService lowonganFilterService) {
         this.lowonganService = lowonganService;
         this.lowonganMapper = lowonganMapper;
         this.pendaftaranService = pendaftaranService;
+        this.lowonganSortService = lowonganSortService;
+        this.lowonganFilterService = lowonganFilterService;
     }
-
-    @Autowired
-    private LowonganSortService lowonganSortService;
-
-    @Autowired
-    private LowonganFilterService lowonganFilterService;
 
     @GetMapping
     public ResponseEntity<List<LowonganDTO>> getAllLowongan(
@@ -55,6 +47,8 @@ public class LowonganController {
             @RequestParam(required = false) String sortStrategy
     ) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.info("GET /api/lowongan by user: {}", username);
+
         List<Lowongan> lowonganList = lowonganService.findAllByDosenUsername(username);
 
         if (filterStrategy != null && filterValue != null) {
@@ -66,92 +60,73 @@ public class LowonganController {
         }
 
         List<LowonganDTO> responses = lowonganMapper.toDtoList(lowonganList);
+        logger.info("Returning {} lowongan(s)", responses.size());
         return ResponseEntity.ok(responses);
     }
 
+
     @GetMapping("/{id}")
-    public ResponseEntity<?> getLowonganById(@PathVariable UUID id) {
-        try {
-            Lowongan lowongan = lowonganService.findById(id);
-            LowonganDTO response = lowonganMapper.toDto(lowongan);
+    public ResponseEntity<LowonganDTO> getLowonganById(@PathVariable UUID id) {
+        Lowongan lowongan = lowonganService.findById(id);
+        LowonganDTO response = lowonganMapper.toDto(lowongan);
+        List<UUID> idDaftarPendaftaran = pendaftaranService.getByLowongan(lowongan.getLowonganId())
+                .stream()
+                .map(Pendaftaran::getPendaftaranId)
+                .toList();
 
-            List<UUID> idDaftarPendaftaran = pendaftaranService.getByLowongan(lowongan.getLowonganId())
-                    .stream()
-                    .map(Pendaftaran::getPendaftaranId)
-                    .collect(Collectors.toList());
-
-            response.setIdDaftarPendaftaran(idDaftarPendaftaran);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lowongan dengan ID " + id + " tidak ditemukan");
-        }
+        response.setIdDaftarPendaftaran(idDaftarPendaftaran);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<?> createLowongan(@RequestBody LowonganDTO lowonganDTO) {
-        try {
-            Lowongan lowonganEntity = lowonganMapper.toEntity(lowonganDTO);
-            Lowongan created = lowonganService.createLowongan(lowonganEntity);
-            LowonganDTO responseDTO = lowonganMapper.toDto(created);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Gagal membuat lowongan: " + e.getMessage());
-        }
+    public ResponseEntity<LowonganDTO> createLowongan(@RequestBody LowonganDTO dto) {
+        logger.info("Creating new lowongan: {}", dto.getNamaMataKuliah());
+        Lowongan created = lowonganService.createLowongan(lowonganMapper.toEntity(dto));
+        logger.info("Created lowongan with ID: {}", created.getLowonganId());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(lowonganMapper.toDto(created));
     }
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteLowongan(@PathVariable UUID id) {
-        try {
-            lowonganService.deleteLowonganById(id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lowongan dengan ID " + id + " tidak ditemukan");
-        }
+    public ResponseEntity<Void> deleteLowongan(@PathVariable UUID id) {
+        logger.info("Request DELETE /api/lowongan/{}", id);
+        lowonganService.deleteLowonganById(id);
+        logger.info("Lowongan with ID {} deleted", id);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{lowonganId}/terima/{pendaftaranId}")
-    public ResponseEntity<?> terimaPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
-        try {
-            lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
-            return ResponseEntity.ok("Pendaftar berhasil diterima");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Gagal menerima pendaftar: " + e.getMessage());
-        }
+    public ResponseEntity<Void> terimaPendaftar(
+            @PathVariable UUID lowonganId,
+            @PathVariable UUID pendaftaranId
+    ) {
+        logger.info("Request POST /api/lowongan/{}/terima/{}", lowonganId, pendaftaranId);
+        lowonganService.terimaPendaftar(lowonganId, pendaftaranId);
+        logger.info("Pendaftar {} diterima untuk lowongan {}", pendaftaranId, lowonganId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{lowonganId}/tolak/{pendaftaranId}")
-    public ResponseEntity<?> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
-        try {
-            lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
-            return ResponseEntity.ok("Pendaftar berhasil ditolak");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Gagal menolak pendaftar: " + e.getMessage());
-        }
+    public ResponseEntity<Object> tolakPendaftar(@PathVariable UUID lowonganId, @PathVariable UUID pendaftaranId) {
+        logger.info("Request POST /api/lowongan/{}/tolak/{}", lowonganId, pendaftaranId);
+        lowonganService.tolakPendaftar(lowonganId, pendaftaranId);
+        logger.info("Pendaftar {} ditolak untuk lowongan {}", pendaftaranId, lowonganId);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateLowongan(@PathVariable UUID id, @RequestBody LowonganDTO updatedLowonganDTO) {
-        if (updatedLowonganDTO.getLowonganId() == null || !id.equals(updatedLowonganDTO.getLowonganId())) {
-            return ResponseEntity.badRequest().body("ID di URL dan body tidak cocok atau ID kosong");
+    public ResponseEntity<LowonganDTO> updateLowongan(
+            @PathVariable UUID id,
+            @RequestBody LowonganDTO dto
+    ) {
+        logger.info("Request PUT /api/lowongan/{} with body: {}", id, dto);
+        if (!id.equals(dto.getLowonganId())) {
+            logger.error("ID mismatch: path ID {} != body ID {}", id, dto.getLowonganId());
+            throw new IllegalArgumentException("ID di URL dan body tidak cocok atau ID kosong");
         }
-        try {
-            Lowongan updatedLowongan = lowonganMapper.toEntity(updatedLowonganDTO);
-            Lowongan updated = lowonganService.updateLowongan(id, updatedLowongan);
-            LowonganDTO responseDto = lowonganMapper.toDto(updated);
-
-            return ResponseEntity.ok(responseDto);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Gagal memperbarui lowongan: " + e.getMessage());
-        }
+        Lowongan updated = lowonganService.updateLowongan(id, lowonganMapper.toEntity(dto));
+        logger.info("Lowongan with ID {} updated successfully", id);
+        return ResponseEntity.ok(lowonganMapper.toDto(updated));
     }
-
 }

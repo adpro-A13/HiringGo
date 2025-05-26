@@ -3,7 +3,8 @@ package id.ac.ui.cs.advprog.hiringgo.log.model;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,12 +21,12 @@ import java.util.UUID;
 public class Log {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "kode_mata_kuliah")
-    private MataKuliah mataKuliah;
+    @JoinColumn(name = "pendaftaran_id")
+    private Pendaftaran pendaftaran;
 
     @ManyToOne
     @JoinColumn(name = "users_id")
@@ -47,7 +48,7 @@ public class Log {
 
     private Log(Builder builder) {
         this.id = builder.id;
-        this.mataKuliah = builder.mataKuliah;
+        this.pendaftaran = builder.pendaftaran;
         this.user = builder.user;
         this.judul = builder.judul;
         this.keterangan = builder.keterangan;
@@ -60,8 +61,8 @@ public class Log {
     }
 
     public static class Builder {
-        private Long id;
-        private MataKuliah mataKuliah;
+        private UUID id;
+        private Pendaftaran pendaftaran;
         private User user;
         private String judul;
         private String keterangan;
@@ -72,13 +73,13 @@ public class Log {
         private String pesanUntukDosen;
         private LogStatus status = LogStatus.MENUNGGU;
 
-        public Builder id(Long id) {
+        public Builder id(UUID id) {
             this.id = id;
             return this;
         }
 
-        public Builder mataKuliah(MataKuliah mataKuliah) {
-            this.mataKuliah = mataKuliah;
+        public Builder pendaftaran(Pendaftaran pendaftaran) {
+            this.pendaftaran = pendaftaran;
             return this;
         }
 
@@ -138,6 +139,9 @@ public class Log {
         }
         if (!waktuMulai.isBefore(waktuSelesai)) {
             throw new IllegalArgumentException("Waktu selesai harus setelah waktu mulai.");
+        }
+        if (pendaftaran == null || pendaftaran.getStatus() != StatusPendaftaran.DITERIMA) {
+            throw new IllegalArgumentException("Pendaftaran harus memiliki status DITERIMA.");
         }
     }
 }

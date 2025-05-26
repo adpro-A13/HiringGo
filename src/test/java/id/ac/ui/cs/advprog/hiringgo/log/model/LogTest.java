@@ -3,7 +3,8 @@ package id.ac.ui.cs.advprog.hiringgo.log.model;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -11,17 +12,19 @@ import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class LogTest {
+class LogTest {
 
     @Test
-    public void testValidLogCreation() {
+    void testValidLogCreation() {
         // Create mock objects for dependencies
-        MataKuliah mockMataKuliah = mock(MataKuliah.class);
+        Pendaftaran mockPendaftaran = mock(Pendaftaran.class);
+        when(mockPendaftaran.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
         User mockUser = mock(User.class);
 
         Log log = new Log.Builder()
-                .mataKuliah(mockMataKuliah)
+                .pendaftaran(mockPendaftaran)
                 .user(mockUser)
                 .judul("Mengoreksi Tugas")
                 .keterangan("Mengoreksi tugas mahasiswa")
@@ -39,7 +42,7 @@ public class LogTest {
     }
 
     @Test
-    public void testWaktuMulaiDanSelesaiHarusValid() {
+    void testWaktuMulaiDanSelesaiHarusValid() {
         Log log = new Log.Builder()
                 .waktuMulai(LocalTime.of(14, 0))
                 .waktuSelesai(LocalTime.of(13, 0))
@@ -50,7 +53,7 @@ public class LogTest {
     }
 
     @Test
-    public void testWaktuTidakBolehKosong() {
+    void testWaktuTidakBolehKosong() {
         Log log = new Log.Builder()
                 .waktuMulai(null)
                 .waktuSelesai(null)
@@ -61,14 +64,14 @@ public class LogTest {
     }
 
     @Test
-    public void testDefaultStatusAdalahMenunggu() {
+    void testDefaultStatusAdalahMenunggu() {
         Log log = new Log.Builder().build();
 
         assertEquals(LogStatus.MENUNGGU, log.getStatus());
     }
 
     @Test
-    public void testWaktuMulaiNullSelesaiValid() {
+    void testWaktuMulaiNullSelesaiValid() {
         Log log = new Log.Builder()
                 .waktuMulai(null)
                 .waktuSelesai(LocalTime.of(12, 0))
@@ -79,7 +82,7 @@ public class LogTest {
     }
 
     @Test
-    public void testWaktuMulaiValidSelesaiNull() {
+    void testWaktuMulaiValidSelesaiNull() {
         Log log = new Log.Builder()
                 .waktuMulai(LocalTime.of(10, 0))
                 .waktuSelesai(null)
@@ -90,7 +93,7 @@ public class LogTest {
     }
 
     @Test
-    public void testCustomStatusSetting() {
+    void testCustomStatusSetting() {
         Log log = new Log.Builder()
                 .status(LogStatus.DITERIMA)
                 .build();
@@ -99,7 +102,7 @@ public class LogTest {
     }
 
     @Test
-    public void testPesanUntukDosen() {
+    void testPesanUntukDosen() {
         String pesan = "Ini adalah pesan untuk dosen";
         Log log = new Log.Builder()
                 .pesanUntukDosen(pesan)

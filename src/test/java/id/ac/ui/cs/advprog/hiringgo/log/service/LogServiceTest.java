@@ -4,50 +4,62 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
 import id.ac.ui.cs.advprog.hiringgo.log.dto.request.CreateLogRequest;
+import id.ac.ui.cs.advprog.hiringgo.log.dto.response.LowonganWithPendaftaranDTO;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogKategori;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.repository.LogRepository;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class LogServiceTest {
+class LogServiceTest {
 
     private LogRepository logRepository;
-    private MataKuliahRepository mataKuliahRepository;
+    private PendaftaranRepository pendaftaranRepository;
+    private Lowongan lowongan;
     private UserRepository userRepository;
     private LogService logService;
 
     @BeforeEach
     void setUp() {
         logRepository = mock(LogRepository.class);
-        mataKuliahRepository = mock(MataKuliahRepository.class);
+        pendaftaranRepository = mock(PendaftaranRepository.class);
+        lowongan = mock(Lowongan.class);
         userRepository = mock(UserRepository.class);
-        logService = new LogServiceImpl(logRepository, mataKuliahRepository, userRepository);
+        logService = new LogServiceImpl(logRepository, pendaftaranRepository, userRepository);
     }
 
     @Test
     void testCreateLogValid() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
-
-        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
         User user = new Mahasiswa();
         user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
 
         CreateLogRequest request = new CreateLogRequest();
         request.setJudul("Asistensi");
@@ -55,10 +67,10 @@ public class LogServiceTest {
         request.setTanggalLog(LocalDate.now());
         request.setWaktuMulai(LocalTime.of(9, 0));
         request.setWaktuSelesai(LocalTime.of(10, 0));
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(logRepository.save(any(Log.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -69,31 +81,35 @@ public class LogServiceTest {
         assertEquals(LogStatus.MENUNGGU, result.getStatus());
         assertEquals("Asistensi", result.getJudul());
         assertEquals(user, result.getUser());
-        assertEquals(mataKuliah, result.getMataKuliah());
+        assertEquals(pendaftaran, result.getPendaftaran());
         verify(logRepository).save(any(Log.class));
     }
 
     @Test
-    void testCreateLogMataKuliahNotFound() {
+    void testCreateLogPendaftaranNotFound() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
         User user = new Mahasiswa();
         user.setId(userId);
 
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
+
         CreateLogRequest request = new CreateLogRequest();
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
         request.setWaktuMulai(LocalTime.of(9, 0));
         request.setWaktuSelesai(LocalTime.of(10, 0));
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.empty());
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.empty());
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         // Act & Assert
         Exception exception = assertThrows(RuntimeException.class, () -> logService.createLog(request));
-        assertEquals("Mata Kuliah Not Found", exception.getMessage());
+        assertEquals("Pendaftaran Not Found", exception.getMessage());
         verify(logRepository, never()).save(any());
     }
 
@@ -101,17 +117,22 @@ public class LogServiceTest {
     void testCreateLogUserNotFound() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
-        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
 
         CreateLogRequest request = new CreateLogRequest();
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
         request.setWaktuMulai(LocalTime.of(9, 0));
         request.setWaktuSelesai(LocalTime.of(10, 0));
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -124,12 +145,14 @@ public class LogServiceTest {
     void testCreateLogInvalidTime() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String mataKuliahId = "CS101";
-
-        MataKuliah mataKuliah = new MataKuliah("CS101", "Pemrograman Lanjut", "Test");
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
 
         User user = new Mahasiswa();
         user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
 
         CreateLogRequest request = new CreateLogRequest();
         request.setJudul("Asistensi");
@@ -137,10 +160,10 @@ public class LogServiceTest {
         request.setTanggalLog(LocalDate.now());
         request.setWaktuMulai(LocalTime.of(14, 0));
         request.setWaktuSelesai(LocalTime.of(12, 0));
-        request.setMataKuliah(mataKuliahId);
+        request.setPendaftaran(String.valueOf(pendaftaranId));
         request.setUser(userId);
 
-        when(mataKuliahRepository.findById(mataKuliahId)).thenReturn(Optional.of(mataKuliah));
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         // Act & Assert
@@ -153,14 +176,15 @@ public class LogServiceTest {
     void testUpdateStatus() {
         // Arrange
         Log log = new Log.Builder()
+                .id(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                 .status(LogStatus.MENUNGGU)
                 .build();
 
-        when(logRepository.findById(1L)).thenReturn(Optional.of(log));
+        when(logRepository.findById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))).thenReturn(Optional.of(log));
         when(logRepository.save(any(Log.class))).thenReturn(log);
 
         // Act
-        Log updated = logService.updateStatus(1L, LogStatus.DITERIMA);
+        Log updated = logService.updateStatus(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"), LogStatus.DITERIMA);
 
         // Assert
         assertEquals(LogStatus.DITERIMA, updated.getStatus());
@@ -171,13 +195,14 @@ public class LogServiceTest {
     void testGetLogById() {
         // Arrange
         Log log = new Log.Builder()
+                .id(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))
                 .judul("Review")
                 .build();
 
-        when(logRepository.findById(1L)).thenReturn(Optional.of(log));
+        when(logRepository.findById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))).thenReturn(Optional.of(log));
 
         // Act
-        Optional<Log> found = logService.getLogById(1L);
+        Optional<Log> found = logService.getLogById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
 
         // Assert
         assertTrue(found.isPresent());
@@ -187,10 +212,10 @@ public class LogServiceTest {
     @Test
     void testGetLogByIdNotFound() {
         // Arrange
-        when(logRepository.findById(99L)).thenReturn(Optional.empty());
+        when(logRepository.findById(UUID.fromString("17fc3ab6-2a61-426a-b9a7-19fb09492104"))).thenReturn(Optional.empty());
 
         // Act
-        Optional<Log> found = logService.getLogById(99L);
+        Optional<Log> found = logService.getLogById(UUID.fromString("17fc3ab6-2a61-426a-b9a7-19fb09492104"));
 
         // Assert
         assertFalse(found.isPresent());
@@ -227,11 +252,11 @@ public class LogServiceTest {
                 .waktuSelesai(LocalTime.of(11, 0))
                 .build();
 
-        when(logRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(logRepository.findById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"))).thenReturn(Optional.of(existing));
         when(logRepository.save(any(Log.class))).thenReturn(updated);
 
         // Act
-        Log result = logService.updateLog(1L, updated);
+        Log result = logService.updateLog(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"), updated);
 
         // Assert
         assertEquals("Sidang", result.getJudul());
@@ -241,11 +266,11 @@ public class LogServiceTest {
     @Test
     void testDeleteLog() {
         // Arrange
-        doNothing().when(logRepository).deleteById(1L);
+        doNothing().when(logRepository).deleteById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
 
         // Act & Assert
-        assertDoesNotThrow(() -> logService.deleteLog(1L));
-        verify(logRepository).deleteById(1L);
+        assertDoesNotThrow(() -> logService.deleteLog(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25")));
+        verify(logRepository).deleteById(UUID.fromString("90c05a1f-4183-401c-a0fe-09ebd943da25"));
     }
 
     @Test
@@ -253,12 +278,12 @@ public class LogServiceTest {
         // Arrange
         LogStatus status = LogStatus.DITERIMA;
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("Log 1")
                 .status(status)
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("Log 2")
                 .status(status)
                 .build();
@@ -282,60 +307,48 @@ public class LogServiceTest {
         // Arrange
         int month = 5;
         int year = 2023;
+        UUID userId = UUID.randomUUID();
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("Monthly Log 1")
                 .tanggalLog(LocalDate.of(year, month, 15))
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("Monthly Log 2")
                 .tanggalLog(LocalDate.of(year, month, 20))
                 .build();
 
         List<Log> expectedLogs = Arrays.asList(log1, log2);
 
-        when(logRepository.findByTanggalLogBetween(startDate, endDate))
+        when(logRepository.findByTanggalLogBetweenAndUser_Id(startDate, endDate, userId))
                 .thenReturn(expectedLogs);
 
         // Act
-        List<Log> actualLogs = logService.getLogsByMonth(month, year);
+        CompletableFuture<List<Log>> future = logService.getLogsByMonth(month, year, userId);
+        List<Log> actualLogs = future.join();
 
         // Assert
         assertEquals(2, actualLogs.size());
         assertEquals("Monthly Log 1", actualLogs.get(0).getJudul());
         assertEquals("Monthly Log 2", actualLogs.get(1).getJudul());
-        verify(logRepository).findByTanggalLogBetween(startDate, endDate);
+        verify(logRepository).findByTanggalLogBetweenAndUser_Id(startDate, endDate, userId);
     }
 
     @Test
-    void testGetLogsByMataKuliah() {
-        // Arrange
-        String kode = "CS101";
-        Log log1 = new Log.Builder()
-                .id(1L)
-                .judul("MK Log 1")
-                .build();
-        Log log2 = new Log.Builder()
-                .id(2L)
-                .judul("MK Log 2")
-                .build();
+    void testGetLogsByDosenMataKuliah() {
+        UUID dosenId = UUID.randomUUID();
+        List<Log> mockLogs = List.of(new Log());
 
-        List<Log> expectedLogs = Arrays.asList(log1, log2);
+        when(logRepository.findLogsByDosenMataKuliah(dosenId)).thenReturn(mockLogs);
 
-        when(logRepository.findByMataKuliah_Kode(kode)).thenReturn(expectedLogs);
+        List<Log> result = logService.getLogsByDosenMataKuliah(dosenId);
 
-        // Act
-        List<Log> actualLogs = logService.getLogsByMataKuliah(kode);
-
-        // Assert
-        assertEquals(2, actualLogs.size());
-        assertEquals("MK Log 1", actualLogs.get(0).getJudul());
-        assertEquals("MK Log 2", actualLogs.get(1).getJudul());
-        verify(logRepository).findByMataKuliah_Kode(kode);
+        assertEquals(1, result.size());
+        verify(logRepository, times(1)).findLogsByDosenMataKuliah(dosenId);
     }
 
     @Test
@@ -343,11 +356,11 @@ public class LogServiceTest {
         // Arrange
         UUID userId = UUID.randomUUID();
         Log log1 = new Log.Builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .judul("User Log 1")
                 .build();
         Log log2 = new Log.Builder()
-                .id(2L)
+                .id(UUID.randomUUID())
                 .judul("User Log 2")
                 .build();
 
@@ -368,7 +381,7 @@ public class LogServiceTest {
     @Test
     void testUpdateLogNotFound() {
         // Arrange
-        Long id = 999L;
+        UUID id = UUID.randomUUID();
         Log updatedLog = new Log.Builder()
                 .judul("Updated Log")
                 .waktuMulai(LocalTime.of(10, 0))
@@ -389,7 +402,7 @@ public class LogServiceTest {
     @Test
     void testUpdateStatusNotFound() {
         // Arrange
-        Long id = 999L;
+        UUID id = UUID.randomUUID();
         LogStatus newStatus = LogStatus.DITERIMA;
 
         when(logRepository.findById(id)).thenReturn(Optional.empty());
@@ -406,11 +419,61 @@ public class LogServiceTest {
     @Test
     void testDeleteLogWithNonExistentId() {
         // Arrange
-        Long id = 999L;
+        UUID id = UUID.randomUUID();
         doThrow(new RuntimeException("Log not found")).when(logRepository).deleteById(id);
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> logService.deleteLog(id));
         verify(logRepository).deleteById(id);
+    }
+
+    @Test
+    void testGetLowonganYangDiterima() {
+        UUID kandidatId = UUID.randomUUID();
+
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(kandidatId);
+        mahasiswa.setUsername("testMahasiswa");
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(mahasiswa, null, mahasiswa.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        Pendaftaran diterima1 = mock(Pendaftaran.class);
+        Pendaftaran diterima2 = mock(Pendaftaran.class);
+        Pendaftaran ditolak = mock(Pendaftaran.class);
+
+        Lowongan lowongan1 = mock(Lowongan.class);
+        Lowongan lowongan2 = mock(Lowongan.class);
+
+        when(diterima1.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
+        when(diterima2.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
+        when(ditolak.getStatus()).thenReturn(StatusPendaftaran.DITOLAK);
+
+        when(diterima1.getLowongan()).thenReturn(lowongan1);
+        when(diterima2.getLowongan()).thenReturn(lowongan2);
+        when(ditolak.getLowongan()).thenReturn(mock(Lowongan.class)); // opsional
+
+        List<Pendaftaran> semuaPendaftaran = List.of(diterima1, diterima2, ditolak);
+        when(pendaftaranRepository.findByKandidatId(kandidatId)).thenReturn(semuaPendaftaran);
+
+        List<LowonganWithPendaftaranDTO> hasil = logService.getLowonganYangDiterima();
+
+        assertEquals(2, hasil.size());
+
+        assertTrue(hasil.stream().anyMatch(dto -> dto.getLowongan().equals(lowongan1)));
+        assertTrue(hasil.stream().anyMatch(dto -> dto.getLowongan().equals(lowongan2)));
+
+        assertFalse(hasil.stream()
+                .anyMatch(dto -> dto.getLowongan().equals(ditolak.getLowongan())));
+
+        for (LowonganWithPendaftaranDTO dto : hasil) {
+            for (Pendaftaran p : dto.getPendaftaranUser()) {
+                assertEquals(StatusPendaftaran.DITERIMA, p.getStatus());
+                assertEquals(dto.getLowongan(), p.getLowongan());
+            }
+        }
+
+        verify(pendaftaranRepository).findByKandidatId(kandidatId);
     }
 }

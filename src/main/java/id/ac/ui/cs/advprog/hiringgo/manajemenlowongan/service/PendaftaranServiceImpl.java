@@ -7,7 +7,6 @@ import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.strategy.PendaftaranStrate
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.stream.Collectors;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -93,7 +92,7 @@ public class PendaftaranServiceImpl implements PendaftaranService {
             return pendaftaranRepository.findByLowonganLowonganId(lowonganId)
                     .stream()
                     .map(Pendaftaran::getPendaftaranId)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (RuntimeException cause) {
             throw new IllegalStateException(
                     "Failed to retrieve pendaftaran IDs for lowongan " + lowonganId,

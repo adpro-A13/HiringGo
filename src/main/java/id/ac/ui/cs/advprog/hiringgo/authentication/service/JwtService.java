@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.hiringgo.authentication.service;
 
+import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -10,7 +11,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -33,10 +33,17 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> extraClaims = new HashMap<>();
+        if (userDetails instanceof User user) {
+            extraClaims.put("tokenVersion", user.getTokenVersion());
+        }
+        return generateToken(extraClaims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        if (userDetails instanceof User user) {
+            extraClaims.put("tokenVersion", user.getTokenVersion());
+        }
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
@@ -61,6 +68,13 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
+        if (!(userDetails instanceof User user)) {
+            return false;
+        }
+        Integer tokenVersionInToken = extractClaim(token, claims -> claims.get("tokenVersion", Integer.class));
+        if (tokenVersionInToken == null || tokenVersionInToken != user.getTokenVersion()) {
+            return false;
+        }
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 

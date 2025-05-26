@@ -88,22 +88,6 @@ class LowonganSortServiceTest {
         assertEquals(expectedSorted, result);
     }
 
-
-
-    @Test
-    void testGetSortedLowonganReturnsEmptyListWhenNoLowongan() {
-        when(lowonganRepository.findAll()).thenReturn(List.of());
-        when(sortService.sort(List.of(), "anyKey")).thenReturn(List.of());
-
-        List<Lowongan> result = lowonganService.getSortedLowongan("anyKey");
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-
-        verify(lowonganRepository).findAll();
-        verify(sortService).sort(List.of(), "anyKey");
-    }
-
     private Lowongan createLowongan(UUID lowonganId, MataKuliah mataKuliah, int dibutuhkan, int diterima) {
         Lowongan lowongan = new Lowongan();
         lowongan.setLowonganId(lowonganId);
