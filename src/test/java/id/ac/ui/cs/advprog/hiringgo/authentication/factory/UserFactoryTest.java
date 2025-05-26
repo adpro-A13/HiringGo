@@ -209,4 +209,52 @@ class UserFactoryTest {
             fail("All enum values should be handled");
         }
     }
+
+    @Test
+    void createUser_withNullIdParameter_shouldGenerateNewIdWhenUserIdIsNull() {
+
+        User user = UserFactory.createUser(UserRoleEnums.MAHASISWA, "test@test.com", "password", "Test User", "123456", null);
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+        assertNotNull(user.getId().toString());
+    }
+
+    @Test
+    void createUser_withNullIdParameter_allUserTypes_shouldGenerateNewId() {
+
+        User mahasiswa = UserFactory.createUser(UserRoleEnums.MAHASISWA, "m@test.com", "password", "M User", "123", null);
+        assertNotNull(mahasiswa);
+        assertNotNull(mahasiswa.getId());
+
+        User dosen = UserFactory.createUser(UserRoleEnums.DOSEN, "d@test.com", "password", "D User", "456", null);
+        assertNotNull(dosen);
+        assertNotNull(dosen.getId());
+
+        // Test with ADMIN
+        User admin = UserFactory.createUser(UserRoleEnums.ADMIN, "a@test.com", "password", "A User", "789", null);
+        assertNotNull(admin);
+        assertNotNull(admin.getId());
+    }
+
+    @Test
+    void createUser_overloadedMethodWithNullId_shouldGenerateNewId() {
+        User user = UserFactory.createUser(UserRoleEnums.DOSEN, "dosen@test.com", "password", "Dosen User", "123456");
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+        assertTrue(user.getId().toString().length() > 0);
+    }
+
+    @Test
+    void createUser_verifyUuidGeneration_whenUserIdIsNull() {
+
+        User user1 = UserFactory.createUser(UserRoleEnums.MAHASISWA, "test1@test.com", "password", "Test1", "111", null);
+        User user2 = UserFactory.createUser(UserRoleEnums.MAHASISWA, "test2@test.com", "password", "Test2", "222", null);
+
+        assertNotNull(user1.getId());
+        assertNotNull(user2.getId());
+
+        assertNotEquals(user1.getId(), user2.getId());
+    }
 }

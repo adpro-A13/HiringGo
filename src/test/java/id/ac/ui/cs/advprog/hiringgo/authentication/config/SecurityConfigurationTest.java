@@ -48,7 +48,7 @@ class SecurityConfigurationTest {
         when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
         when(httpSecurity.authenticationProvider(any())).thenReturn(httpSecurity);
         when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
-        when(httpSecurity.build()).thenReturn(mockFilterChain); // Add this line
+        when(httpSecurity.build()).thenReturn(mockFilterChain);
     }
 
     @Test
@@ -96,7 +96,7 @@ class SecurityConfigurationTest {
         assertEquals(3, corsConfig.getAllowedOrigins().size());
         assertEquals("http://localhost:8005", corsConfig.getAllowedOrigins().get(0));
         
-        List<String> expectedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS");
+        List<String> expectedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH");
         assertEquals(expectedMethods, corsConfig.getAllowedMethods());
         
         List<String> expectedHeaders = List.of("Authorization", "Content-Type");
