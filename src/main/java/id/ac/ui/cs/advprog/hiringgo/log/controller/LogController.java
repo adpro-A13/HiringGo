@@ -27,6 +27,7 @@ public class LogController {
         this.logService = logService;
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @PostMapping
     public ResponseEntity<?> createLog(@RequestBody CreateLogRequest createLogRequest) {
         try {
@@ -39,6 +40,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<Log>> getAllLogs() {
         List<Log> logs = logService.getAllLogs();
@@ -58,12 +60,14 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @GetMapping("/user/{id}")
     public ResponseEntity<List<Log>> getLogsByUser(@PathVariable UUID id) {
         List<Log> logs = logService.getLogsByUser(id);
         return ResponseEntity.ok(logs);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getLogById(@PathVariable UUID id) {
         Optional<Log> log = logService.getLogById(id);
@@ -74,6 +78,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Log>> getLogsByStatus(@PathVariable LogStatus status) {
         List<Log> logs = logService.getLogsByStatus(status);
@@ -113,6 +118,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateLog(@PathVariable UUID id, @RequestBody Log updatedLog) {
         try {
@@ -127,6 +133,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLog(@PathVariable UUID id) {
         try {
@@ -139,6 +146,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @GetMapping("/listLowongan")
     public ResponseEntity<List<LowonganWithPendaftaranDTO>> getLowonganYangDiterima() {
         List<LowonganWithPendaftaranDTO> lowongan = logService.getLowonganYangDiterima();
