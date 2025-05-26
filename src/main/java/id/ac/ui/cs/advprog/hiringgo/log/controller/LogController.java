@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.hiringgo.log.model.Log;
 import id.ac.ui.cs.advprog.hiringgo.log.enums.LogStatus;
 import id.ac.ui.cs.advprog.hiringgo.log.service.LogService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class LogController {
         this.logService = logService;
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @PostMapping
     public ResponseEntity<?> createLog(@RequestBody CreateLogRequest createLogRequest) {
         try {
@@ -38,12 +40,14 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping
     public ResponseEntity<List<Log>> getAllLogs() {
         List<Log> logs = logService.getAllLogs();
         return ResponseEntity.ok(logs);
     }
 
+    @PreAuthorize("hasAuthority('DOSEN')")
     @GetMapping("/dosen/{dosenId}")
     public ResponseEntity<?> getLogsByDosenMataKuliah(@PathVariable UUID dosenId) {
         try {
@@ -56,12 +60,14 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @GetMapping("/user/{id}")
     public ResponseEntity<List<Log>> getLogsByUser(@PathVariable UUID id) {
         List<Log> logs = logService.getLogsByUser(id);
         return ResponseEntity.ok(logs);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<?> getLogById(@PathVariable UUID id) {
         Optional<Log> log = logService.getLogById(id);
@@ -72,12 +78,14 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Log>> getLogsByStatus(@PathVariable LogStatus status) {
         List<Log> logs = logService.getLogsByStatus(status);
         return ResponseEntity.ok(logs);
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @GetMapping("/month")
     public ResponseEntity<List<Log>> getLogsByMonth(
             @RequestParam UUID id,
@@ -94,6 +102,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('DOSEN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateLogStatus(@PathVariable UUID id, @RequestBody LogStatus status) {
         try {
@@ -109,6 +118,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateLog(@PathVariable UUID id, @RequestBody Log updatedLog) {
         try {
@@ -123,6 +133,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteLog(@PathVariable UUID id) {
         try {
@@ -135,6 +146,7 @@ public class LogController {
         }
     }
 
+    @PreAuthorize("hasAuthority('MAHASISWA')")
     @GetMapping("/listLowongan")
     public ResponseEntity<List<LowonganWithPendaftaranDTO>> getLowonganYangDiterima() {
         List<LowonganWithPendaftaranDTO> lowongan = logService.getLowonganYangDiterima();

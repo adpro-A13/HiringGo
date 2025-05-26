@@ -476,4 +476,329 @@ class LogServiceTest {
 
         verify(pendaftaranRepository).findByKandidatId(kandidatId);
     }
+
+    // Test cases tambahan untuk mencapai 100% branch coverage LogService
+
+    @Test
+    void testCreateLogWithNullWaktuMulai() {
+        // Test untuk validateLogTime dengan waktuMulai null
+        UUID userId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
+
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setKategori(LogKategori.ASISTENSI);
+        request.setTanggalLog(LocalDate.now());
+        request.setWaktuMulai(null); // Null waktu mulai
+        request.setWaktuSelesai(LocalTime.of(10, 0));
+        request.setPendaftaran(String.valueOf(pendaftaranId));
+        request.setUser(userId);
+
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> logService.createLog(request));
+        assertEquals("Waktu mulai dan selesai tidak boleh kosong", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateLogWithNullWaktuSelesai() {
+        // Test untuk validateLogTime dengan waktuSelesai null
+        UUID userId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
+
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setKategori(LogKategori.ASISTENSI);
+        request.setTanggalLog(LocalDate.now());
+        request.setWaktuMulai(LocalTime.of(9, 0));
+        request.setWaktuSelesai(null); // Null waktu selesai
+        request.setPendaftaran(String.valueOf(pendaftaranId));
+        request.setUser(userId);
+
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> logService.createLog(request));
+        assertEquals("Waktu mulai dan selesai tidak boleh kosong", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateLogWithBothTimesNull() {
+        // Test untuk validateLogTime dengan kedua waktu null
+        UUID userId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
+
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setKategori(LogKategori.ASISTENSI);
+        request.setTanggalLog(LocalDate.now());
+        request.setWaktuMulai(null); // Null waktu mulai
+        request.setWaktuSelesai(null); // Null waktu selesai
+        request.setPendaftaran(String.valueOf(pendaftaranId));
+        request.setUser(userId);
+
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> logService.createLog(request));
+        assertEquals("Waktu mulai dan selesai tidak boleh kosong", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreateLogWithEqualTimes() {
+        // Test untuk waktu mulai sama dengan waktu selesai (edge case)
+        UUID userId = UUID.randomUUID();
+        UUID pendaftaranId = UUID.randomUUID();
+        BigDecimal ipk = new BigDecimal("3.14");
+
+        User user = new Mahasiswa();
+        user.setId(userId);
+
+        Pendaftaran pendaftaran = new Pendaftaran(lowongan, (Mahasiswa) user, ipk, 3, LocalDateTime.now());
+        pendaftaran.setPendaftaranId(pendaftaranId);
+
+        CreateLogRequest request = new CreateLogRequest();
+        request.setJudul("Asistensi");
+        request.setKategori(LogKategori.ASISTENSI);
+        request.setTanggalLog(LocalDate.now());
+        request.setWaktuMulai(LocalTime.of(10, 0));
+        request.setWaktuSelesai(LocalTime.of(10, 0)); // Waktu sama
+        request.setPendaftaran(String.valueOf(pendaftaranId));
+        request.setUser(userId);
+
+        when(pendaftaranRepository.findById(pendaftaranId)).thenReturn(Optional.of(pendaftaran));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> logService.createLog(request));
+        assertEquals("Waktu mulai harus sebelum waktu selesai", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdateLogWithNullWaktuMulai() {
+        // Test untuk updateLog dengan validasi waktu mulai null
+        UUID logId = UUID.randomUUID();
+
+        Log existingLog = new Log.Builder()
+                .id(logId)
+                .judul("Existing Log")
+                .waktuMulai(LocalTime.of(8, 0))
+                .waktuSelesai(LocalTime.of(9, 0))
+                .build();
+
+        Log updatedLog = new Log.Builder()
+                .judul("Updated Log")
+                .waktuMulai(null) // Null waktu mulai
+                .waktuSelesai(LocalTime.of(11, 0))
+                .build();
+
+        when(logRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                () -> logService.updateLog(logId, updatedLog));
+        assertEquals("Waktu mulai dan selesai tidak boleh kosong", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdateLogWithNullWaktuSelesai() {
+        // Test untuk updateLog dengan validasi waktu selesai null
+        UUID logId = UUID.randomUUID();
+
+        Log existingLog = new Log.Builder()
+                .id(logId)
+                .judul("Existing Log")
+                .waktuMulai(LocalTime.of(8, 0))
+                .waktuSelesai(LocalTime.of(9, 0))
+                .build();
+
+        Log updatedLog = new Log.Builder()
+                .judul("Updated Log")
+                .waktuMulai(LocalTime.of(10, 0))
+                .waktuSelesai(null) // Null waktu selesai
+                .build();
+
+        when(logRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                () -> logService.updateLog(logId, updatedLog));
+        assertEquals("Waktu mulai dan selesai tidak boleh kosong", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdateLogWithInvalidTime() {
+        // Test untuk updateLog dengan waktu tidak valid
+        UUID logId = UUID.randomUUID();
+
+        Log existingLog = new Log.Builder()
+                .id(logId)
+                .judul("Existing Log")
+                .waktuMulai(LocalTime.of(8, 0))
+                .waktuSelesai(LocalTime.of(9, 0))
+                .build();
+
+        Log updatedLog = new Log.Builder()
+                .judul("Updated Log")
+                .waktuMulai(LocalTime.of(15, 0)) // Waktu mulai setelah waktu selesai
+                .waktuSelesai(LocalTime.of(11, 0))
+                .build();
+
+        when(logRepository.findById(logId)).thenReturn(Optional.of(existingLog));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                () -> logService.updateLog(logId, updatedLog));
+        assertEquals("Waktu mulai harus sebelum waktu selesai", exception.getMessage());
+        verify(logRepository, never()).save(any());
+    }
+
+    @Test
+    void testGetLowonganYangDiterimaWithNonMahasiswaPrincipal() {
+        // Test untuk case ketika principal bukan Mahasiswa
+        User nonMahasiswaUser = mock(User.class); // User yang bukan Mahasiswa
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(nonMahasiswaUser, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class,
+                () -> logService.getLowonganYangDiterima());
+        assertEquals("User not authenticated or user data unavailable", exception.getMessage());
+    }
+
+    @Test
+    void testGetLowonganYangDiterimaWithNullPrincipal() {
+        // Test untuk case ketika principal null
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(null, null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class,
+                () -> logService.getLowonganYangDiterima());
+        assertEquals("User not authenticated or user data unavailable", exception.getMessage());
+    }
+
+    @Test
+    void testGetLowonganYangDiterimaWithEmptyPendaftaran() {
+        // Test untuk case ketika tidak ada pendaftaran
+        UUID kandidatId = UUID.randomUUID();
+
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(kandidatId);
+        mahasiswa.setUsername("testMahasiswa");
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(mahasiswa, null, mahasiswa.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        when(pendaftaranRepository.findByKandidatId(kandidatId)).thenReturn(List.of());
+
+        // Act
+        List<LowonganWithPendaftaranDTO> hasil = logService.getLowonganYangDiterima();
+
+        // Assert
+        assertTrue(hasil.isEmpty());
+        verify(pendaftaranRepository).findByKandidatId(kandidatId);
+    }
+
+    @Test
+    void testGetLowonganYangDiterimaWithOnlyDitolakPendaftaran() {
+        // Test untuk case ketika semua pendaftaran ditolak
+        UUID kandidatId = UUID.randomUUID();
+
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(kandidatId);
+        mahasiswa.setUsername("testMahasiswa");
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(mahasiswa, null, mahasiswa.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        Pendaftaran ditolak1 = mock(Pendaftaran.class);
+        Pendaftaran ditolak2 = mock(Pendaftaran.class);
+
+        when(ditolak1.getStatus()).thenReturn(StatusPendaftaran.DITOLAK);
+        when(ditolak2.getStatus()).thenReturn(StatusPendaftaran.DITOLAK);
+
+        List<Pendaftaran> semuaPendaftaran = List.of(ditolak1, ditolak2);
+        when(pendaftaranRepository.findByKandidatId(kandidatId)).thenReturn(semuaPendaftaran);
+
+        // Act
+        List<LowonganWithPendaftaranDTO> hasil = logService.getLowonganYangDiterima();
+
+        // Assert
+        assertTrue(hasil.isEmpty());
+        verify(pendaftaranRepository).findByKandidatId(kandidatId);
+    }
+
+    @Test
+    void testGetLowonganYangDiterimaWithMultiplePendaftaranSameLowongan() {
+        // Test untuk case ketika ada multiple pendaftaran untuk lowongan yang sama
+        UUID kandidatId = UUID.randomUUID();
+
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(kandidatId);
+        mahasiswa.setUsername("testMahasiswa");
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(mahasiswa, null, mahasiswa.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        Lowongan sameLowongan = mock(Lowongan.class);
+
+        Pendaftaran diterima1 = mock(Pendaftaran.class);
+        Pendaftaran diterima2 = mock(Pendaftaran.class);
+
+        when(diterima1.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
+        when(diterima2.getStatus()).thenReturn(StatusPendaftaran.DITERIMA);
+        when(diterima1.getLowongan()).thenReturn(sameLowongan);
+        when(diterima2.getLowongan()).thenReturn(sameLowongan);
+
+        List<Pendaftaran> semuaPendaftaran = List.of(diterima1, diterima2);
+        when(pendaftaranRepository.findByKandidatId(kandidatId)).thenReturn(semuaPendaftaran);
+
+        // Act
+        List<LowonganWithPendaftaranDTO> hasil = logService.getLowonganYangDiterima();
+
+        // Assert
+        assertEquals(1, hasil.size()); // Hanya 1 lowongan
+        assertEquals(2, hasil.get(0).getPendaftaranUser().size()); // Tapi ada 2 pendaftaran
+        assertEquals(sameLowongan, hasil.get(0).getLowongan());
+
+        verify(pendaftaranRepository).findByKandidatId(kandidatId);
+    }
 }
