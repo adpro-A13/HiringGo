@@ -25,6 +25,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import java.util.UUID;
+import java.util.Arrays;
+import org.springframework.mock.web.MockHttpServletResponse;
+import jakarta.servlet.http.Cookie;
+import static org.mockito.ArgumentMatchers.argThat;
 
 public class AuthenticationControllerTest {
 
@@ -448,5 +453,327 @@ public class AuthenticationControllerTest {
         assertFalse(userInfo.containsKey("fullName"));
         assertFalse(userInfo.containsKey("nim"));
         assertFalse(userInfo.containsKey("nip"));
+    }
+
+    // Add these additional tests to AuthenticationControllerTest.java to achieve 100% coverage
+
+    @Test
+    void sanitizeUser_withMahasiswaUser_shouldIncludeAllMahasiswaFields() {
+        // Test all branches of the sanitizeUser method for Mahasiswa
+        Mahasiswa mahasiswaUser = new Mahasiswa();
+        mahasiswaUser.setId(UUID.randomUUID());
+        mahasiswaUser.setUsername("complete.student@example.com");
+        mahasiswaUser.setPassword("hashedPassword");
+        mahasiswaUser.setFullName("Complete Student User");
+        mahasiswaUser.setNim("20231234567");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(mahasiswaUser);
+        when(jwtService.generateToken(anyMap(), eq(mahasiswaUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
+        assertEquals(mahasiswaUser.getId(), userInfo.get("id"));
+        assertEquals("complete.student@example.com", userInfo.get("email"));
+        assertEquals("Complete Student User", userInfo.get("fullName"));
+        assertEquals("20231234567", userInfo.get("nim"));
+        assertEquals("MAHASISWA", userInfo.get("role"));
+        assertFalse(userInfo.containsKey("password"));
+        assertFalse(userInfo.containsKey("nip")); // Should not contain Dosen-specific field
+    }
+
+    @Test
+    void sanitizeUser_withDosenUser_shouldIncludeAllDosenFields() {
+        // Test all branches of the sanitizeUser method for Dosen
+        Dosen dosenUser = new Dosen();
+        dosenUser.setId(UUID.randomUUID());
+        dosenUser.setUsername("complete.lecturer@example.com");
+        dosenUser.setPassword("hashedPassword");
+        dosenUser.setFullName("Complete Lecturer User");
+        dosenUser.setNip("198701012345678901");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(dosenUser);
+        when(jwtService.generateToken(anyMap(), eq(dosenUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
+        assertEquals(dosenUser.getId(), userInfo.get("id"));
+        assertEquals("complete.lecturer@example.com", userInfo.get("email"));
+        assertEquals("Complete Lecturer User", userInfo.get("fullName"));
+        assertEquals("198701012345678901", userInfo.get("nip"));
+        assertEquals("DOSEN", userInfo.get("role"));
+        assertFalse(userInfo.containsKey("password"));
+        assertFalse(userInfo.containsKey("nim")); // Should not contain Mahasiswa-specific field
+    }
+
+    @Test
+    void sanitizeUser_withAdminUser_shouldIncludeBasicAdminFields() {
+        // Test the Admin branch of sanitizeUser method
+        Admin adminUser = new Admin();
+        adminUser.setId(UUID.randomUUID());
+        adminUser.setUsername("complete.admin@example.com");
+        adminUser.setPassword("hashedPassword");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(adminUser);
+        when(jwtService.generateToken(anyMap(), eq(adminUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
+        assertEquals(adminUser.getId(), userInfo.get("id"));
+        assertEquals("complete.admin@example.com", userInfo.get("email"));
+        assertEquals("ADMIN", userInfo.get("role"));
+        assertFalse(userInfo.containsKey("password"));
+        assertFalse(userInfo.containsKey("fullName")); // Admin doesn't have fullName in sanitizeUser
+        assertFalse(userInfo.containsKey("nim"));
+        assertFalse(userInfo.containsKey("nip"));
+    }
+
+    @Test
+    void sanitizeUser_withUserHavingNoAuthorities_shouldReturnUnknownRole() {
+        // Test the case where user has no authorities (orElse("UNKNOWN") branch)
+        User userWithNoAuthorities = new User() {
+            @Override
+            public List<SimpleGrantedAuthority> getAuthorities() {
+                return Collections.emptyList(); // No authorities
+            }
+
+            @Override
+            public String getPassword() {
+                return "password";
+            }
+
+            @Override
+            public String getUsername() {
+                return "noauth@example.com";
+            }
+
+            @Override
+            public boolean isAccountNonExpired() {
+                return true;
+            }
+
+            @Override
+            public boolean isAccountNonLocked() {
+                return true;
+            }
+
+            @Override
+            public boolean isCredentialsNonExpired() {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return true;
+            }
+        };
+        userWithNoAuthorities.setId(UUID.randomUUID());
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(userWithNoAuthorities);
+        when(jwtService.generateToken(anyMap(), eq(userWithNoAuthorities))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody() instanceof LoginResponse);
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertNotNull(userInfo);
+        assertEquals("UNKNOWN", userInfo.get("role")); // Should default to UNKNOWN
+        assertEquals("noauth@example.com", userInfo.get("email"));
+        assertFalse(userInfo.containsKey("password"));
+    }
+
+    @Test
+    void logout_shouldClearCookiesAndReturnSuccessResponse() {
+        // Test the logout endpoint
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        ResponseEntity<Map<String, Object>> result = authenticationController.logout(response);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
+
+        Map<String, Object> responseBody = result.getBody();
+        assertTrue(responseBody.containsKey("data"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
+        assertEquals(200, data.get("status_code"));
+        assertEquals("Anda berhasil logout!!", data.get("message"));
+
+        // Verify cookies were cleared
+        Cookie[] cookies = response.getCookies();
+        assertNotNull(cookies);
+        assertEquals(2, cookies.length);
+
+        // Check authToken cookie
+        Cookie authTokenCookie = Arrays.stream(cookies)
+                .filter(cookie -> "authToken".equals(cookie.getName()))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(authTokenCookie);
+        assertNull(authTokenCookie.getValue());
+        assertEquals("/", authTokenCookie.getPath());
+        assertEquals(0, authTokenCookie.getMaxAge());
+
+        // Check token cookie
+        Cookie tokenCookie = Arrays.stream(cookies)
+                .filter(cookie -> "token".equals(cookie.getName()))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(tokenCookie);
+        assertNull(tokenCookie.getValue());
+        assertEquals("/", tokenCookie.getPath());
+        assertEquals(0, tokenCookie.getMaxAge());
+    }
+
+    @Test
+    void register_withValidMahasiswaData_shouldCreateJwtWithCorrectClaims() {
+        // Test JWT generation with specific user data
+        Mahasiswa mahasiswaUser = new Mahasiswa();
+        mahasiswaUser.setId(UUID.randomUUID());
+        mahasiswaUser.setUsername("jwt.test@example.com");
+        mahasiswaUser.setFullName("JWT Test User");
+        mahasiswaUser.setNim("20230001");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(mahasiswaUser);
+        when(jwtService.generateToken(anyMap(), eq(mahasiswaUser))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(7200000L);
+
+        ResponseEntity<?> response = authenticationController.register(validRegisterDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertNotNull(loginResponse);
+        assertEquals(validToken, loginResponse.getToken());
+        assertEquals(7200000L, loginResponse.getExpiresIn());
+
+        // Verify JWT service was called with correct user info
+        verify(jwtService).generateToken(argThat(userInfo -> {
+            Map<String, Object> map = (Map<String, Object>) userInfo;
+            return "jwt.test@example.com".equals(map.get("email")) &&
+                    "JWT Test User".equals(map.get("fullName")) &&
+                    "20230001".equals(map.get("nim")) &&
+                    "MAHASISWA".equals(map.get("role"));
+        }), eq(mahasiswaUser));
+    }
+
+    @Test
+    void authenticate_withValidDosenCredentials_shouldReturnTokenWithDosenInfo() {
+        // Test authentication with Dosen user
+        Dosen authenticatedDosen = new Dosen();
+        authenticatedDosen.setId(UUID.randomUUID());
+        authenticatedDosen.setUsername("auth.dosen@example.com");
+        authenticatedDosen.setFullName("Authenticated Dosen");
+        authenticatedDosen.setNip("199001011234567890");
+
+        when(authenticationService.authenticate(any(LoginUserDto.class))).thenReturn(authenticatedDosen);
+        when(jwtService.generateToken(anyMap(), eq(authenticatedDosen))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertNotNull(loginResponse);
+
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertEquals("auth.dosen@example.com", userInfo.get("email"));
+        assertEquals("Authenticated Dosen", userInfo.get("fullName"));
+        assertEquals("199001011234567890", userInfo.get("nip"));
+        assertEquals("DOSEN", userInfo.get("role"));
+        assertFalse(userInfo.containsKey("nim"));
+    }
+
+    @Test
+    void authenticate_withValidAdminCredentials_shouldReturnTokenWithAdminInfo() {
+        // Test authentication with Admin user
+        Admin authenticatedAdmin = new Admin();
+        authenticatedAdmin.setId(UUID.randomUUID());
+        authenticatedAdmin.setUsername("auth.admin@example.com");
+
+        when(authenticationService.authenticate(any(LoginUserDto.class))).thenReturn(authenticatedAdmin);
+        when(jwtService.generateToken(anyMap(), eq(authenticatedAdmin))).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response = authenticationController.authenticate(validLoginDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        LoginResponse loginResponse = (LoginResponse) response.getBody();
+        assertNotNull(loginResponse);
+
+        Map<String, Object> userInfo = loginResponse.getUser();
+        assertEquals("auth.admin@example.com", userInfo.get("email"));
+        assertEquals("ADMIN", userInfo.get("role"));
+        assertFalse(userInfo.containsKey("fullName"));
+        assertFalse(userInfo.containsKey("nim"));
+        assertFalse(userInfo.containsKey("nip"));
+    }
+
+    @Test
+    void sanitizeUser_coverageForAllUserTypeBranches() {
+        // Comprehensive test to ensure all instanceof branches are covered
+
+        // Test 1: Mahasiswa instance
+        Mahasiswa mahasiswa = new Mahasiswa();
+        mahasiswa.setId(UUID.randomUUID());
+        mahasiswa.setUsername("m@test.com");
+        mahasiswa.setFullName("M User");
+        mahasiswa.setNim("123");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(mahasiswa);
+        when(jwtService.generateToken(anyMap(), any())).thenReturn(validToken);
+        when(jwtService.getExpirationTime()).thenReturn(3600000L);
+
+        ResponseEntity<?> response1 = authenticationController.register(validRegisterDto);
+        assertEquals(HttpStatus.OK, response1.getStatusCode());
+
+        // Test 2: Dosen instance
+        Dosen dosen = new Dosen();
+        dosen.setId(UUID.randomUUID());
+        dosen.setUsername("d@test.com");
+        dosen.setFullName("D User");
+        dosen.setNip("456");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(dosen);
+
+        ResponseEntity<?> response2 = authenticationController.register(validRegisterDto);
+        assertEquals(HttpStatus.OK, response2.getStatusCode());
+
+        // Test 3: Admin instance (neither Mahasiswa nor Dosen)
+        Admin admin = new Admin();
+        admin.setId(UUID.randomUUID());
+        admin.setUsername("a@test.com");
+
+        when(authenticationService.signup(any(RegisterUserDto.class))).thenReturn(admin);
+
+        ResponseEntity<?> response3 = authenticationController.register(validRegisterDto);
+        assertEquals(HttpStatus.OK, response3.getStatusCode());
+
+        // Verify all user types were processed correctly
+        verify(jwtService, times(3)).generateToken(anyMap(), any(User.class));
     }
 }

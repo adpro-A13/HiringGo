@@ -16,6 +16,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 
 class SecurityConfigurationTest {
 
@@ -34,13 +37,18 @@ class SecurityConfigurationTest {
     void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         securityConfiguration = new SecurityConfiguration(jwtAuthenticationFilter, authenticationProvider);
-        
+
+        DefaultSecurityFilterChain mockFilterChain = mock(DefaultSecurityFilterChain.class);
+
+
         when(httpSecurity.securityMatcher(anyString())).thenReturn(httpSecurity);
+        when(httpSecurity.cors(any())).thenReturn(httpSecurity);
         when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
         when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
         when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
         when(httpSecurity.authenticationProvider(any())).thenReturn(httpSecurity);
         when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
+        when(httpSecurity.build()).thenReturn(mockFilterChain); // Add this line
     }
 
     @Test
@@ -93,5 +101,29 @@ class SecurityConfigurationTest {
         
         List<String> expectedHeaders = List.of("Authorization", "Content-Type");
         assertEquals(expectedHeaders, corsConfig.getAllowedHeaders());
+    }
+
+    @Test
+    void securityFilterChain_ShouldDisableCsrf() throws Exception {
+        SecurityFilterChain result = securityConfiguration.securityFilterChain(httpSecurity);
+
+        assertNotNull(result);
+        verify(httpSecurity).csrf(any());
+    }
+
+    @Test
+    void securityFilterChain_ShouldConfigureAuthorizeHttpRequests() throws Exception {
+        SecurityFilterChain result = securityConfiguration.securityFilterChain(httpSecurity);
+
+        assertNotNull(result);
+        verify(httpSecurity).authorizeHttpRequests(any());
+    }
+
+    @Test
+    void securityFilterChain_ShouldConfigureSessionManagement() throws Exception {
+        SecurityFilterChain result = securityConfiguration.securityFilterChain(httpSecurity);
+
+        assertNotNull(result);
+        verify(httpSecurity).sessionManagement(any());
     }
 }
