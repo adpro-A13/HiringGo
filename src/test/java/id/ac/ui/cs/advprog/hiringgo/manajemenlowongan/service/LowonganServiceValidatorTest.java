@@ -215,18 +215,33 @@ class LowonganServiceValidatorTest {
 
     @Test
     void testValidateLowonganCombinationIsUnique_duplicateOrUnique() {
-        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaranAndJumlahAsdosDibutuhkan(
-                any(), any(), any(), anyInt()))
-                .thenReturn(Optional.of(lowongan));
+        Lowongan inputLowongan = new Lowongan();
+        inputLowongan.setLowonganId(UUID.randomUUID());
+        inputLowongan.setMataKuliah(mataKuliah);
+        inputLowongan.setSemester("Ganjil");
+        inputLowongan.setTahunAjaran("2024/2025");
+
+        Lowongan existingLowongan = new Lowongan();
+        existingLowongan.setLowonganId(UUID.randomUUID());
+        existingLowongan.setMataKuliah(inputLowongan.getMataKuliah());
+        existingLowongan.setSemester(inputLowongan.getSemester().getValue());
+        existingLowongan.setTahunAjaran(inputLowongan.getTahunAjaran());
+
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                any(), any(), any()))
+                .thenReturn(Optional.of(existingLowongan));
+
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> validator.validateLowonganCombinationIsUnique(lowongan));
+                () -> validator.validateLowonganCombinationIsUnique(inputLowongan));
         assertEquals("Lowongan dengan kombinasi yang sama sudah ada.", ex.getMessage());
 
-        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaranAndJumlahAsdosDibutuhkan(
-                any(), any(), any(), anyInt()))
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                any(), any(), any()))
                 .thenReturn(Optional.empty());
-        assertDoesNotThrow(() -> validator.validateLowonganCombinationIsUnique(lowongan));
+
+        assertDoesNotThrow(() -> validator.validateLowonganCombinationIsUnique(inputLowongan));
     }
+
 
     @Test
     void testValidateStatusAndCapacity_pendaftaranDitolak_throwsIllegalState() {
