@@ -9,6 +9,9 @@ import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
 
 @Component
 public class MataKuliahMapper {
@@ -22,18 +25,22 @@ public class MataKuliahMapper {
     public MataKuliah toEntity(MataKuliahDTO dto) {
         MataKuliah mataKuliah = new MataKuliah(dto.getKode(), dto.getNama(), dto.getDeskripsi());
 
-        if (dto.getDosenPengampuEmails() != null) {
-            for (String email : dto.getDosenPengampuEmails()) {
-                User user = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new DosenEmailNotFoundException("Pengguna dengan email " + email + " tidak ditemukan"));
-
-                if (!(user instanceof Dosen dosen)) {
-                    throw new DosenEmailNotFoundException("Pengguna dengan email " + email + " bukan seorang dosen");
+        List<String> dosenEmails = dto.getDosenPengampuEmails();
+        if (dosenEmails != null && !dosenEmails.isEmpty()) {
+            List<User> dosenPengampu = userRepository.findAllByEmailIn(dosenEmails);
+            Set<String> found = dosenPengampu.stream().map(User::getUsername).collect(toSet());
+            for (String email : dosenEmails) {
+                if (!found.contains(email)){
+                    throw new DosenEmailNotFoundException("Pengguna dengan email " + email + " tidak ditemukan");
                 }
-                mataKuliah.addDosenPengampu(dosen);
+            }
+            for (User user : dosenPengampu) {
+                if (!(user instanceof Dosen)) {
+                    throw new DosenEmailNotFoundException("Pengguna dengan email " + user.getUsername()+ " bukan DOSEN");
+                }
+                mataKuliah.addDosenPengampu((Dosen) user);
             }
         }
-
         return mataKuliah;
     }
 
