@@ -6,7 +6,8 @@ import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.User;
 
-public class UserFactory {    public static User createUser(UserRoleEnums role, String email, String password, String fullName, String nimOrNip, java.util.UUID id) {
+public class UserFactory {
+    public static User createUser(UserRoleEnums role, String email, String password, String fullName, String nimOrNip, java.util.UUID id) {
         String safeIdentifier = (nimOrNip != null) ? nimOrNip : "";
         System.out.println("UserFactory creating " + role + " with identifier: " + safeIdentifier);
         User user;
@@ -17,11 +18,8 @@ public class UserFactory {    public static User createUser(UserRoleEnums role, 
             case DOSEN:
                 user = new Dosen(email, password, fullName, safeIdentifier);
                 break;
-            case ADMIN:
-                user = new Admin(email, password);
-                break;
             default:
-                throw new IllegalArgumentException("Unknown role: " + role);
+                user = new Admin(email, password);
         }
         if (id != null) {
             user.setId(id);
