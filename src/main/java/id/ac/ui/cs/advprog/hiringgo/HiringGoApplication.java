@@ -15,14 +15,13 @@ public class HiringGoApplication {
     }
 
     public static void loadEnv() {
-        // Fallback ke dotenv hanya kalau System.getenv belum ada
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
-        setPropertyIfNotNull("DB_HOST", getEnvOrDotenv("DB_HOST", dotenv));
-        setPropertyIfNotNull("DB_PORT", getEnvOrDotenv("DB_PORT", dotenv));
-        setPropertyIfNotNull("DB_USER", getEnvOrDotenv("DB_USER", dotenv));
+        setPropertyIfNotNull("DB_URL", getEnvOrDotenv("DB_URL", dotenv));
+        setPropertyIfNotNull("DB_USERNAME", getEnvOrDotenv("DB_USERNAME", dotenv));
         setPropertyIfNotNull("DB_PASSWORD", getEnvOrDotenv("DB_PASSWORD", dotenv));
-        setPropertyIfNotNull("DB_NAME", getEnvOrDotenv("DB_NAME", dotenv));
+        setPropertyIfNotNull("JWT_SECRET", getEnvOrDotenv("JWT_SECRET", dotenv));
+        setPropertyIfNotNull("PASSWORD_ADMIN", getEnvOrDotenv("PASSWORD_ADMIN", dotenv));
     }
 
     private static String getEnvOrDotenv(String key, Dotenv dotenv) {

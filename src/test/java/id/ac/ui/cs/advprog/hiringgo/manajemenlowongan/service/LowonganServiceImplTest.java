@@ -56,7 +56,6 @@ class LowonganServiceImplTest {
         dosenPengampu = new Dosen();
         dosenPengampu.setUsername("dosen@example.com");
         dosenPengampu.setNip("12345678");
-        lowonganService.eventPublisher = eventPublisher;
         // Setup mata kuliah default
         mataKuliah = new MataKuliah("CS100", "Advpro", "advanced programming");
         mataKuliah.addDosenPengampu(dosenPengampu);
@@ -312,8 +311,6 @@ class LowonganServiceImplTest {
 
         when(pendaftaranRepository.save(any(Pendaftaran.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(lowonganRepository.save(any(Lowongan.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        spyService.eventPublisher = eventPublisher;
 
         spyService.terimaPendaftar(id1, id2);
 

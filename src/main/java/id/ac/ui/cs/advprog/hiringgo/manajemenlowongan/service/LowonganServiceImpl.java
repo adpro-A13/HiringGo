@@ -29,7 +29,7 @@ public class LowonganServiceImpl implements LowonganService {
 
     private final LowonganRepository lowonganRepository;
     private final PendaftaranRepository pendaftaranRepository;
-    ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
     private final LowonganServiceValidator validator;
 
     @Override
