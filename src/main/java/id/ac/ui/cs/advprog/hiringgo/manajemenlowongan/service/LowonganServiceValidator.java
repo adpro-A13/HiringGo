@@ -88,15 +88,18 @@ public class LowonganServiceValidator {
 
     public void validateLowonganCombinationIsUnique(Lowongan lowongan) {
         Optional<Lowongan> existing = lowonganRepository
-                .findByMataKuliahAndSemesterAndTahunAjaranAndJumlahAsdosDibutuhkan(
+                .findByMataKuliahAndSemesterAndTahunAjaran(
                         lowongan.getMataKuliah(),
                         lowongan.getSemester(),
-                        lowongan.getTahunAjaran(),
-                        lowongan.getJumlahAsdosDiterima()
+                        lowongan.getTahunAjaran()
                 );
 
         if (existing.isPresent()) {
-            throw new IllegalArgumentException("Lowongan dengan kombinasi yang sama sudah ada.");
+            Lowongan found = existing.get();
+            if (lowongan.getLowonganId() == null || !lowongan.getLowonganId().equals(found.getLowonganId())) {
+                throw new IllegalArgumentException("Lowongan dengan kombinasi yang sama sudah ada.");
+            }
         }
     }
+
 }
