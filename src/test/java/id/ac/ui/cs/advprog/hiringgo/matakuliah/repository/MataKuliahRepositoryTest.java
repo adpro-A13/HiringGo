@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
+import java.util.UUID;
 
 @DataJpaTest
 class MataKuliahRepositoryTest {
@@ -23,6 +24,8 @@ class MataKuliahRepositoryTest {
     void testSaveMataKuliah() {
         Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
         Dosen dosenB = new Dosen("b@u.id", "pass", "B", "124");
+        dosenA.setId(UUID.randomUUID());
+        dosenB.setId(UUID.randomUUID());
         entityManager.persist(dosenA);
         entityManager.persist(dosenB);
 
@@ -46,6 +49,7 @@ class MataKuliahRepositoryTest {
     @Test
     void testUpdateMataKuliah() {
         Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
+        dosenA.setId(UUID.randomUUID());
         entityManager.persist(dosenA);
 
         MataKuliah matkul = new MataKuliah(
@@ -56,6 +60,7 @@ class MataKuliahRepositoryTest {
         mataKuliahRepository.save(matkul);
 
         Dosen dosenB = new Dosen("b@u.id", "pass", "B", "124");
+        dosenB.setId(UUID.randomUUID());
         entityManager.persist(dosenB);
         MataKuliah updatedMatkul = new MataKuliah(
                 matkul.getKode(),
@@ -90,6 +95,7 @@ class MataKuliahRepositoryTest {
     @Test
     void testFindAllMataKuliahIfMoreThanOne() {
         Dosen dosenA = new Dosen("a@u.id", "pass", "A", "123");
+        dosenA.setId(UUID.randomUUID());
         entityManager.persist(dosenA);
 
         MataKuliah mk1 = new MataKuliah(
@@ -100,6 +106,7 @@ class MataKuliahRepositoryTest {
                 .addDosenPengampu(dosenA);
 
         Dosen dosenB = new Dosen("b@u.id", "pass", "B", "124");
+        dosenB.setId(UUID.randomUUID());
         entityManager.persist(dosenB);
         MataKuliah mk2 = new MataKuliah(
                 "CSGE602023 - 01.00.12.01-2024",
@@ -118,6 +125,7 @@ class MataKuliahRepositoryTest {
     @Test
     void testFindByDosenPengampu(){
         Dosen dosen = new Dosen("dosen@u.id", "pass", "dosen", "124");
+        dosen.setId(UUID.randomUUID());
         entityManager.persist(dosen);
 
         MataKuliah matkul = new MataKuliah("CS101", "Algoritma", "Dasar");

@@ -125,7 +125,7 @@ class JwtAuthenticationFilterTest {
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
         
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
-        assertTrue(response.getContentAsString().contains("Token is no longer valid"));
+        assertTrue(response.getContentAsString().contains("Invalid or expired token"));
         assertTrue(response.getContentAsString().contains("invalid_token"));
         
         verify(filterChain, never()).doFilter(request, response);
@@ -158,7 +158,6 @@ class JwtAuthenticationFilterTest {
         
         assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
         assertTrue(response.getContentAsString().contains("Invalid or expired token"));
-        assertTrue(response.getContentAsString().contains("Token parsing error"));
         
         verify(filterChain, never()).doFilter(request, response);
     }

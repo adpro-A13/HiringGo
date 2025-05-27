@@ -3,7 +3,6 @@ package id.ac.ui.cs.advprog.hiringgo.authentication.model;
 import java.util.List;
 import java.util.UUID;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import jakarta.persistence.*;
@@ -14,8 +13,6 @@ import jakarta.persistence.*;
 @Table(name = "users")
 public abstract class User implements UserDetails {
     @Id
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @GeneratedValue(generator = "UUID")
     @Column(nullable = false)
     private UUID id;
 
@@ -24,6 +21,9 @@ public abstract class User implements UserDetails {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private int tokenVersion = 0;
 
     public UUID getId() {
         return id;
@@ -55,5 +55,17 @@ public abstract class User implements UserDetails {
     public User setUsername(String email) {
         this.email = email;
         return this;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(int tokenVersion) {
+        this.tokenVersion = tokenVersion;
+    }
+
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
     }
 }

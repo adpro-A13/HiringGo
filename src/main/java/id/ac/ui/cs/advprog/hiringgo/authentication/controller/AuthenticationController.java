@@ -14,11 +14,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import java.util.HashMap;
 import java.util.Map;
 
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RestController
 public class AuthenticationController {
     private final JwtService jwtService;
@@ -84,7 +86,6 @@ public class AuthenticationController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(403).body("Authorization failed");
         }
     }
@@ -111,4 +112,27 @@ public class AuthenticationController {
 
         return userMap;
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(HttpServletResponse response) {
+        Cookie authTokenCookie = new Cookie("authToken", null);
+        authTokenCookie.setPath("/");
+        authTokenCookie.setMaxAge(0);
+        response.addCookie(authTokenCookie);
+
+        Cookie tokenCookie = new Cookie("token", null);
+        tokenCookie.setPath("/");
+        tokenCookie.setMaxAge(0);
+        response.addCookie(tokenCookie);
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("status_code", 200);
+        responseData.put("message", "Anda berhasil logout!!");
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", responseData);
+
+        return ResponseEntity.ok(result);
+    }
+
 }

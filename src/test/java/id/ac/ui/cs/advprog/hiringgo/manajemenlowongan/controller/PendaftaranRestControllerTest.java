@@ -1,433 +1,449 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.controller;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Mahasiswa;
-import id.ac.ui.cs.advprog.hiringgo.authentication.repository.UserRepository;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.PendaftaranRepository;
-import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import id.ac.ui.cs.advprog.hiringgo.authentication.service.JwtService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.DaftarForm;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDetailResponse;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.dto.LowonganDTO;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.exception.LowonganExceptionHandler;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.mapper.LowonganMapper;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.ApplicationProcessingService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.ApplicationStatusService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.AuthenticationValidatorService;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.LowonganService;
-import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.PendaftaranService;
-import jakarta.persistence.EntityNotFoundException;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.ResponseBuilderService;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service.validation.DaftarFormBusinessValidator; // Tambahkan import ini
+import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 
-@WebMvcTest(PendaftaranRestController.class)
-@AutoConfigureMockMvc
-@WithMockUser(
-        username = "testUser",
-        roles = {"MAHASISWA"}
-)
+@ExtendWith(MockitoExtension.class)
 class PendaftaranRestControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
+    @Mock
+    private LowonganService lowonganService;
 
-    @MockBean private LowonganService lowonganService;
-    @MockBean private PendaftaranService pendaftaranService;
-    @MockBean private JwtService jwtService;
-    @MockBean private UserRepository userRepository;
-    @MockBean private PendaftaranRepository pendaftaranRepository;
-    @MockBean private LowonganMapper lowonganMapper;
+    @Mock
+    private ApplicationProcessingService applicationProcessingService;
 
-    private UUID lowonganId;
-    private Lowongan lowongan;
-    private Pendaftaran pendaftaran;
-    private DaftarForm daftarForm;
-    private Mahasiswa mahasiswaMock;
+    @Mock
+    private ApplicationStatusService applicationStatusService;
+
+    @Mock
+    private AuthenticationValidatorService authenticationValidatorService;
+
+    @Mock
+    private ResponseBuilderService responseBuilderService;
+
+    @Mock
+    private LowonganMapper lowonganMapper;
+
+    @Mock
+    private DaftarFormBusinessValidator daftarFormBusinessValidator; // Tambahkan mock ini
+
+    @InjectMocks
+    private PendaftaranRestController pendaftaranRestController;
+
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
+
+    private UUID testLowonganId;
+    private Lowongan testLowongan;
+    private Mahasiswa testMahasiswa;
+    private DaftarForm testDaftarForm;
+    private Pendaftaran testPendaftaran;
+    private LowonganDetailResponse testLowonganDetailResponse;
 
     @BeforeEach
-    void setup() {
-        lowonganId = UUID.randomUUID();
+    void setUp() {
+        // Configure MockMvc with GlobalExceptionHandler
+        mockMvc = MockMvcBuilders.standaloneSetup(pendaftaranRestController)
+                .setControllerAdvice(new LowonganExceptionHandler())
+                .build();
+        objectMapper = new ObjectMapper();
 
-        lowongan = new Lowongan();
-        lowongan.setLowonganId(lowonganId);
-        MataKuliah mataKuliah = new MataKuliah("CS100", "AdvProg", "sigma sigma boy");
-        lowongan.setMataKuliah(mataKuliah);
-        lowongan.setTahunAjaran("2024/2025");
-        lowongan.setSemester(Semester.GANJIL.getValue());
-        lowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
-        lowongan.setJumlahAsdosDibutuhkan(3);
-        lowongan.setJumlahAsdosDiterima(0);
-        lowongan.setJumlahAsdosPendaftar(0);
+        testLowonganId = UUID.randomUUID();
 
-        daftarForm = new DaftarForm();
-        daftarForm.setIpk(3.75);
-        daftarForm.setSks(20);
+        testLowongan = new Lowongan();
+        testLowongan.setLowonganId(testLowonganId);
+        MataKuliah mataKuliah = new MataKuliah("CS101", "Advanced Programming", "Advanced Programming Course");
+        testLowongan.setMataKuliah(mataKuliah);
+        testLowongan.setTahunAjaran("2024/2025");
+        testLowongan.setSemester(Semester.GANJIL.getValue());
+        testLowongan.setStatusLowongan(StatusLowongan.DIBUKA.getValue());
+        testLowongan.setJumlahAsdosDibutuhkan(3);
 
-        mahasiswaMock = mock(Mahasiswa.class);
-        when(mahasiswaMock.getFullName()).thenReturn("Mock Mahasiswa");
-        when(mahasiswaMock.getId()).thenReturn(UUID.randomUUID());
+        testMahasiswa = new Mahasiswa();
+        testMahasiswa.setId(UUID.randomUUID());
+        testMahasiswa.setUsername("test@ui.ac.id");
+        testMahasiswa.setFullName("Test Student");
 
-        pendaftaran = new Pendaftaran();
-        pendaftaran.setPendaftaranId(UUID.randomUUID());
-        pendaftaran.setKandidat(mahasiswaMock);
-        pendaftaran.setLowongan(lowongan);
-        pendaftaran.setIpk(BigDecimal.valueOf(3.75));
-        pendaftaran.setSks(20);
-        pendaftaran.setWaktuDaftar(LocalDateTime.now());
-        pendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
+        testDaftarForm = new DaftarForm();
+        testDaftarForm.setIpk(3.75);
+        testDaftarForm.setSks(20);
+
+        testPendaftaran = new Pendaftaran();
+        testPendaftaran.setPendaftaranId(UUID.randomUUID());
+        testPendaftaran.setKandidat(testMahasiswa);
+        testPendaftaran.setLowongan(testLowongan);
+        testPendaftaran.setIpk(BigDecimal.valueOf(3.75));
+        testPendaftaran.setSks(20);
+        testPendaftaran.setWaktuDaftar(LocalDateTime.now());
+        testPendaftaran.setStatus(StatusPendaftaran.BELUM_DIPROSES);
+
+        testLowonganDetailResponse = new LowonganDetailResponse(testLowongan);
     }
 
     @Test
-    void testGetLowonganDetail() throws Exception {
-        when(lowonganService.findById(lowonganId)).thenReturn(lowongan);
+    void testGetLowonganDetail_Success() throws Exception {
+        when(lowonganService.findById(testLowonganId)).thenReturn(testLowongan);
 
-        mockMvc.perform(get("/api/lowongandaftar/{id}", lowonganId))
+        Map<String, Object> successResponse = createMockResponse(200, "Lowongan detail retrieved successfully");
+        successResponse.put("lowongan", testLowonganDetailResponse);
+
+        when(responseBuilderService.buildSuccessResponse(
+                eq("Lowongan detail retrieved successfully"),
+                eq("lowongan"),
+                any(LowonganDetailResponse.class)
+        )).thenReturn(ResponseEntity.ok(successResponse));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}", testLowonganId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lowonganId").value(lowonganId.toString()))
-                .andExpect(jsonPath("$.idMataKuliah").value("CS100"))
-                .andExpect(jsonPath("$.statusLowongan").value("DIBUKA"));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status_code").value(200))
+                .andExpect(jsonPath("$.message").value("Lowongan detail retrieved successfully"));
+
+        verify(lowonganService).findById(testLowonganId);
+        verify(responseBuilderService).buildSuccessResponse(
+                eq("Lowongan detail retrieved successfully"),
+                eq("lowongan"),
+                any(LowonganDetailResponse.class)
+        );
     }
 
     @Test
-    void testGetLowonganDetailNotFound() throws Exception {
-        when(lowonganService.findById(lowonganId)).thenThrow(new NoSuchElementException());
+    void testGetLowonganDetail_NotFound() throws Exception {
+        when(lowonganService.findById(testLowonganId)).thenThrow(new NoSuchElementException());
 
-        mockMvc.perform(get("/api/lowongandaftar/{id}", lowonganId))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testDaftarSuccess() throws Exception {
-        // Create a Principal mock
-        Principal mockPrincipal = mock(Principal.class);
-        when(mockPrincipal.getName()).thenReturn("testUser");
-
-        // Mock the behavior of userRepository.findByEmail to return the mahasiswaMock
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-
-        // Mock pendaftaranRepository to return an empty list (user hasn't applied yet)
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(new ArrayList<>());
-
-        when(pendaftaranService.daftar(
-                eq(lowonganId),
-                any(Mahasiswa.class),
-                eq(BigDecimal.valueOf(3.75)),
-                eq(20)
-        )).thenReturn(pendaftaran);
-
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Berhasil mendaftar asisten dosen"))
-                .andExpect(jsonPath("$.pendaftaranId").value(pendaftaran.getPendaftaranId().toString()))
-                .andExpect(jsonPath("$.lowonganId").value(lowonganId.toString()))
-                .andExpect(jsonPath("$.ipk").value(3.75))
-                .andExpect(jsonPath("$.sks").value(20))
-                .andExpect(jsonPath("$.waktuDaftar").exists());
-    }
-
-    @Test
-    void testDaftarUserAlreadyRegistered() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-
-        // Mock that user has already applied
-        List<Pendaftaran> existingPendaftaran = List.of(pendaftaran);
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(existingPendaftaran);
-
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
+        mockMvc.perform(get("/api/lowongandaftar/{id}", testLowonganId))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Anda sudah mendaftar untuk lowongan ini"));
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Lowongan tidak ditemukan dengan ID: " + testLowonganId));
+
+        verify(lowonganService).findById(testLowonganId);
     }
 
     @Test
-    void testDaftarLowonganNotFound() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(new ArrayList<>());
+    void testDaftar_Success() throws Exception {
+        doNothing().when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
 
-        when(pendaftaranService.daftar(
-                eq(lowonganId),
-                any(Mahasiswa.class),
-                eq(BigDecimal.valueOf(3.75)),
-                eq(20)
-        )).thenThrow(new NoSuchElementException("Lowongan tidak ditemukan"));
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationProcessingService.processApplication(any(UUID.class), any(DaftarForm.class), any(Mahasiswa.class)))
+                .thenReturn(testPendaftaran);
 
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
-                .andExpect(status().isNotFound());
+        Map<String, Object> registrationResponse = createMockResponse(201, "Berhasil mendaftar asisten dosen");
+        lenient().when(responseBuilderService.buildRegistrationResponse(testPendaftaran))
+                .thenReturn(ResponseEntity.status(201).body(registrationResponse));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testDaftarForm)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status_code").value(201))
+                .andExpect(jsonPath("$.message").value("Berhasil mendaftar asisten dosen"));
     }
 
     @Test
-    void testDaftarQuotaFull() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(new ArrayList<>());
+    void testDaftar_ValidationError() throws Exception {
+        DaftarForm invalidForm = new DaftarForm();
+        invalidForm.setIpk(5.0);
+        invalidForm.setSks(-10);
 
-        when(pendaftaranService.daftar(
-                eq(lowonganId),
-                any(Mahasiswa.class),
-                eq(BigDecimal.valueOf(3.75)),
-                eq(20)
-        )).thenThrow(new IllegalStateException("Kuota lowongan sudah penuh!"));
-
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidForm)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Kuota lowongan sudah penuh!"));
+                .andExpect(jsonPath("$.error").value("Validation Failed"))
+                .andExpect(jsonPath("$.details").isArray())
+                .andExpect(jsonPath("$.details[*].field").exists())
+                .andExpect(jsonPath("$.details[*].message").exists());
     }
 
     @Test
-    void testDaftarUserNotFound() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenThrow(
-                new EntityNotFoundException("User not found: testUser"));
+    void testDaftar_AuthenticationError() throws Exception {
+        doNothing().when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
 
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenThrow(new IllegalArgumentException("Anda harus login terlebih dahulu"));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testDaftarForm)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Anda harus login terlebih dahulu"));
     }
 
     @Test
-    void testDaftarInvalidForm() throws Exception {
-        DaftarForm invalid = new DaftarForm();
-        invalid.setIpk(5.01); // > 4.0
-        invalid.setSks(20);
+    void testDaftar_ProcessingError() throws Exception {
+        doNothing().when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
 
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(invalid))
-                )
-                .andExpect(status().isBadRequest());
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationProcessingService.processApplication(any(UUID.class), any(DaftarForm.class), any(Mahasiswa.class)))
+                .thenThrow(new IllegalArgumentException("Anda sudah mendaftar untuk lowongan ini"));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testDaftarForm)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Anda sudah mendaftar untuk lowongan ini"));
     }
 
     @Test
-    void testDaftarGeneralException() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(new ArrayList<>());
+    void testDaftar_UnexpectedError() throws Exception {
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationProcessingService.processApplication(any(UUID.class), any(DaftarForm.class), any(Mahasiswa.class)))
+                .thenThrow(new RuntimeException("Database connection failed"));
 
-        when(pendaftaranService.daftar(
-                eq(lowonganId),
-                any(Mahasiswa.class),
-                eq(BigDecimal.valueOf(3.75)),
-                eq(20)
-        )).thenThrow(new RuntimeException("Unexpected server error"));
-
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testDaftarForm)))
                 .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Terjadi kesalahan: Unexpected server error"));
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred"));
+    }
+
+    @Test
+    void testGetLowonganApplyStatus_Success() throws Exception {
+        Map<String, Object> statusData = new HashMap<>();
+        statusData.put("hasApplied", true);
+        statusData.put("status", "BELUM_DIPROSES");
+        statusData.put("pendaftaranId", testPendaftaran.getPendaftaranId().toString());
+
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationStatusService.getApplicationStatus(testLowonganId, testMahasiswa))
+                .thenReturn(statusData);
+
+        Map<String, Object> successResponse = createMockResponse(200, "Status pendaftaran retrieved successfully");
+        successResponse.put("application_status", statusData);
+
+        lenient().when(responseBuilderService.buildSuccessResponse(
+                eq("Status pendaftaran retrieved successfully"),
+                eq("application_status"),
+                eq(statusData)
+        )).thenReturn(ResponseEntity.ok(successResponse));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", testLowonganId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status_code").value(200))
+                .andExpect(jsonPath("$.message").value("Status pendaftaran retrieved successfully"))
+                .andExpect(jsonPath("$.application_status.hasApplied").value(true))
+                .andExpect(jsonPath("$.application_status.status").value("BELUM_DIPROSES"));
+    }
+
+    @Test
+    void testGetLowonganApplyStatus_AuthenticationError() throws Exception {
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenThrow(new IllegalArgumentException("Anda harus login terlebih dahulu"));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", testLowonganId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Anda harus login terlebih dahulu"));
+    }
+
+    @Test
+    void testGetLowonganApplyStatus_ServiceError() throws Exception {
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationStatusService.getApplicationStatus(testLowonganId, testMahasiswa))
+                .thenThrow(new RuntimeException("Service unavailable"));
+
+        mockMvc.perform(get("/api/lowongandaftar/{id}/status", testLowonganId))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred"));
+    }
+
+    @Test
+    void testGetAllLowonganForMahasiswa_Success() throws Exception {
+        List<Lowongan> lowonganList = Arrays.asList(testLowongan);
+
+        LowonganDTO lowonganDTO = new LowonganDTO();
+        lowonganDTO.setLowonganId(testLowonganId);
+        lowonganDTO.setIdMataKuliah("CS101");
+        lowonganDTO.setStatusLowongan("DIBUKA");
+
+        List<LowonganDTO> lowonganDTOList = Arrays.asList(lowonganDTO);
+
+        when(lowonganService.findAll()).thenReturn(lowonganList);
+        when(lowonganMapper.toDtoList(lowonganList)).thenReturn(lowonganDTOList);
+
+        Map<String, Object> listResponse = createMockResponse(200, "Lowongan list retrieved successfully");
+        listResponse.put("lowongan_list", lowonganDTOList);
+        listResponse.put("total_lowongan", 1);
+
+        when(responseBuilderService.buildListResponse(
+                eq("Lowongan list retrieved successfully"),
+                eq(lowonganDTOList)
+        )).thenReturn(ResponseEntity.ok(listResponse));
+
+        mockMvc.perform(get("/api/lowongandaftar/list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status_code").value(200))
+                .andExpect(jsonPath("$.message").value("Lowongan list retrieved successfully"))
+                .andExpect(jsonPath("$.lowongan_list").isArray())
+                .andExpect(jsonPath("$.lowongan_list", hasSize(1)))
+                .andExpect(jsonPath("$.total_lowongan").value(1));
+
+        verify(lowonganService).findAll();
+        verify(lowonganMapper).toDtoList(lowonganList);
+    }
+
+    @Test
+    void testGetAllLowonganForMahasiswa_EmptyList() throws Exception {
+        List<Lowongan> emptyLowonganList = new ArrayList<>();
+        List<LowonganDTO> emptyLowonganDTOList = new ArrayList<>();
+
+        when(lowonganService.findAll()).thenReturn(emptyLowonganList);
+        when(lowonganMapper.toDtoList(emptyLowonganList)).thenReturn(emptyLowonganDTOList);
+
+        Map<String, Object> listResponse = createMockResponse(200, "Lowongan list retrieved successfully");
+        listResponse.put("lowongan_list", emptyLowonganDTOList);
+        listResponse.put("total_lowongan", 0);
+
+        when(responseBuilderService.buildListResponse(
+                eq("Lowongan list retrieved successfully"),
+                eq(emptyLowonganDTOList)
+        )).thenReturn(ResponseEntity.ok(listResponse));
+
+        mockMvc.perform(get("/api/lowongandaftar/list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lowongan_list").isArray())
+                .andExpect(jsonPath("$.lowongan_list", hasSize(0)))
+                .andExpect(jsonPath("$.total_lowongan").value(0));
+    }
+
+    @Test
+    void testGetAllLowonganForMahasiswa_ServiceError() throws Exception {
+        when(lowonganService.findAll()).thenThrow(new RuntimeException("Database connection failed"));
+
+        mockMvc.perform(get("/api/lowongandaftar/list"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred"));
+
+        verify(lowonganService).findAll();
+    }
+
+    @Test
+    void testDaftar_LowonganNotFound() throws Exception {
+        doNothing().when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
+
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationProcessingService.processApplication(any(UUID.class), any(DaftarForm.class), any(Mahasiswa.class)))
+                .thenThrow(new NoSuchElementException("Lowongan not found"));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testDaftarForm)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Lowongan tidak ditemukan dengan ID: " + testLowonganId));
     }
 
     @Test
     void testDaftarWithNullPrincipal() {
-        // Create the controller instance with all the required dependencies
-        PendaftaranRestController controller = new PendaftaranRestController(
-                lowonganService,
-                pendaftaranService,
-                jwtService,
-                userRepository,
-                pendaftaranRepository,
-                lowonganMapper
-        );
+        doNothing().when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
 
-        // Call the daftar method with a null Principal
-        ResponseEntity<?> response = controller.daftar(lowonganId, daftarForm, null);
+        when(authenticationValidatorService.validateAndGetCurrentUser(null))
+                .thenThrow(new IllegalArgumentException("Anda harus login terlebih dahulu"));
 
-        // Verify the response
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Anda harus login terlebih dahulu", response.getBody());
+        assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranRestController.daftar(testLowonganId, testDaftarForm, null);
+        });
     }
 
     @Test
     void testGetLowonganApplyStatusWithNullPrincipal() {
-        PendaftaranRestController controller = new PendaftaranRestController(
-                lowonganService,
-                pendaftaranService,
-                jwtService,
-                userRepository,
-                pendaftaranRepository,
-                lowonganMapper
-        );
+        when(authenticationValidatorService.validateAndGetCurrentUser(null))
+                .thenThrow(new IllegalArgumentException("Anda harus login terlebih dahulu"));
 
-        ResponseEntity<?> response = controller.getLowonganApplyStatus(lowonganId, null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            pendaftaranRestController.getLowonganApplyStatus(testLowonganId, null);
+        });
+    }
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertEquals("Anda harus login terlebih dahulu", response.getBody());
+    private Map<String, Object> createMockResponse(int statusCode, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status_code", statusCode);
+        response.put("message", message);
+        response.put("timestamp", System.currentTimeMillis());
+        return response;
     }
 
     @Test
-    void testGetLowonganApplyStatusUserNotFound() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenThrow(
-                new EntityNotFoundException("User not found: testUser"));
+    void testDaftar_BusinessValidationError() throws Exception {
+        DaftarForm invalidBusinessForm = new DaftarForm();
+        invalidBusinessForm.setIpk(2.0);
+        invalidBusinessForm.setSks(10);
 
-        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
-                .andExpect(status().isUnauthorized())  // Changed from isInternalServerError()
-                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
+        doThrow(new IllegalArgumentException("IPK minimal 2.5 untuk mendaftar lowongan"))
+                .when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
+
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidBusinessForm)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("IPK minimal 2.5 untuk mendaftar lowongan"));
     }
 
     @Test
-    void testGetLowonganApplyStatusUserHasNotApplied() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(new ArrayList<>());
+    void testDaftar_IllegalStateError() throws Exception {
+        doNothing().when(daftarFormBusinessValidator).validateBusinessRules(any(DaftarForm.class));
 
-        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hasApplied").value(false))
-                .andExpect(jsonPath("$.status").value("BELUM_DAFTAR"));
-    }
+        lenient().when(authenticationValidatorService.validateAndGetCurrentUser(any()))
+                .thenReturn(testMahasiswa);
+        lenient().when(applicationProcessingService.processApplication(any(UUID.class), any(DaftarForm.class), any(Mahasiswa.class)))
+                .thenThrow(new IllegalStateException("Kuota lowongan sudah penuh"));
 
-    @Test
-    void testGetLowonganApplyStatusUserHasApplied() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId))).thenReturn(List.of(pendaftaran));
-
-        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hasApplied").value(true))
-                .andExpect(jsonPath("$.status").value("BELUM_DIPROSES"))
-                .andExpect(jsonPath("$.pendaftaranId").value(pendaftaran.getPendaftaranId().toString()));
-    }
-
-    @Test
-    void testGetAllLowonganForMahasiswa() throws Exception {
-        // Create test data
-        Lowongan lowongan1 = new Lowongan();
-        lowongan1.setLowonganId(UUID.randomUUID());
-        MataKuliah mk1 = new MataKuliah("MK001", "Test Course 1", "Desc1");
-        lowongan1.setMataKuliah(mk1);
-
-        Lowongan lowongan2 = new Lowongan();
-        lowongan2.setLowonganId(UUID.randomUUID());
-        MataKuliah mk2 = new MataKuliah("MK002", "Test Course 2", "Desc2");
-        lowongan2.setMataKuliah(mk2);
-
-        List<Lowongan> lowonganList = Arrays.asList(lowongan1, lowongan2);
-
-        // Create DTOs that will be returned by the mapper
-        LowonganDTO dto1 = new LowonganDTO();
-        dto1.setLowonganId(lowongan1.getLowonganId());
-        dto1.setIdMataKuliah(mk1.getKode());  // Using idMataKuliah instead of namaMatakuliah
-        dto1.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
-
-        LowonganDTO dto2 = new LowonganDTO();
-        dto2.setLowonganId(lowongan2.getLowonganId());
-        dto2.setIdMataKuliah(mk2.getKode());  // Using idMataKuliah instead of namaMatakuliah
-        dto2.setStatusLowongan(String.valueOf(StatusLowongan.DIBUKA));
-
-        List<LowonganDTO> lowonganDTOList = Arrays.asList(dto1, dto2);
-
-        // Mock service and mapper
-        when(lowonganService.findAll()).thenReturn(lowonganList);
-        when(lowonganMapper.toDtoList(lowonganList)).thenReturn(lowonganDTOList);
-
-        // Perform request and verify response
-        mockMvc.perform(get("/api/lowongandaftar/list"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].lowonganId", is(dto1.getLowonganId().toString())))
-                .andExpect(jsonPath("$[0].idMataKuliah", is(dto1.getIdMataKuliah())))
-                .andExpect(jsonPath("$[1].lowonganId", is(dto2.getLowonganId().toString())))
-                .andExpect(jsonPath("$[1].idMataKuliah", is(dto2.getIdMataKuliah())));
-    }
-
-    @Test
-    void testGetLowonganApplyStatusGeneralException() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.of(mahasiswaMock));
-
-        when(pendaftaranRepository.findByKandidatIdAndLowonganLowonganId(
-                eq(mahasiswaMock.getId()), eq(lowonganId)))
-                .thenThrow(new RuntimeException("Database connection failed"));
-
-        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().string("Terjadi kesalahan: Database connection failed"));
-    }
-
-    @Test
-    void testDaftarUserNotFoundViaEmptyOptional() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.empty());
-
-        mockMvc.perform(
-                        post("/api/lowongandaftar/{id}/daftar", lowonganId)
-                                .with(csrf())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(daftarForm))
-                )
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
-    }
-
-    @Test
-    void testGetLowonganApplyStatusUserNotFoundViaEmptyOptional() throws Exception {
-        when(userRepository.findByEmail(eq("testUser"))).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/api/lowongandaftar/{id}/status", lowonganId))
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().string("User tidak ditemukan: User not found: testUser"));
+        mockMvc.perform(post("/api/lowongandaftar/{id}/daftar", testLowonganId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testDaftarForm)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid State"))
+                .andExpect(jsonPath("$.message").value("Kuota lowongan sudah penuh"));
     }
 }

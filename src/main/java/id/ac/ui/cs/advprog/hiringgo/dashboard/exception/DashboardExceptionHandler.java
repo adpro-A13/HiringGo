@@ -15,23 +15,30 @@ import java.util.concurrent.CompletionException;
 @ControllerAdvice(basePackages = "id.ac.ui.cs.advprog.hiringgo.dashboard")
 public class DashboardExceptionHandler {
 
+    // Define constants for repeated literals
+    private static final String STATUS_KEY = "status";
+    private static final String MESSAGE_KEY = "message";
+    private static final String MODULE_KEY = "module";
+    private static final String TIMESTAMP_KEY = "timestamp";
+    private static final String MODULE_VALUE = "dashboard";
+
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFound(NoSuchElementException ex, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Dashboard data tidak dapat dimuat: " + ex.getMessage());
-        response.put("module", "dashboard");
-        response.put("status", "NOT_FOUND");
-        response.put("timestamp", System.currentTimeMillis());
+        response.put(MESSAGE_KEY, "Dashboard data tidak dapat dimuat: " + ex.getMessage());
+        response.put(MODULE_KEY, MODULE_VALUE);
+        response.put(STATUS_KEY, "NOT_FOUND");
+        response.put(TIMESTAMP_KEY, System.currentTimeMillis());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @ExceptionHandler(CompletionException.class)
     public ResponseEntity<Map<String, Object>> handleAsyncError(CompletionException ex, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Terjadi kesalahan saat memproses data dashboard secara asynchronous");
-        response.put("module", "dashboard");
-        response.put("status", "ASYNC_ERROR");
-        response.put("timestamp", System.currentTimeMillis());
+        response.put(MESSAGE_KEY, "Terjadi kesalahan saat memproses data dashboard secara asynchronous");
+        response.put(MODULE_KEY, MODULE_VALUE);
+        response.put(STATUS_KEY, "ASYNC_ERROR");
+        response.put(TIMESTAMP_KEY, System.currentTimeMillis());
         response.put("details", ex.getCause() != null ? ex.getCause().getMessage() : "Unknown async error");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
@@ -39,30 +46,30 @@ public class DashboardExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidDashboardRequest(IllegalArgumentException ex, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Parameter dashboard tidak valid: " + ex.getMessage());
-        response.put("module", "dashboard");
-        response.put("status", "INVALID_REQUEST");
-        response.put("timestamp", System.currentTimeMillis());
+        response.put(MESSAGE_KEY, "Parameter dashboard tidak valid: " + ex.getMessage());
+        response.put(MODULE_KEY, MODULE_VALUE);
+        response.put(STATUS_KEY, "INVALID_REQUEST");
+        response.put(TIMESTAMP_KEY, System.currentTimeMillis());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<Map<String, Object>> handleDashboardAccessDenied(SecurityException ex, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Akses dashboard ditolak: " + ex.getMessage());
-        response.put("module", "dashboard");
-        response.put("status", "ACCESS_DENIED");
-        response.put("timestamp", System.currentTimeMillis());
+        response.put(MESSAGE_KEY, "Akses dashboard ditolak: " + ex.getMessage());
+        response.put(MODULE_KEY, MODULE_VALUE);
+        response.put(STATUS_KEY, "ACCESS_DENIED");
+        response.put(TIMESTAMP_KEY, System.currentTimeMillis());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralDashboardError(Exception ex, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Terjadi kesalahan saat memuat dashboard");
-        response.put("module", "dashboard");
-        response.put("status", "INTERNAL_ERROR");
-        response.put("timestamp", System.currentTimeMillis());
+        response.put(MESSAGE_KEY, "Terjadi kesalahan saat memuat dashboard");
+        response.put(MODULE_KEY, MODULE_VALUE);
+        response.put(STATUS_KEY, "INTERNAL_ERROR");
+        response.put(TIMESTAMP_KEY, System.currentTimeMillis());
         response.put("error_type", ex.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
@@ -70,10 +77,10 @@ public class DashboardExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAuthorizationDenied(AuthorizationDeniedException ex, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Anda tidak memiliki akses ke dashboard ini");
-        response.put("module", "dashboard");
-        response.put("status", "FORBIDDEN");
-        response.put("timestamp", System.currentTimeMillis());
+        response.put(MESSAGE_KEY, "Anda tidak memiliki akses ke dashboard ini");
+        response.put(MODULE_KEY, MODULE_VALUE);
+        response.put(STATUS_KEY, "FORBIDDEN");
+        response.put(TIMESTAMP_KEY, System.currentTimeMillis());
         response.put("required_role", extractRequiredRole(request));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }

@@ -15,24 +15,20 @@ public class HiringGoApplication {
     }
 
     public static void loadEnv() {
-        // Fallback ke dotenv hanya kalau System.getenv belum ada
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-
-        setPropertyIfNotNull("DB_HOST", getEnvOrDotenv("DB_HOST", dotenv));
-        setPropertyIfNotNull("DB_PORT", getEnvOrDotenv("DB_PORT", dotenv));
-        setPropertyIfNotNull("DB_USER", getEnvOrDotenv("DB_USER", dotenv));
-        setPropertyIfNotNull("DB_PASSWORD", getEnvOrDotenv("DB_PASSWORD", dotenv));
-        setPropertyIfNotNull("DB_NAME", getEnvOrDotenv("DB_NAME", dotenv));
+        try {
+            System.setProperty("DB_URL", getEnvOrDotenv("DB_URL", dotenv));
+            System.setProperty("DB_USERNAME", getEnvOrDotenv("DB_USERNAME", dotenv));
+            System.setProperty("DB_PASSWORD", getEnvOrDotenv("DB_PASSWORD", dotenv));
+            System.setProperty("JWT_SECRET", getEnvOrDotenv("JWT_SECRET", dotenv));
+            System.setProperty("PASSWORD_ADMIN", getEnvOrDotenv("PASSWORD_ADMIN", dotenv));
+        } catch (Exception e) {
+            System.err.println("Error setting system properties");
+        }
     }
 
     private static String getEnvOrDotenv(String key, Dotenv dotenv) {
         String value = System.getenv(key);
         return (value != null) ? value : dotenv.get(key);
-    }
-
-    private static void setPropertyIfNotNull(String key, String value) {
-        if (value != null) {
-            System.setProperty(key, value);
-        }
     }
 }
