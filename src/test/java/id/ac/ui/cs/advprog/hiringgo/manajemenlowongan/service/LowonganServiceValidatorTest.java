@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.Semester;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusLowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.enums.StatusPendaftaran;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
 import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Pendaftaran;
@@ -215,18 +217,33 @@ class LowonganServiceValidatorTest {
 
     @Test
     void testValidateLowonganCombinationIsUnique_duplicateOrUnique() {
-        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaranAndJumlahAsdosDibutuhkan(
-                any(), any(), any(), anyInt()))
-                .thenReturn(Optional.of(lowongan));
+        Lowongan inputLowongan = new Lowongan();
+        inputLowongan.setLowonganId(UUID.randomUUID());
+        inputLowongan.setMataKuliah(mataKuliah);
+        inputLowongan.setSemester("Ganjil");
+        inputLowongan.setTahunAjaran("2024/2025");
+
+        Lowongan existingLowongan = new Lowongan();
+        existingLowongan.setLowonganId(UUID.randomUUID());
+        existingLowongan.setMataKuliah(inputLowongan.getMataKuliah());
+        existingLowongan.setSemester(inputLowongan.getSemester().getValue());
+        existingLowongan.setTahunAjaran(inputLowongan.getTahunAjaran());
+
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                any(), any(), any()))
+                .thenReturn(Optional.of(existingLowongan));
+
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> validator.validateLowonganCombinationIsUnique(lowongan));
+                () -> validator.validateLowonganCombinationIsUnique(inputLowongan));
         assertEquals("Lowongan dengan kombinasi yang sama sudah ada.", ex.getMessage());
 
-        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaranAndJumlahAsdosDibutuhkan(
-                any(), any(), any(), anyInt()))
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                any(), any(), any()))
                 .thenReturn(Optional.empty());
-        assertDoesNotThrow(() -> validator.validateLowonganCombinationIsUnique(lowongan));
+
+        assertDoesNotThrow(() -> validator.validateLowonganCombinationIsUnique(inputLowongan));
     }
+
 
     @Test
     void testValidateStatusAndCapacity_pendaftaranDitolak_throwsIllegalState() {
@@ -259,5 +276,75 @@ class LowonganServiceValidatorTest {
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> validator.validateStatusAndCapacity(pendaftaran, lowongan));
         assertEquals("Lowongan sudah penuh", ex.getMessage());
+    }
+
+    @Test
+    void testValidateLowonganCombinationIsUnique_lowonganIdNull_throwsIllegalArgument() {
+        Lowongan existingLowongan = new Lowongan();
+        existingLowongan.setLowonganId(UUID.randomUUID());
+        existingLowongan.setMataKuliah(mataKuliah);
+        existingLowongan.setSemester(Semester.GENAP.getValue());
+        existingLowongan.setTahunAjaran("2023/2024");
+
+        lowongan.setLowonganId(null);
+        lowongan.setSemester(Semester.GENAP.getValue());
+        lowongan.setTahunAjaran("2023/2024");
+
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                mataKuliah, Semester.valueOf("GENAP"), "2023/2024"))
+                .thenReturn(Optional.of(existingLowongan));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> validator.validateLowonganCombinationIsUnique(lowongan));
+        assertEquals("Lowongan dengan kombinasi yang sama sudah ada.", ex.getMessage());
+    }
+
+    @Test
+    void testValidateLowonganCombinationIsUnique_existingWithDifferentId_throwsIllegalArgument() {
+        UUID existingId = UUID.randomUUID();
+        Lowongan existingLowongan = new Lowongan();
+        existingLowongan.setLowonganId(existingId);
+
+        lowongan.setMataKuliah(mataKuliah);
+        lowongan.setSemester(Semester.GENAP.getValue());
+        lowongan.setTahunAjaran("2024/2025");
+        lowongan.setLowonganId(UUID.randomUUID());
+
+        existingLowongan.setMataKuliah(lowongan.getMataKuliah());
+        existingLowongan.setSemester(Semester.GENAP.getValue());
+        existingLowongan.setTahunAjaran(lowongan.getTahunAjaran());
+
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                any(), any(), any()))
+                .thenReturn(Optional.of(existingLowongan));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> validator.validateLowonganCombinationIsUnique(lowongan));
+        assertEquals("Lowongan dengan kombinasi yang sama sudah ada.", ex.getMessage());
+    }
+
+    @Test
+    void testValidateLowonganCombinationIsUnique_sameId_doesNotThrow() {
+        UUID sameId = UUID.randomUUID();
+        lowongan.setLowonganId(sameId);
+        lowongan.setMataKuliah(mataKuliah);
+        lowongan.setSemester(Semester.GENAP.getValue());
+        lowongan.setTahunAjaran("2024/2025");
+
+        Lowongan existingLowongan = new Lowongan();
+        existingLowongan.setLowonganId(sameId);
+        existingLowongan.setMataKuliah(lowongan.getMataKuliah());
+        existingLowongan.setSemester(Semester.GENAP.getValue());
+        existingLowongan.setTahunAjaran(lowongan.getTahunAjaran());
+
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                lowongan.getMataKuliah(),
+                lowongan.getSemester(),
+                lowongan.getTahunAjaran()))
+                .thenReturn(Optional.of(existingLowongan));
+
+        assertDoesNotThrow(() ->
+                validator.validateLowonganCombinationIsUnique(lowongan)
+        );
     }
 }

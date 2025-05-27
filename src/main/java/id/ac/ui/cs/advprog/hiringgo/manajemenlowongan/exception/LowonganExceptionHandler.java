@@ -7,45 +7,44 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.validation.FieldError;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice(basePackages = "id.ac.ui.cs.advprog.hiringgo.manajemenlowongan")
 public class LowonganExceptionHandler {
-
+    private static final String ERROR = "error";
+    private static final String MESSAGE = "message";
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Object> handleNotFound(EntityNotFoundException ex) {
         Map<String, String> body = new HashMap<>();
-        body.put("error", "Not Found");
-        body.put("message", ex.getMessage());
+        body.put(ERROR, "Not Found");
+        body.put(MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleBadRequest(IllegalArgumentException ex) {
         Map<String, String> body = new HashMap<>();
-        body.put("error", "Bad Request");
-        body.put("message", ex.getMessage());
+        body.put(ERROR, "Bad Request");
+        body.put(MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Object> handleIllegalState(IllegalStateException ex) {
         Map<String, String> body = new HashMap<>();
-        body.put("error", "Invalid State");
-        body.put("message", ex.getMessage());
+        body.put(ERROR, "Invalid State");
+        body.put(MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex) {
         Map<String, String> body = new HashMap<>();
-        body.put("error", "Forbidden");
-        body.put("message", ex.getMessage());
+        body.put(ERROR, "Forbidden");
+        body.put(MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
@@ -57,13 +56,13 @@ public class LowonganExceptionHandler {
                 .map(err -> {
                     Map<String, String> m = new HashMap<>();
                     m.put("field", err.getField());
-                    m.put("message", err.getDefaultMessage());
+                    m.put(MESSAGE, err.getDefaultMessage());
                     return m;
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         Map<String, Object> body = new HashMap<>();
-        body.put("error", "Validation Failed");
+        body.put(ERROR, "Validation Failed");
         body.put("details", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
@@ -71,8 +70,8 @@ public class LowonganExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGeneral(Exception ex) {
         Map<String, String> body = new HashMap<>();
-        body.put("error", "Internal Server Error");
-        body.put("message", "An unexpected error occurred");
+        body.put(ERROR, "Internal Server Error");
+        body.put(MESSAGE, "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

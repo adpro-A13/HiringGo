@@ -184,7 +184,7 @@ class LowonganServiceImplTest {
 
         MataKuliah mataKuliahBaru = createMataKuliah("CS100", "Sister",
                 "sistem interaksi", dosenPengampu);
-        Lowongan updatedLowongan = createLowongan(null, mataKuliahBaru, 8, 0);
+        Lowongan updatedLowongan = createLowongan(id1, mataKuliahBaru, 8, 0);
         updatedLowongan.setTahunAjaran("2025");
         String semesterBaru = Semester.GENAP.name();
         updatedLowongan.setSemester(semesterBaru);
@@ -192,8 +192,8 @@ class LowonganServiceImplTest {
         updatedLowongan.setStatusLowongan(statusBaru);
 
         when(validator.getAuthorizedLowongan(id1)).thenReturn(existingLowongan);
-        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaranAndJumlahAsdosDibutuhkan(
-                mataKuliahBaru, Semester.valueOf(semesterBaru), "2025", 8))
+        when(lowonganRepository.findByMataKuliahAndSemesterAndTahunAjaran(
+                mataKuliahBaru, Semester.valueOf(semesterBaru), "2025"))
                 .thenReturn(Optional.empty());
         when(lowonganRepository.save(any(Lowongan.class)))
                 .thenAnswer(i -> i.getArgument(0));
