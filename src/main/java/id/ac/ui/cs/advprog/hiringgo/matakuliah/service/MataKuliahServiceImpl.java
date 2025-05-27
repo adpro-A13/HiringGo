@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahAlreadyExistException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
@@ -13,9 +15,11 @@ import java.util.List;
 public class MataKuliahServiceImpl implements MataKuliahService {
 
     private final MataKuliahRepository mataKuliahRepository;
+    private final LowonganRepository lowonganRepository;
 
-    public MataKuliahServiceImpl(MataKuliahRepository mataKuliahRepository) {
+    public MataKuliahServiceImpl(MataKuliahRepository mataKuliahRepository, LowonganRepository lowonganRepository) {
         this.mataKuliahRepository = mataKuliahRepository;
+        this.lowonganRepository = lowonganRepository;
     }
 
     @Override
@@ -54,6 +58,11 @@ public class MataKuliahServiceImpl implements MataKuliahService {
 
     @Override
     public void deleteByKode(String kode) {
+        MataKuliah mataKuliah = findByKode(kode);
+        List<Lowongan> lowongan = lowonganRepository.findByMataKuliah(mataKuliah);
+        if (!lowongan.isEmpty()) {
+            lowonganRepository.deleteAll(lowongan);
+        }
         mataKuliahRepository.deleteById(kode);
     }
 }

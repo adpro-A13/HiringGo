@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.hiringgo.matakuliah.service;
 
 import id.ac.ui.cs.advprog.hiringgo.authentication.model.Dosen;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.model.Lowongan;
+import id.ac.ui.cs.advprog.hiringgo.manajemenlowongan.repository.LowonganRepository;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.exception.MataKuliahNotFoundException;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.model.MataKuliah;
 import id.ac.ui.cs.advprog.hiringgo.matakuliah.repository.MataKuliahRepository;
@@ -19,6 +21,8 @@ import static org.mockito.Mockito.*;
 class MataKuliahServiceTest {
     @Mock
     MataKuliahRepository mataKuliahRepository;
+    @Mock
+    private LowonganRepository lowonganRepository;
     @InjectMocks
     private MataKuliahServiceImpl mataKuliahService;
 
@@ -139,7 +143,53 @@ class MataKuliahServiceTest {
 
     @Test
     void testDeleteMataKuliah() {
+        MataKuliah mk = new MataKuliah("CS001", "Lanjut", "Desc");
+        when(mataKuliahRepository.findByKode("CS001")).thenReturn(Optional.of(mk));
+        when(lowonganRepository.findByMataKuliah(mk)).thenReturn(List.of());
         mataKuliahService.deleteByKode("CS001");
         verify(mataKuliahRepository).deleteById("CS001");
+    }
+
+    @Test
+    void testDeleteByKode_withExistingLowongan() {
+        MataKuliah mk = new MataKuliah("CS002", "Lanjut", "Desc");
+        Lowongan l1 = mock(Lowongan.class);
+        when(mataKuliahRepository.findByKode("CS002"))
+                .thenReturn(Optional.of(mk));
+        when(lowonganRepository.findByMataKuliah(mk))
+                .thenReturn(List.of(l1));
+
+        mataKuliahService.deleteByKode("CS002");
+
+        verify(mataKuliahRepository).findByKode("CS002");
+        verify(lowonganRepository).findByMataKuliah(mk);
+        verify(lowonganRepository).deleteAll(List.of(l1));
+        verify(mataKuliahRepository).deleteById("CS002");
+    }
+
+    @Test
+    void testDeleteByKode_notFound() {
+        when(mataKuliahRepository.findByKode("CS003"))
+                .thenReturn(Optional.empty());
+
+        MataKuliahNotFoundException ex = assertThrows(
+                MataKuliahNotFoundException.class,
+                () -> mataKuliahService.deleteByKode("CS003")
+        );
+        assertEquals("Mata kuliah tidak ditemukan", ex.getMessage());
+        verify(lowonganRepository, never()).findByMataKuliah(any());
+        verify(mataKuliahRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testFindByDosenPengampu_withNullDosen_shouldThrowException() {
+        MataKuliahNotFoundException ex = assertThrows(
+                MataKuliahNotFoundException.class,
+                () -> mataKuliahService.findByDosenPengampu(null)
+        );
+
+        assertEquals("Dosen tidak ditemukan", ex.getMessage());
+
+        verify(mataKuliahRepository, never()).findByDosenPengampu(any());
     }
 }

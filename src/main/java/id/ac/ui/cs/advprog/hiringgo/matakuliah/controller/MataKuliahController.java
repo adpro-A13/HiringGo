@@ -70,7 +70,7 @@ public class MataKuliahController {
         }
     }
 
-    @DeleteMapping("/{kode}")
+    @DeleteMapping("delete/{kode}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> deleteMataKuliah(@PathVariable String kode) {
         mataKuliahService.deleteByKode(kode);
